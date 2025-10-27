@@ -1,33 +1,35 @@
-import { useState, useEffect } from 'react';
-import './App.css';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
+import HomePage from './pages/HomePage.jsx';
+import MenuPage from './pages/MenuPage.jsx';
+import CartPage from './pages/CartPage.jsx';
+import CheckoutPage from './pages/CheckoutPage.jsx';
+import OrderSuccessPage from './pages/OrderSuccessPage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import TrackOrderPage from './pages/TrackOrderPage.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 
 function App() {
-  const [apiStatus, setApiStatus] = useState('Đang chờ kết nối...');
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/health`)
-      .then((response) => response.json())
-      .then((data) => {
-        // --- THÊM DÒNG NÀY VÀO ---
-        console.log("✅ Kết nối tới API thành công!", data);
-        // -------------------------
-
-        setApiStatus(data.status); // Cập nhật giao diện
-      })
-      .catch((error) => {
-        console.error("❌ Lỗi khi kết nối tới API:", error);
-        setApiStatus('Kết nối thất bại! Bạn đã chạy server backend chưa?');
-      });
-  }, []);
-
   return (
-    <div>
-      <h1>Trang Web Pizza Sắp Ra Mắt!</h1>
-      <p>
-        <strong>API Status:</strong> {apiStatus}
-      </p>
+    <div className="App">
+      <Header />
+      <main>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/menu" element={<MenuPage />} />
+          <Route path="/foods/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-success" element={<OrderSuccessPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/track-order" element={<TrackOrderPage />} />
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      </main>
+      <Footer />
     </div>
   );
 }
