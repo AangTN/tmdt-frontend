@@ -4,7 +4,24 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000, // 30 seconds timeout for free tier DB
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
+
+// Retry helper for slow free-tier connections
+async function retryRequest(fn, retries = 2, delay = 1000) {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0 && (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.response?.status >= 500)) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryRequest(fn, retries - 1, delay * 1.5);
+    }
+    throw error;
+  }
+}
 
 export function assetUrl(path) {
   const base = API_BASE_URL.replace(/\/$/, '');
@@ -13,31 +30,43 @@ export function assetUrl(path) {
 }
 
 export async function fetchFoods() {
-  const res = await api.get('/api/foods');
-  return res.data;
+  return retryRequest(async () => {
+    const res = await api.get('/api/foods');
+    return res.data;
+  });
 }
 
 export async function fetchTypes() {
-  const res = await api.get('/api/types');
-  return res.data;
+  return retryRequest(async () => {
+    const res = await api.get('/api/types');
+    return res.data;
+  });
 }
 
 export async function fetchCategories() {
-  const res = await api.get('/api/categories');
-  return res.data;
+  return retryRequest(async () => {
+    const res = await api.get('/api/categories');
+    return res.data;
+  });
 }
 
 export async function fetchVariants() {
-  const res = await api.get('/api/variants');
-  return res.data;
+  return retryRequest(async () => {
+    const res = await api.get('/api/variants');
+    return res.data;
+  });
 }
 
 export async function fetchOptionPrices() {
-  const res = await api.get('/api/variants/option-prices');
-  return res.data;
+  return retryRequest(async () => {
+    const res = await api.get('/api/variants/option-prices');
+    return res.data;
+  });
 }
 
 export async function fetchCrusts() {
-  const res = await api.get('/api/crusts');
-  return res.data;
+  return retryRequest(async () => {
+    const res = await api.get('/api/crusts');
+    return res.data;
+  });
 }

@@ -20,6 +20,7 @@ const MenuPage = () => {
     let mounted = true;
     (async () => {
       try {
+        setError(''); // Clear previous errors
         const [foodsData, typesData] = await Promise.all([
           fetchFoods(),
           fetchTypes()
@@ -33,9 +34,12 @@ const MenuPage = () => {
           }
         }
       } catch (e) {
-        setError('Không tải được menu.');
+        if (mounted) {
+          console.error('Menu load error:', e);
+          setError('Đang tải dữ liệu từ server... Vui lòng đợi trong giây lát.');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
     return () => { mounted = false; };
@@ -157,10 +161,17 @@ const MenuPage = () => {
         )}
 
         {loading && (
-          <div className="text-center py-5"><Spinner animation="border" /></div>
+          <div className="text-center py-5">
+            <Spinner animation="border" variant="danger" />
+            <p className="mt-3 text-muted">Đang tải menu từ server...</p>
+            <small className="text-muted">Free tier có thể mất 5-10 giây lần đầu</small>
+          </div>
         )}
         {!loading && error && (
-          <EmptyState title="Có lỗi xảy ra" description={error} />
+          <div className="alert alert-warning d-flex align-items-center" role="alert">
+            <Spinner animation="border" size="sm" className="me-2" />
+            <div>{error}</div>
+          </div>
         )}
         {!loading && !error && filtered.length === 0 && (
           <EmptyState title="Không tìm thấy món ăn" description="Hãy thử từ khóa khác hoặc chọn loại món khác." />
