@@ -45,7 +45,10 @@ const ProductDetail = () => {
   }, [id]);
 
   const imageUrl = useMemo(() => {
-    return food?.HinhAnh ? assetUrl(`images/AnhMonAn/${food.HinhAnh}`) : '/placeholder.svg';
+    if (!food?.HinhAnh) return '/placeholder.svg';
+    const raw = String(food.HinhAnh);
+    const path = raw.startsWith('/') ? raw : `/images/AnhMonAn/${raw}`;
+    return assetUrl(path);
   }, [food]);
 
   const variants = food?.BienTheMonAn || [];

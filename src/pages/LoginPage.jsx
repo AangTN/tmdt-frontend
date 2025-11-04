@@ -13,8 +13,9 @@ const LoginPage = () => {
     diaChi: ''
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,23 +33,15 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      // TODO: Call API login endpoint
-      // For now, mock login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock success response (using email)
-      const userData = {
-        id: 1,
-        email: formData.email,
-        hoTen: 'Người dùng',
-        soDienThoai: '0901234567',
-        role: 'CUSTOMER'
-      };
-
-      login(userData);
-      navigate(from, { replace: true });
+      const resp = await login({ email: formData.email, matKhau: formData.password });
+      if (resp.ok) {
+        navigate(from, { replace: true });
+      } else {
+        setError(resp.message || 'Đăng nhập thất bại');
+      }
     } catch (err) {
       setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
@@ -59,23 +52,63 @@ const LoginPage = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+  setError('');
+  setSuccess('');
+    // Client-side validation
+    const email = (formData.email || '').trim();
+    const password = String(formData.password || '');
+    const hoTen = (formData.hoTen || '').trim();
+    const phoneRaw = String(formData.soDienThoai || '').trim();
+
+    function isValidEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    function isValidVNPhone(v) {
+      const cleaned = (v || '').replace(/[^0-9+]/g, '');
+      // Vietnamese mobile numbers: start with 0 or +84, next digit 3|5|7|8|9 and 8 more digits
+      return /^(?:\+84|0)(3|5|7|8|9)\d{8}$/.test(cleaned);
+    }
+
+    if (!hoTen) {
+      setError('Vui lòng nhập họ tên.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Định dạng email không hợp lệ.');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length <= 6) {
+      setError('Mật khẩu phải nhiều hơn 6 ký tự.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidVNPhone(phoneRaw)) {
+      setError('Số điện thoại không hợp lệ (VD: 0909123456 hoặc +84909123456).');
+      setLoading(false);
+      return;
+    }
 
     try {
-      // TODO: Call API register endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock success - auto login after register (using email)
-      const userData = {
-        id: Date.now(),
-        email: formData.email,
-        hoTen: formData.hoTen,
-        soDienThoai: formData.soDienThoai,
-        role: 'CUSTOMER'
-      };
-
-      login(userData);
-      navigate(from, { replace: true });
+      const resp = await register({
+        email,
+        hoTen,
+        matKhau: password,
+        soDienThoai: phoneRaw,
+      });
+      if (resp.ok) {
+        // Show success, switch to login tab, and prefill credentials
+        setSuccess(resp.message || 'Đăng ký thành công. Vui lòng đăng nhập.');
+        setActiveTab('login');
+        setFormData(prev => ({ ...prev, email, password }));
+      } else {
+        setError(resp.message || 'Đăng ký thất bại');
+      }
     } catch (err) {
       setError('Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
@@ -95,6 +128,7 @@ const LoginPage = () => {
                 </h2>
                 
                 {error && <Alert variant="danger">{error}</Alert>}
+                {success && <Alert variant="success">{success}</Alert>}
 
                 <Tabs
                   activeKey={activeTab}

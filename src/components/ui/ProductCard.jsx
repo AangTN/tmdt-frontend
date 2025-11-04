@@ -37,7 +37,7 @@ const ProductCard = ({ pizza, onView }) => {
     return null;
   });
   const image = pizza?.HinhAnh
-    ? assetUrl(`images/AnhMonAn/${pizza.HinhAnh}`)
+    ? assetUrl(String(pizza.HinhAnh).startsWith('/') ? String(pizza.HinhAnh) : `/images/AnhMonAn/${pizza.HinhAnh}`)
     : '/placeholder.svg';
 
   // Reconcile price using new variants API to ensure consistency with cart logic

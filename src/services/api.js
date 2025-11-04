@@ -70,3 +70,17 @@ export async function fetchCrusts() {
     return res.data;
   });
 }
+
+export async function fetchBanners() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/banners');
+    return res.data;
+  });
+}
+
+export async function fetchBranches() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/branches');
+    return res.data;
+  });
+}

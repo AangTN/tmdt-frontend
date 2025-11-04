@@ -1,0 +1,194 @@
+/* Hero About Section */
+.aboutHero {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4d4f 40%, #d32029 80%);
+  color: white;
+  padding: 4rem 0 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.aboutHero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.heroTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+  font-size: 1.2rem;
+  opacity: 0.95;
+  max-width: 600px;
+}
+
+/* Story Section */
+.storySection {
+  padding: 4rem 0;
+  background: #fff;
+}
+
+.storyCard {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: none;
+  height: 100%;
+}
+
+.storyCard h3 {
+  color: #ff4d4f;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.storyCard p {
+  color: #555;
+  line-height: 1.8;
+}
+
+.storyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+/* Branches Map Section */
+.mapSection {
+  padding: 4rem 0;
+  background: linear-gradient(to bottom, #fafafa, #fff);
+}
+
+.mapTitle {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.mapSubtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 3rem;
+}
+
+.mapContainer {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  height: 500px;
+  position: relative;
+}
+
+.mapPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f6f8;
+  color: #999;
+}
+
+/* Branch Cards */
+.branchesGrid {
+  margin-top: 3rem;
+}
+
+.branchCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: none;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.branchCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(255, 77, 79, 0.2);
+}
+
+.branchCard h5 {
+  color: #ff4d4f;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.branchCard .info {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.branchCard .info strong {
+  color: #333;
+  margin-right: 0.5rem;
+}
+
+/* Values Section */
+.valuesSection {
+  padding: 4rem 0;
+  background: white;
+}
+
+.valueCard {
+  text-align: center;
+  padding: 2rem;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.valueCard:hover {
+  border-color: #ff4d4f;
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(255, 77, 79, 0.15);
+}
+
+.valueIcon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.valueCard h4 {
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.valueCard p {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .heroTitle {
+    font-size: 2rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1rem;
+  }
+
+  .mapContainer {
+    height: 350px;
+  }
+
+  .storyCard {
+    margin-bottom: 1rem;
+  }
+}

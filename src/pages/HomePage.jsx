@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Button, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Button, Spinner, Carousel } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
-import { fetchFoods, fetchTypes, fetchCategories } from '../services/api';
+import { fetchFoods, fetchTypes, fetchCategories, fetchBanners, assetUrl } from '../services/api';
 import styles from './HomePage.module.css';
 
 const HomePage = () => {
@@ -10,20 +10,23 @@ const HomePage = () => {
   const [foods, setFoods] = useState([]);
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [banners, setBanners] = useState([]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const [f, t, c] = await Promise.all([
+        const [f, t, c, b] = await Promise.all([
           fetchFoods(),
           fetchTypes(),
           fetchCategories(),
+          fetchBanners(),
         ]);
         if (mounted) {
           setFoods(Array.isArray(f) ? f : []);
           setTypes(Array.isArray(t) ? t : []);
           setCategories(Array.isArray(c) ? c : []);
+          setBanners(Array.isArray(b) ? b : []);
         }
       } finally {
         setLoading(false);
@@ -33,51 +36,63 @@ const HomePage = () => {
   }, []);
 
   const featured = useMemo(() => foods.slice(0, 8), [foods]);
+  const bannerUrls = useMemo(() => (Array.isArray(banners) ? banners : []).map(p => assetUrl(p)), [banners]);
 
   return (
     <>
-      {/* HERO */}
-      <section className={`${styles.hero}`}>
+      {/* TOP BANNER (Compact 3.5:1) */}
+      <section className={styles.bannerSection}>
+        <Container fluid className="px-0">
+          <div className={`${styles.bannerWrap} ${styles.bannerCarousel}`}>
+            {bannerUrls.length > 0 ? (
+              <Carousel interval={3500} controls indicators fade pause="hover" touch wrap>
+                {bannerUrls.map((url, idx) => (
+                  <Carousel.Item key={idx}>
+                    <div className={styles.bannerFrame}>
+                      <img
+                        src={url}
+                        alt={`Banner ${idx + 1}`}
+                        loading="lazy"
+                        onError={(e)=>{ try { e.currentTarget.onerror=null; e.currentTarget.src='/placeholder.svg'; } catch{} }}
+                      />
+                    </div>
+                  </Carousel.Item>
+                ))}
+              </Carousel>
+            ) : (
+              <div className={styles.bannerFrame}>
+                <img src="/placeholder.svg" alt="Banner" />
+              </div>
+            )}
+          </div>
+        </Container>
+      </section>
+
+      {/* HERO CTA - Overlays bottom of banner */}
+      <section className={styles.heroOverlay}>
         <Container>
-          <Row className="align-items-center">
-            <Col md={7} className="mb-4 mb-md-0">
-              <div className={styles.heroContent}>
-                <div className={styles.promoTag}>🔥 ƯU ĐÃI HÔM NAY - GIẢM TỚI 30%</div>
-                <h1 className="display-4 fw-bold mb-3">
-                  Pizza nóng hổi,<br />
-                  giao <span style={{ textDecoration: 'underline', textDecorationColor: '#ffc107', textDecorationThickness: '4px' }}>siêu tốc</span>
-                </h1>
-                <p className="lead mb-4" style={{ fontSize: '1.25rem', opacity: 0.95 }}>
-                  Chọn chiếc pizza yêu thích từ menu đa dạng với hơn 50+ món.<br />
-                  Nguyên liệu tươi ngon, công thức độc quyền - Hương vị Ý chính gốc
-                </p>
-                <div className="d-flex gap-3 flex-wrap">
+          <div className={styles.ctaCard}>
+            <Row className="align-items-center">
+              <Col md={8}>
+                <h2>🍕 Pizza nóng hổi, giao siêu tốc 30 phút</h2>
+                <p>Hơn 50+ món pizza thơm ngon với nguyên liệu tươi mỗi ngày. Đặt ngay để nhận ưu đãi!</p>
+              </Col>
+              <Col md={4}>
+                <div className={styles.ctaBtnGroup}>
                   <Link to="/menu">
-                    <Button size="lg" className="btn-danger px-4 py-3 fw-bold">
-                      🍕 Đặt ngay
+                    <Button size="lg" variant="danger">
+                      Đặt ngay
                     </Button>
                   </Link>
                   <Link to="/menu">
-                    <Button variant="outline-light" size="lg" className="px-4 py-3 fw-bold">
+                    <Button size="lg" variant="outline-danger">
                       Xem menu
                     </Button>
                   </Link>
                 </div>
-              </div>
-            </Col>
-            <Col md={5}>
-              <div className={`${styles.heroCard} p-3 rounded-4 bg-white text-dark`}>
-                <div className="ratio ratio-1x1 rounded-3 overflow-hidden mb-3 bg-light">
-                  <img src="/placeholder.svg" alt="Pizza" style={{ objectFit: 'cover' }} />
-                </div>
-                <Row className="text-center g-2">
-                  <Col xs={4}><small className="text-muted d-block">⭐ 4.8/5</small><small className="fw-bold">Đánh giá</small></Col>
-                  <Col xs={4}><small className="text-muted d-block">🚚 30'</small><small className="fw-bold">Giao nhanh</small></Col>
-                  <Col xs={4}><small className="text-muted d-block">🎁 Deal</small><small className="fw-bold">Mỗi ngày</small></Col>
-                </Row>
-              </div>
-            </Col>
-          </Row>
+              </Col>
+            </Row>
+          </div>
         </Container>
       </section>
 

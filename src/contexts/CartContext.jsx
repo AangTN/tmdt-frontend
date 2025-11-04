@@ -16,6 +16,39 @@ const initialState = {
   items: []
 };
 
+const STORAGE_KEY = 'cart';
+const COMPACT_KEY = 'cart:compact';
+
+function loadInitialState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && Array.isArray(parsed.items) && parsed.items.every(it => it?.monAnId != null)) {
+        const items = parsed.items.map(it => ({ ...it, key: it.key || buildKey(it) }));
+        return { items };
+      }
+    }
+    const compact = localStorage.getItem(COMPACT_KEY);
+    if (compact) {
+      const rawItems = JSON.parse(compact);
+      if (Array.isArray(rawItems)) {
+        const items = rawItems
+          .filter(it => it && it.monAnId != null)
+          .map(it => normalizeItem({
+            monAnId: it.monAnId,
+            bienTheId: it.bienTheId ?? null,
+            soLuong: it.soLuong ?? 1,
+            deBanhId: it.deBanhId ?? null,
+            tuyChonThem: Array.isArray(it.tuyChonThem) ? it.tuyChonThem : [],
+          }));
+        if (items.length > 0) return { items };
+      }
+    }
+  } catch {}
+  return initialState;
+}
+
 function buildKey(item) {
   const opts = Array.isArray(item.tuyChonThem) ? [...item.tuyChonThem].sort((a, b) => a - b) : [];
   const deBanh = item.deBanhId == null ? 'null' : String(item.deBanhId);
@@ -66,50 +99,12 @@ function reducer(state, action) {
 }
 
 export const CartProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  // Load synchronously from localStorage to avoid losing cart on refresh/flicker
+  const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('cart');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // basic migration: ensure items have our new shape else reset
-        if (parsed && Array.isArray(parsed.items) && parsed.items.every(it => it.monAnId != null)) {
-          // ensure keys exist
-          const items = parsed.items.map(it => ({ ...it, key: it.key || buildKey(it) }));
-          dispatch({ type: 'INIT', payload: { items } });
-          return;
-        }
-      }
-      // Fallback: support compact structure saved separately
-      const compact = localStorage.getItem('cart:compact');
-      if (compact) {
-        const rawItems = JSON.parse(compact);
-        if (Array.isArray(rawItems)) {
-          const items = rawItems
-            .filter(it => it && it.monAnId != null)
-            .map(it => normalizeItem({
-              monAnId: it.monAnId,
-              bienTheId: it.bienTheId ?? null,
-              soLuong: it.soLuong ?? 1,
-              deBanhId: it.deBanhId ?? null,
-              tuyChonThem: Array.isArray(it.tuyChonThem) ? it.tuyChonThem : [],
-            }));
-          if (items.length > 0) {
-            dispatch({ type: 'INIT', payload: { items } });
-            return;
-          }
-        }
-      }
-      dispatch({ type: 'INIT', payload: initialState });
-    } catch {
-      dispatch({ type: 'INIT', payload: initialState });
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('cart', JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       const compactItems = state.items.map(({ monAnId, bienTheId, soLuong, deBanhId, tuyChonThem }) => ({
         monAnId,
         bienTheId,
@@ -117,7 +112,7 @@ export const CartProvider = ({ children }) => {
         deBanhId,
         tuyChonThem,
       }));
-      localStorage.setItem('cart:compact', JSON.stringify(compactItems));
+      localStorage.setItem(COMPACT_KEY, JSON.stringify(compactItems));
     } catch {}
   }, [state]);
 
