@@ -1,4 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import styles from '../../styles/admin/AdminTable.module.css';
+import buttonStyles from '../../styles/admin/AdminButton.module.css';
+import formStyles from '../../styles/admin/AdminForm.module.css';
+import cardStyles from '../../styles/admin/AdminCard.module.css';
 
 const mockUsers = [
   {
@@ -71,9 +75,9 @@ const statusLabels = {
 };
 
 const statusVariant = {
-  active: 'success',
-  pending: 'warning',
-  suspended: 'secondary'
+  active: 'tableBadgeActive',
+  pending: 'tableBadgePending',
+  suspended: 'tableBadgeError'
 };
 
 const ManageUsers = () => {
@@ -99,114 +103,232 @@ const ManageUsers = () => {
   }, [roleFilter, search, statusFilter]);
 
   return (
-    <div>
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
-        <div>
-          <h3 className="mb-0">Quản lý người dùng</h3>
-          <small className="text-muted">Theo dõi tài khoản khách hàng và nhân viên (dữ liệu demo).</small>
-        </div>
-        <div className="d-flex gap-2 flex-wrap">
-          <input
-            type="search"
-            className="form-control"
-            placeholder="Tìm theo tên, email, số điện thoại..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            style={{ minWidth: 240 }}
-          />
-          <select
-            className="form-select"
-            value={roleFilter}
-            onChange={(event) => setRoleFilter(event.target.value)}
-          >
-            <option value="all">Tất cả vai trò</option>
-            <option value="customer">Khách hàng</option>
-            <option value="staff">Nhân viên</option>
-            <option value="admin">Quản trị viên</option>
-          </select>
-          <select
-            className="form-select"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="pending">Chờ xác minh</option>
-            <option value="suspended">Tạm khóa</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="row g-3 mb-3">
-        <div className="col-md-4">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <p className="text-muted mb-1">Tổng tài khoản</p>
-              <h4 className="mb-0">{totalUsers}</h4>
+    <div className="admin-animate-fade-in">
+      {/* Header Section */}
+      <div className={`${cardStyles.cardPremium} mb-4`}>
+        <div className={cardStyles.cardHeaderPremium}>
+          <div className="d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+              <h2 className={`${cardStyles.cardTitleLarge} mb-2`}>Quản lý người dùng</h2>
+              <p className={cardStyles.cardSubtitle}>Tổng số: {totalUsers} tài khoản • {activeUsers} đang hoạt động • {staffUsers} nhân sự</p>
             </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <p className="text-muted mb-1">Đang hoạt động</p>
-              <h4 className="mb-0">{activeUsers}</h4>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <p className="text-muted mb-1">Nhân sự nội bộ</p>
-              <h4 className="mb-0">{staffUsers}</h4>
+            <div className="d-flex gap-2 align-items-center">
+              <div className={formStyles.formSearch}>
+                <span className={formStyles.formSearchIcon}>🔍</span>
+                <input
+                  type="search"
+                  className={`${formStyles.formInput} ${formStyles.formSearchInput}`}
+                  placeholder="Tìm theo tên, email, số điện thoại..."
+                  style={{ minWidth: 280 }}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className={formStyles.formSearchClear}
+                    onClick={() => setSearch('')}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <select
+                className={`${formStyles.formSelect}`}
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value)}
+                style={{ minWidth: 150 }}
+              >
+                <option value="all">Tất cả vai trò</option>
+                <option value="customer">Khách hàng</option>
+                <option value="staff">Nhân viên</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+              <select
+                className={`${formStyles.formSelect}`}
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                style={{ minWidth: 150 }}
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Hoạt động</option>
+                <option value="pending">Chờ xác minh</option>
+                <option value="suspended">Tạm khóa</option>
+              </select>
+              <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}>
+                <span>+</span> Thêm người dùng
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body p-0">
-          <table className="table table-hover mb-0 align-middle">
-            <thead className="table-light">
+      {/* Table Section */}
+      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+        <div className={styles.tableResponsive}>
+          <table className={`${styles.table} ${styles.tableRowHover}`}>
+            <thead className={styles.tableHeaderPrimary}>
               <tr>
-                <th>Mã người dùng</th>
-                <th>Họ tên</th>
-                <th>Email</th>
-                <th>Số điện thoại</th>
-                <th>Vai trò</th>
-                <th>Đơn đã đặt</th>
-                <th>Đơn gần nhất</th>
-                <th>Trạng thái</th>
-                <th>Lần đăng nhập cuối</th>
+                <th style={{ width: 120 }}>
+                  <div className={styles.tableSortable}>
+                    <span>Mã người dùng</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Họ tên</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Email</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Số điện thoại</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Vai trò</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Đơn đã đặt</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Đơn gần nhất</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Trạng thái</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
+                <th>
+                  <div className={styles.tableSortable}>
+                    <span>Lần đăng nhập cuối</span>
+                    <span className={styles.tableSortIcon}></span>
+                  </div>
+                </th>
                 <th style={{ width: 200 }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-4 text-muted">Chưa có người dùng phù hợp với bộ lọc.</td>
+                  <td colSpan={10}>
+                    <div className={styles.tableEmpty}>
+                      <div className={styles.tableEmptyIcon}>👥</div>
+                      <div className={styles.tableEmptyTitle}>Không có người dùng</div>
+                      <div className={styles.tableEmptyDescription}>
+                        {search || roleFilter !== 'all' || statusFilter !== 'all' 
+                          ? 'Chưa có người dùng phù hợp với bộ lọc được chọn.' 
+                          : 'Chưa có dữ liệu người dùng.'}
+                      </div>
+                      <button 
+                        className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                        onClick={() => {
+                          setSearch('');
+                          setRoleFilter('all');
+                          setStatusFilter('all');
+                        }}
+                      >
+                        Xóa bộ lọc
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td className="fw-semibold">{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.phone}</td>
-                    <td>{roleLabels[user.role]}</td>
-                    <td>{user.totalOrders}</td>
-                    <td>{user.lastOrder}</td>
+                  <tr key={user.id} className="admin-animate-slide-up">
+                    <td className={styles.tableCellBold}>
+                      <span className="badge bg-light text-dark border">
+                        {user.id}
+                      </span>
+                    </td>
                     <td>
-                      <span className={`badge bg-${statusVariant[user.status] || 'secondary'}`}>
+                      <div className="d-flex align-items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <div 
+                            className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
+                            style={{ 
+                              width: 48, 
+                              height: 48,
+                              background: user.role === 'admin' 
+                                ? 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
+                                : user.role === 'staff'
+                                ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
+                                : 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
+                            }}
+                          >
+                            <span style={{ fontSize: 20 }}>
+                              {user.role === 'admin' ? '👑' : user.role === 'staff' ? '👨‍💼' : '👤'}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className={`${styles.tableCellBold} mb-1`}>{user.name}</div>
+                          <small className={styles.tableCellMuted}>ID: {user.id}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={styles.tableCellText}>{user.email}</td>
+                    <td className={styles.tableCellMuted}>{user.phone}</td>
+                    <td>
+                      <span className={`${styles.tableBadge} ${
+                        user.role === 'admin' ? styles.tableBadgeWarning :
+                        user.role === 'staff' ? styles.tableBadgeInfo :
+                        styles.tableBadgeActive
+                      }`}>
+                        {roleLabels[user.role]}
+                      </span>
+                    </td>
+                    <td className={styles.tableCellSuccess}>{user.totalOrders}</td>
+                    <td className={styles.tableCellMuted}>{user.lastOrder}</td>
+                    <td>
+                      <span className={`${styles.tableBadge} ${statusVariant[user.status] || styles.tableBadgeInfo}`}>
                         {statusLabels[user.status] || user.status}
                       </span>
                     </td>
-                    <td><small>{user.lastLogin}</small></td>
+                    <td className={styles.tableCellMuted}>
+                      <small>{user.lastLogin}</small>
+                    </td>
                     <td>
-                      <div className="btn-group btn-group-sm">
-                        <button type="button" className="btn btn-outline-primary" disabled>Xem chi tiết</button>
-                        <button type="button" className="btn btn-outline-warning" disabled>Đặt lại mật khẩu</button>
-                        <button type="button" className="btn btn-outline-danger" disabled>{user.status === 'suspended' ? 'Mở khóa' : 'Khóa tài khoản'}</button>
+                      <div className={styles.tableActions}>
+                        <button 
+                          className={`${styles.tableAction} ${styles.tableActionSuccess}`}
+                          title="Xem chi tiết"
+                          disabled
+                        >
+                          👁️
+                        </button>
+                        <button 
+                          className={styles.tableAction}
+                          title="Đặt lại mật khẩu"
+                          disabled
+                        >
+                          🔑
+                        </button>
+                        <button 
+                          className={`${styles.tableAction} ${styles.tableActionDanger}`}
+                          title={user.status === 'suspended' ? 'Mở khóa' : 'Khóa tài khoản'}
+                          disabled
+                        >
+                          {user.status === 'suspended' ? '🔓' : '🔒'}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -214,6 +336,96 @@ const ManageUsers = () => {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Table Footer with Pagination */}
+        {filteredUsers.length > 0 && (
+          <div className={styles.tablePagination}>
+            <div className={styles.tablePaginationInfo}>
+              Hiển thị {filteredUsers.length} trên {totalUsers} người dùng
+            </div>
+            <div className={styles.tablePaginationControls}>
+              <button 
+                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                disabled
+              >
+                ←
+              </button>
+              <span className="px-3 py-1">
+                <strong>1</strong> / 1
+              </span>
+              <button 
+                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                disabled
+              >
+                →
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Stats */}
+      <div className="row g-3 mt-4">
+        <div className="col-md-3">
+          <div className={`${cardStyles.card} ${cardStyles.cardAnimateHover}`}>
+            <div className={cardStyles.cardBody}>
+              <div className={cardStyles.cardStats}>
+                <div>
+                  <div className={cardStyles.cardStatValue}>{totalUsers}</div>
+                  <div className={cardStyles.cardStatLabel}>Tổng tài khoản</div>
+                </div>
+                <div className={`${cardStyles.cardStatIcon} ${cardStyles.cardStatIconPrimary}`}>
+                  👥
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className={`${cardStyles.card} ${cardStyles.cardAnimateHover}`}>
+            <div className={cardStyles.cardBody}>
+              <div className={cardStyles.cardStats}>
+                <div>
+                  <div className={cardStyles.cardStatValue}>{activeUsers}</div>
+                  <div className={cardStyles.cardStatLabel}>Đang hoạt động</div>
+                </div>
+                <div className={`${cardStyles.cardStatIcon} ${cardStyles.cardStatIconSuccess}`}>
+                  ✅
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className={`${cardStyles.card} ${cardStyles.cardAnimateHover}`}>
+            <div className={cardStyles.cardBody}>
+              <div className={cardStyles.cardStats}>
+                <div>
+                  <div className={cardStyles.cardStatValue}>{staffUsers}</div>
+                  <div className={cardStyles.cardStatLabel}>Nhân sự nội bộ</div>
+                </div>
+                <div className={`${cardStyles.cardStatIcon} ${cardStyles.cardStatIconInfo}`}>
+                  👨‍💼
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className={`${cardStyles.card} ${cardStyles.cardAnimateHover}`}>
+            <div className={cardStyles.cardBody}>
+              <div className={cardStyles.cardStats}>
+                <div>
+                  <div className={cardStyles.cardStatValue}>{filteredUsers.length}</div>
+                  <div className={cardStyles.cardStatLabel}>Kết quả tìm kiếm</div>
+                </div>
+                <div className={`${cardStyles.cardStatIcon} ${cardStyles.cardStatIconWarning}`}>
+                  🔍
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

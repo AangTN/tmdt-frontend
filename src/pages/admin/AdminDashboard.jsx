@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { fetchFoods, fetchCategories, fetchTypes } from '../../services/api';
+import styles from '../../styles/admin/AdminCard.module.css';
+import '../../styles/admin.css';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     foods: 0,
     categories: 0,
     types: 0,
-    orders: 24, // số liệu giả lập
+    orders: 24,
+    revenue: 12500000,
+    customers: 156,
   });
   const [loading, setLoading] = useState(true);
 
@@ -33,45 +37,304 @@ const AdminDashboard = () => {
     return () => { mounted = false; };
   }, []);
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const statCards = [
+    {
+      title: 'Sản phẩm',
+      value: stats.foods,
+      icon: '🍕',
+      variant: 'primary',
+      trend: '+12%',
+      description: 'So với tháng trước'
+    },
+    {
+      title: 'Danh mục',
+      value: stats.categories,
+      icon: '🏷️',
+      variant: 'success',
+      trend: '+5%',
+      description: 'Mới thêm'
+    },
+    {
+      title: 'Thể loại',
+      value: stats.types,
+      icon: '📂',
+      variant: 'info',
+      trend: '0%',
+      description: 'Không đổi'
+    },
+    {
+      title: 'Đơn hàng chờ',
+      value: stats.orders,
+      icon: '🧾',
+      variant: 'warning',
+      trend: '+18%',
+      description: 'Hôm nay'
+    },
+    {
+      title: 'Doanh thu',
+      value: formatCurrency(stats.revenue),
+      icon: '💰',
+      variant: 'success',
+      trend: '+25%',
+      description: 'Tháng này'
+    },
+    {
+      title: 'Khách hàng',
+      value: stats.customers,
+      icon: '👥',
+      variant: 'primary',
+      trend: '+8%',
+      description: 'Hoạt động'
+    }
+  ];
+
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Tổng quan cửa hàng</h2>
-        {loading && <span className="badge bg-secondary">Đang đồng bộ...</span>}
+    <div className="admin-animate-fade-in">
+      {/* Dashboard Header */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: 'var(--admin-space-xl)',
+        padding: 'var(--admin-space-lg)',
+        background: 'linear-gradient(135deg, var(--admin-bg-primary) 0%, var(--admin-bg-secondary) 100%)',
+        borderRadius: 'var(--admin-radius-xl)',
+        boxShadow: 'var(--admin-shadow-base)'
+      }}>
+        <div>
+          <h2 
+            style={{ 
+              margin: 0,
+              fontSize: 'var(--admin-font-size-3xl)',
+              fontWeight: 'var(--admin-font-weight-extrabold)',
+              background: 'linear-gradient(135deg, var(--admin-text-primary) 0%, var(--admin-primary) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+          >
+            Tổng quan cửa hàng
+          </h2>
+          <p 
+            style={{ 
+              margin: 'var(--admin-space-xs) 0 0 0',
+              fontSize: 'var(--admin-font-size-base)',
+              color: 'var(--admin-text-secondary)',
+              fontWeight: 'var(--admin-font-weight-medium)'
+            }}
+          >
+            Chào mừng trở lại! Đây là tổng quan hoạt động của bạn hôm nay.
+          </p>
+        </div>
+        {loading && (
+          <div 
+            style={{
+              padding: 'var(--admin-space-sm) var(--admin-space-md)',
+              background: 'linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-light) 100%)',
+              color: 'var(--admin-white)',
+              borderRadius: 'var(--admin-radius-lg)',
+              fontSize: 'var(--admin-font-size-sm)',
+              fontWeight: 'var(--admin-font-weight-semibold)',
+              boxShadow: 'var(--admin-shadow-sm)',
+              animation: 'admin-pulse 2s infinite'
+            }}
+          >
+            Đang đồng bộ dữ liệu...
+          </div>
+        )}
       </div>
-      <div className="row g-3">
-        {[{
-          title: 'Sản phẩm', value: stats.foods, icon: '🍕', variant: 'primary'
-        }, {
-          title: 'Danh mục', value: stats.categories, icon: '🏷️', variant: 'success'
-        }, {
-          title: 'Thể loại', value: stats.types, icon: '📂', variant: 'info'
-        }, {
-          title: 'Đơn hàng chờ', value: stats.orders, icon: '🧾', variant: 'warning'
-        }].map((card) => (
-          <div className="col-12 col-sm-6 col-lg-3" key={card.title}>
-            <div className={`card border-${card.variant} h-100`}>
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 className="text-muted text-uppercase mb-1">{card.title}</h6>
-                    <h3 className="fw-bold mb-0">{card.value}</h3>
+
+      {/* Stats Cards Grid */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: 'var(--admin-space-lg)',
+        marginBottom: 'var(--admin-space-xl)'
+      }}>
+        {statCards.map((card, index) => (
+          <div
+            key={card.title}
+            className={`${styles.cardPremium} ${styles.cardAnimateIn}`}
+            style={{
+              animationDelay: `${index * 0.1}s`,
+              background: `linear-gradient(135deg, var(--admin-bg-primary) 0%, ${
+                card.variant === 'primary' ? '#fff5f5' :
+                card.variant === 'success' ? '#f6ffed' :
+                card.variant === 'warning' ? '#fffbe6' :
+                '#e6f7ff'
+              } 100%)`,
+              borderLeft: `4px solid ${
+                card.variant === 'primary' ? 'var(--admin-primary)' :
+                card.variant === 'success' ? 'var(--admin-success)' :
+                card.variant === 'warning' ? 'var(--admin-warning)' :
+                'var(--admin-info)'
+              }`
+            }}
+          >
+            <div className={styles.cardBody}>
+              <div className={styles.cardStats}>
+                <div>
+                  <div className={styles.cardStatLabel}>{card.title}</div>
+                  <div className={styles.cardStatValue}>{card.value}</div>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 'var(--admin-space-xs)',
+                    marginTop: 'var(--admin-space-xs)'
+                  }}>
+                    <span style={{
+                      fontSize: 'var(--admin-font-size-xs)',
+                      fontWeight: 'var(--admin-font-weight-semibold)',
+                      color: card.trend.startsWith('+') ? 'var(--admin-success)' : 'var(--admin-text-secondary)'
+                    }}>
+                      {card.trend}
+                    </span>
+                    <span style={{
+                      fontSize: 'var(--admin-font-size-xs)',
+                      color: 'var(--admin-text-tertiary)'
+                    }}>
+                      {card.description}
+                    </span>
                   </div>
-                  <div style={{ fontSize: '2rem' }}>{card.icon}</div>
+                </div>
+                <div className={
+                  card.variant === 'primary' ? styles.cardStatIconPrimary :
+                  card.variant === 'success' ? styles.cardStatIconSuccess :
+                  card.variant === 'warning' ? styles.cardStatIconWarning :
+                  styles.cardStatIconInfo
+                }>
+                  {card.icon}
                 </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="card mt-4">
-        <div className="card-body">
-          <h5 className="card-title">Hoạt động gần đây</h5>
-          <ul className="list-unstyled small mb-0">
-            <li>• 2 đơn hàng mới vừa được tạo.</li>
-            <li>• Menu đã cập nhật thêm 1 sản phẩm đặc biệt.</li>
-            <li>• Danh mục "Pizza Hải Sản" được chỉnh sửa.</li>
-          </ul>
+
+      {/* Recent Activity and Quick Actions */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '2fr 1fr', 
+        gap: 'var(--admin-space-lg)'
+      }}>
+        {/* Recent Activity Card */}
+        <div className={`${styles.cardGradient} ${styles.cardAnimateIn}`} style={{ animationDelay: '0.6s' }}>
+          <div className={styles.cardHeaderPremium}>
+            <h3 className={styles.cardTitleLarge}>Hoạt động gần đây</h3>
+            <p className={styles.cardSubtitle}>Các cập nhật mới nhất từ cửa hàng</p>
+          </div>
+          <div className={styles.cardBody}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--admin-space-md)' }}>
+              {[
+                { icon: '🧾', text: '2 đơn hàng mới vừa được tạo', time: '5 phút trước', color: 'var(--admin-primary)' },
+                { icon: '🍕', text: 'Menu đã cập nhật thêm 1 sản phẩm đặc biệt', time: '15 phút trước', color: 'var(--admin-success)' },
+                { icon: '🏷️', text: 'Danh mục "Pizza Hải Sản" được chỉnh sửa', time: '1 giờ trước', color: 'var(--admin-info)' },
+                { icon: '👥', text: 'Khách hàng mới đăng ký tài khoản', time: '2 giờ trước', color: 'var(--admin-secondary)' },
+                { icon: '🎁', text: 'Khuyến mãi cuối tuần đã bắt đầu', time: '3 giờ trước', color: 'var(--admin-warning)' }
+              ].map((activity, index) => (
+                <div 
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--admin-space-md)',
+                    padding: 'var(--admin-space-md)',
+                    background: 'var(--admin-bg-secondary)',
+                    borderRadius: 'var(--admin-radius-lg)',
+                    borderLeft: `3px solid ${activity.color}`,
+                    transition: 'var(--admin-transition-base)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateX(4px)';
+                    e.target.style.boxShadow = 'var(--admin-shadow-sm)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateX(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>{activity.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontWeight: 'var(--admin-font-weight-medium)',
+                      color: 'var(--admin-text-primary)',
+                      fontSize: 'var(--admin-font-size-sm)'
+                    }}>
+                      {activity.text}
+                    </div>
+                    <div style={{ 
+                      fontSize: 'var(--admin-font-size-xs)',
+                      color: 'var(--admin-text-tertiary)',
+                      marginTop: '2px'
+                    }}>
+                      {activity.time}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions Card */}
+        <div className={`${styles.cardGlass} ${styles.cardAnimateIn}`} style={{ animationDelay: '0.7s' }}>
+          <div className={styles.cardHeaderBorderless}>
+            <h3 className={styles.cardTitle}>Hành động nhanh</h3>
+            <p className={styles.cardSubtitle}>Các tác vụ thường dùng</p>
+          </div>
+          <div className={styles.cardBody}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--admin-space-sm)' }}>
+              {[
+                { icon: '➕', text: 'Thêm sản phẩm mới', color: 'var(--admin-primary)' },
+                { icon: '📦', text: 'Xem đơn hàng', color: 'var(--admin-info)' },
+                { icon: '📊', text: 'Báo cáo doanh thu', color: 'var(--admin-success)' },
+                { icon: '👥', text: 'Quản lý khách hàng', color: 'var(--admin-secondary)' },
+                { icon: '⚙️', text: 'Cài đặt cửa hàng', color: 'var(--admin-gray-600)' }
+              ].map((action, index) => (
+                <button
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--admin-space-md)',
+                    padding: 'var(--admin-space-md)',
+                    background: 'var(--admin-bg-secondary)',
+                    border: '1px solid var(--admin-border-light)',
+                    borderRadius: 'var(--admin-radius-lg)',
+                    color: 'var(--admin-text-primary)',
+                    fontSize: 'var(--admin-font-size-sm)',
+                    fontWeight: 'var(--admin-font-weight-medium)',
+                    cursor: 'pointer',
+                    transition: 'var(--admin-transition-base)',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = action.color;
+                    e.target.style.color = 'var(--admin-white)';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = 'var(--admin-shadow-sm)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'var(--admin-bg-secondary)';
+                    e.target.style.color = 'var(--admin-text-primary)';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>{action.icon}</span>
+                  <span>{action.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
