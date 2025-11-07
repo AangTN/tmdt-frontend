@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Container, Row, Col, Card, Spinner } from 'react-bootstrap';
-import { fetchBranches } from '../services/api';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Container, Row, Col, Card, Spinner, Button } from 'react-bootstrap';
+import { fetchBranches, fetchFoods, assetUrl } from '../services/api';
 import styles from './AboutPage.module.css';
 
 const GOONG_API_KEY = import.meta.env.VITE_MAP_KEY || 'GwbEvplbZNagXL5wwjjKOuOZnonRgeMYi46NToda';
@@ -16,15 +16,16 @@ const AboutPage = () => {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
+  // Foods for best sellers showcase
+  const [foods, setFoods] = useState([]);
+  const [foodsLoading, setFoodsLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const data = await fetchBranches();
-        if (mounted) {
-          setBranches(Array.isArray(data) ? data : []);
-        }
+        if (mounted) setBranches(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to load branches:', err);
       } finally {
@@ -32,6 +33,23 @@ const AboutPage = () => {
       }
     })();
     return () => { mounted = false; };
+  }, []);
+
+  // Load foods for best seller/product showcase
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setFoodsLoading(true);
+      try {
+        const data = await fetchFoods();
+        if (active && Array.isArray(data)) setFoods(data);
+      } catch (err) {
+        console.error('Load foods failed', err);
+      } finally {
+        if (active) setFoodsLoading(false);
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -166,54 +184,160 @@ const AboutPage = () => {
     }
   }, [branches, sdkReady]);
 
+  // Derive best sellers (simple heuristic: first items with an image & variant price)
+  const bestSellers = useMemo(() => {
+    const enriched = foods.map(food => {
+      const rawImg = food?.HinhAnh;
+      const imagePath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
+      const variants = Array.isArray(food?.BienTheMonAn) ? food.BienTheMonAn : [];
+      const prices = variants.map(v => Number(v?.GiaBan || 0)).filter(p => p > 0);
+      const minPrice = prices.length ? Math.min(...prices) : 0;
+      return {
+        id: food.MaMonAn,
+        name: food.TenMonAn,
+        image: imagePath ? assetUrl(imagePath) : '/placeholder.svg',
+        price: minPrice,
+        typeName: food?.LoaiMonAn?.TenLoaiMonAn || '',
+        rating: Number(food?.SoSaoTrungBinh || 0),
+        count: Number(food?.SoDanhGia || 0)
+      };
+    });
+    // prioritize by rating then count then price descending (higher price maybe premium)
+    enriched.sort((a, b) => {
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      if (b.count !== a.count) return b.count - a.count;
+      return b.price - a.price;
+    });
+    return enriched.slice(0, 4);
+  }, [foods]);
+
+  // Simple KPIs (static / could be dynamic later)
+  const kpis = [
+    { label: 'Pizza giao mỗi tháng', value: '12K+' },
+    { label: 'Thành phần tươi mỗi ngày', value: '30+' },
+    { label: 'Đánh giá trung bình', value: '4.8/5' },
+    { label: 'Thời gian giao trung bình', value: '26 phút' }
+  ];
+
   return (
     <>
-      {/* Hero */}
+      {/* Conversion Hero */}
       <section className={styles.aboutHero}>
         <Container>
-          <div className="text-center">
-            <h1 className={styles.heroTitle}>Về Secret Pizza</h1>
-            <p className={styles.heroSubtitle}>
-              Hành trình mang pizza Ý chính gốc đến mọi nhà - Nhanh chóng, Tươi ngon, Đậm đà
-            </p>
+          <Row className="align-items-center">
+            <Col lg={7} className="text-center text-lg-start">
+              <h1 className={styles.heroTitle}>Pizza nóng hổi – Giao siêu tốc</h1>
+              <p className={styles.heroSubtitle}>
+                Từ lò nướng đá chuẩn Ý đến bàn ăn của bạn chỉ trong vài chục phút. Chọn size, đế, tùy chọn thêm & tận hưởng!
+              </p>
+              <div className={styles.heroCTAGroup}>
+                <Button href="/menu" variant="light" size="lg" className={styles.primaryCTA}>Đặt món ngay</Button>
+                <Button href="#best-sellers" variant="outline-light" size="lg" className={styles.secondaryCTA}>Món nổi bật</Button>
+              </div>
+            </Col>
+            <Col lg={5} className="d-none d-lg-block">
+              <div className={styles.heroVisual}>
+                <div className={styles.heroBubbleOne}></div>
+                <div className={styles.heroBubbleTwo}></div>
+                <div className={styles.heroMockPizza}>🍕</div>
+              </div>
+            </Col>
+          </Row>
+          <Row className={styles.kpiRow}>
+            {kpis.map(k => (
+              <Col key={k.label} xs={6} md={3} className={styles.kpiCol}>
+                <div className={styles.kpiCard}>
+                  <div className={styles.kpiValue}>{k.value}</div>
+                  <div className={styles.kpiLabel}>{k.label}</div>
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </Container>
+      </section>
+
+      {/* Delivery Area Notice */}
+      <section className={styles.deliveryNotice}>
+        <Container>
+          <div className={styles.deliveryBanner}>
+            <div className={styles.deliveryText}>
+              <div className={styles.deliveryKicker}>Khu vực giao hàng</div>
+              <h2>Hiện chỉ giao tại TP. Hồ Chí Minh & Hà Nội</h2>
+              <p>Chúng tôi đang mở rộng hệ thống. Rất mong được phục vụ bạn sớm ở nhiều tỉnh thành khác!</p>
+            </div>
+            <div className={styles.deliveryCities}>
+              <div className={styles.cityPill}>🏙️ TP. Hồ Chí Minh</div>
+              <div className={styles.cityPill}>🛕 Hà Nội</div>
+            </div>
           </div>
         </Container>
       </section>
 
-      {/* Story Section */}
-      <section className={styles.storySection}>
+      {/* USP / Why Choose Us */}
+      <section className={styles.uspSection}>
         <Container>
           <Row className="gy-4">
-            <Col md={4}>
-              <Card className={styles.storyCard}>
-                <div className={styles.storyIcon}>🍕</div>
-                <h3>Câu chuyện</h3>
-                <p>
-                  Secret Pizza ra đời từ đam mê mang pizza tươi ngon, nóng hổi đến tay khách hàng. 
-                  Chúng tôi chọn lọc nguyên liệu mỗi ngày, kết hợp công thức độc quyền để tạo nên hương vị khác biệt.
-                </p>
+            <Col md={3} sm={6}>
+              <Card className={styles.uspCard}>
+                <div className={styles.uspIcon}>�</div>
+                <h3>Nguyên liệu chuẩn</h3>
+                <p>Tươi mới mỗi ngày, phô mai & sốt nhập khẩu tuyển chọn.</p>
               </Card>
             </Col>
-            <Col md={4}>
-              <Card className={styles.storyCard}>
-                <div className={styles.storyIcon}>🎯</div>
-                <h3>Sứ mệnh</h3>
-                <p>
-                  Đơn giản hóa việc đặt món - vài cú chạm là có ngay bữa ăn chất lượng. 
-                  Cam kết giao hàng siêu tốc 30 phút với nguyên liệu 100% tươi mới.
-                </p>
+            <Col md={3} sm={6}>
+              <Card className={styles.uspCard}>
+                <div className={styles.uspIcon}>⚡</div>
+                <h3>Giao cực nhanh</h3>
+                <p>Theo dõi trạng thái & thời gian dự kiến đến phút.</p>
               </Card>
             </Col>
-            <Col md={4}>
-              <Card className={styles.storyCard}>
-                <div className={styles.storyIcon}>💎</div>
-                <h3>Giá trị</h3>
-                <p>
-                  Chất lượng - Tốc độ - Uy tín. Mỗi chiếc pizza là một lời cam kết về sự hoàn hảo, 
-                  từ nguyên liệu đến cách phục vụ.
-                </p>
+            <Col md={3} sm={6}>
+              <Card className={styles.uspCard}>
+                <div className={styles.uspIcon}>🛠️</div>
+                <h3>Tùy biến linh hoạt</h3>
+                <p>Chọn size, đế, thêm topping theo khẩu vị của bạn.</p>
               </Card>
             </Col>
+            <Col md={3} sm={6}>
+              <Card className={styles.uspCard}>
+                <div className={styles.uspIcon}>�</div>
+                <h3>Ưu đãi đều đặn</h3>
+                <p>Voucher & combo tiết kiệm chi phí mỗi tuần.</p>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* Best Sellers */}
+      <section id="best-sellers" className={styles.bestSection}>
+        <Container>
+          <div className="text-center mb-4">
+            <h2 className={styles.bestTitle}>Món được đặt nhiều</h2>
+            <p className={styles.bestSubtitle}>Thử ngay những lựa chọn làm khách hàng quay lại thường xuyên</p>
+          </div>
+          <Row className="g-4">
+            {foodsLoading && (
+              <div className="d-flex justify-content-center py-5"><Spinner animation="border" variant="danger" /></div>
+            )}
+            {!foodsLoading && bestSellers.map(f => (
+              <Col key={f.id} md={3} sm={6}>
+                <div className={styles.foodCard}>
+                  <div className={styles.foodImageWrap}>
+                    <img src={f.image} alt={f.name} className={styles.foodImage} />
+                  </div>
+                  <div className={styles.foodBody}>
+                    <div className={styles.foodName}>{f.name}</div>
+                    {f.typeName && <div className={styles.foodType}>{f.typeName}</div>}
+                    <div className={styles.foodPrice}>{f.price.toLocaleString()} đ</div>
+                    <Button href={`/foods/${f.id}`} variant="danger" size="sm" className="mt-2 w-100">Đặt ngay</Button>
+                  </div>
+                </div>
+              </Col>
+            ))}
+            {!foodsLoading && bestSellers.length === 0 && (
+              <div className="text-center text-muted py-4">Chưa có dữ liệu món ăn hiển thị.</div>
+            )}
           </Row>
         </Container>
       </section>
@@ -252,6 +376,9 @@ const AboutPage = () => {
                       <div className={styles.info}>
                         <strong>📞 Điện thoại:</strong> {branch.SoDienThoai}
                       </div>
+                      {branch?.ThanhPho && (/Hà\s*Nội|Ha\s*Noi|Hồ\s*Chí\s*Minh|Ho\s*Chi\s*Minh|HCM/i).test(branch.ThanhPho) && (
+                        <div className={styles.deliveryTag}>Phục vụ giao hàng</div>
+                      )}
                     </Card>
                   </Col>
                 ))}
@@ -262,39 +389,40 @@ const AboutPage = () => {
       </section>
 
       {/* Values Section */}
-      <section className={styles.valuesSection}>
+      <section className={styles.testimonialSection}>
         <Container>
-          <h2 className="text-center mb-5 fw-bold">Cam kết của chúng tôi</h2>
+          <h2 className="text-center mb-4 fw-bold">Khách hàng nói gì?</h2>
           <Row className="g-4">
-            <Col md={3} sm={6}>
-              <div className={styles.valueCard}>
-                <div className={styles.valueIcon}>🌿</div>
-                <h4>Nguyên liệu tươi</h4>
-                <p>100% tươi mỗi ngày, không chất bảo quản</p>
+            <Col md={4}>
+              <div className={styles.testimonialCard}>
+                <div className={styles.quoteMark}>“</div>
+                <p>Pizza sốt đậm đà, phô mai kéo cực đã. Giao nhanh hơn dự kiến!</p>
+                <div className={styles.reviewer}>— Minh Anh</div>
               </div>
             </Col>
-            <Col md={3} sm={6}>
-              <div className={styles.valueCard}>
-                <div className={styles.valueIcon}>⚡</div>
-                <h4>Giao nhanh 30'</h4>
-                <p>Cam kết giao hàng trong 30 phút</p>
+            <Col md={4}>
+              <div className={styles.testimonialCard}>
+                <div className={styles.quoteMark}>“</div>
+                <p>Rất thích phần chọn thêm topping, đúng kiểu cá nhân hóa khẩu vị.</p>
+                <div className={styles.reviewer}>— Quốc Bảo</div>
               </div>
             </Col>
-            <Col md={3} sm={6}>
-              <div className={styles.valueCard}>
-                <div className={styles.valueIcon}>🎁</div>
-                <h4>Ưu đãi hấp dẫn</h4>
-                <p>Chương trình khuyến mãi mỗi tuần</p>
-              </div>
-            </Col>
-            <Col md={3} sm={6}>
-              <div className={styles.valueCard}>
-                <div className={styles.valueIcon}>⭐</div>
-                <h4>Đánh giá 4.8/5</h4>
-                <p>Hàng nghìn khách hàng hài lòng</p>
+            <Col md={4}>
+              <div className={styles.testimonialCard}>
+                <div className={styles.quoteMark}>“</div>
+                <p>Dịch vụ ổn định, mình đặt nhiều lần vẫn nóng hổi & đúng giờ.</p>
+                <div className={styles.reviewer}>— Linh Trang</div>
               </div>
             </Col>
           </Row>
+        </Container>
+      </section>
+
+      <section className={styles.finalCTA}>
+        <Container className="text-center">
+          <h2 className="fw-bold mb-3">Sẵn sàng thưởng thức chưa?</h2>
+          <p className="text-muted mb-4">Khám phá thực đơn đa dạng & tự tạo chiếc pizza của riêng bạn.</p>
+          <Button href="/menu" variant="danger" size="lg">Bắt đầu đặt món →</Button>
         </Container>
       </section>
     </>

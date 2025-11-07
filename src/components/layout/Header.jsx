@@ -56,6 +56,11 @@ const Header = () => {
                     <span>{user?.hoTen || user?.email}</span>
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
+                    <LinkContainer to="/profile/edit">
+                      <Dropdown.Item>
+                        Chỉnh sửa thông tin
+                      </Dropdown.Item>
+                    </LinkContainer>
                     <Dropdown.Item onClick={handleLogout}>
                       Đăng xuất
                     </Dropdown.Item>

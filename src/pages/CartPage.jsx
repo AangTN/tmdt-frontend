@@ -1,17 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Card, Button, Form, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Spinner, Modal } from 'react-bootstrap';
 import { useCart } from '../contexts/CartContext';
 import { Link } from 'react-router-dom';
-import { assetUrl, fetchFoods, fetchVariants, fetchOptionPrices, fetchCrusts } from '../services/api';
+import { assetUrl, fetchFoods, fetchVariants, fetchOptionPrices, fetchCrusts, api } from '../services/api';
 
 const CartPage = () => {
-  const { items, subtotal, remove, setQty, clear } = useCart();
+  const { items, subtotal, remove, setQty, clear, add } = useCart();
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState('');
   const [foods, setFoods] = useState([]);
   const [variants, setVariants] = useState([]);
   const [optionPrices, setOptionPrices] = useState([]);
   const [crusts, setCrusts] = useState([]);
+
+  // Editing modal state
+  const [editingItem, setEditingItem] = useState(null); // existing cart item object
+  const [editorFood, setEditorFood] = useState(null); // full food detail from API
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [sizeId, setSizeId] = useState(null);
+  const [crustId, setCrustId] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({}); // { MaTuyChon: boolean }
+  const [editQty, setEditQty] = useState(1);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [editorError, setEditorError] = useState('');
 
   useEffect(() => {
     if (items.length === 0) return;
@@ -130,6 +141,135 @@ const CartPage = () => {
     });
   }, [items, foodsMap, variantsMap, crustMap, optionPriceMap, optionFallbackMap]);
 
+  // Helpers replicating product detail logic
+  function variantPrice(variant) {
+    const v = variant?.GiaBan;
+    return v ? Number(v) : 0;
+  }
+
+  function optionExtraForSize(option, sizeId) {
+    const price = option?.TuyChon_Gia?.find(g => g.Size?.MaSize === sizeId)?.GiaThem;
+    return price ? Number(price) : 0;
+  }
+
+  const openEditor = async (cartItem) => {
+    if (!cartItem) return;
+    setEditingItem(cartItem);
+    setEditorFood(null);
+    setEditorLoading(true);
+    setEditorError('');
+    setSizeId(null);
+    setCrustId(cartItem.deBanhId ?? null);
+    setSelectedOptions({});
+    setEditQty(cartItem.soLuong || 1);
+    try {
+      const res = await api.get(`/api/foods/${cartItem.monAnId}`);
+      const food = res.data;
+      setEditorFood(food);
+      // sizes list from variants
+      const variants = food?.BienTheMonAn || [];
+      const sizes = variants.map(v => v.Size).filter(Boolean);
+      // determine sizeId from bienTheId if present
+      if (cartItem.bienTheId != null) {
+        const matchedVariant = variants.find(v => v.MaBienThe === cartItem.bienTheId);
+        if (matchedVariant?.Size?.MaSize != null) setSizeId(matchedVariant.Size.MaSize);
+      } else if (sizes.length) {
+        setSizeId(sizes[0].MaSize);
+      }
+      // preselect options
+      const optMap = {};
+      (cartItem.tuyChonThem || []).forEach(id => { optMap[id] = true; });
+      setSelectedOptions(optMap);
+    } catch (err) {
+      setEditorError('Không tải được dữ liệu món để sửa.');
+    } finally {
+      setEditorLoading(false);
+    }
+  };
+
+  const closeEditor = () => {
+    if (saveBusy) return; // block closing while saving
+    setEditingItem(null);
+    setEditorFood(null);
+    setSelectedOptions({});
+    setEditorError('');
+  };
+
+  const toggleOption = (id) => {
+    setSelectedOptions(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Compute dynamic pricing in editor
+  const editorVariants = editorFood?.BienTheMonAn || [];
+  const editorSizes = editorVariants.map(v => v.Size).filter(Boolean);
+  const editorCrusts = (editorFood?.MonAn_DeBanh || []).map(mdb => mdb.DeBanh) || [];
+  const baseVariant = editorVariants.find(v => v.Size?.MaSize === sizeId) || null;
+  const basePrice = variantPrice(baseVariant);
+  const optionsExtra = useMemo(() => {
+    const ids = Object.keys(selectedOptions).filter(k => selectedOptions[k]);
+    return ids.reduce((sum, idStr) => {
+      const idNum = Number(idStr);
+      const list = (editorFood?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
+      const opt = list.find(o => o.MaTuyChon === idNum);
+      return sum + optionExtraForSize(opt, sizeId);
+    }, 0);
+  }, [selectedOptions, editorFood, sizeId]);
+  const editorTotal = (basePrice + optionsExtra) * editQty;
+
+  const groupedEditorOptions = useMemo(() => {
+    const list = (editorFood?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
+    const groups = {};
+    list.forEach(opt => {
+      const key = opt?.LoaiTuyChon?.TenLoaiTuyChon || 'Khác';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(opt);
+    });
+    return groups;
+  }, [editorFood]);
+
+  const saveEditedItem = async () => {
+    if (!editingItem || !editorFood) return;
+    setSaveBusy(true);
+    try {
+      // Remove old item first
+      remove(editingItem.key);
+      const optIds = Object.keys(selectedOptions).filter(k => selectedOptions[k]).map(Number);
+      const sizeName = baseVariant?.Size?.TenSize || null;
+      const crust = editorCrusts.find(c => c.MaDeBanh === crustId);
+      const crustName = crust ? crust.TenDeBanh : null;
+      const allOpts = (editorFood?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
+      const optionsDetail = optIds.map(idNum => {
+        const o = allOpts.find(x => x.MaTuyChon === idNum);
+        return o ? { id: idNum, name: o.TenTuyChon, extra: optionExtraForSize(o, sizeId) } : { id: idNum, name: `Tùy chọn #${idNum}`, extra: 0 };
+      });
+      const imageUrl = (() => {
+        if (!editorFood?.HinhAnh) return '/placeholder.svg';
+        const raw = String(editorFood.HinhAnh);
+        const path = raw.startsWith('/') ? raw : `/images/AnhMonAn/${raw}`;
+        return assetUrl(path);
+      })();
+      const newItem = {
+        monAnId: editorFood.MaMonAn,
+        bienTheId: baseVariant?.MaBienThe ?? null,
+        soLuong: editQty,
+        deBanhId: crustId ?? null,
+        tuyChonThem: optIds,
+        unitPrice: basePrice + optionsExtra,
+        name: editorFood.TenMonAn,
+        image: imageUrl,
+        sizeName,
+        crustName,
+        optionsDetail,
+      };
+      add(newItem);
+      closeEditor();
+    } catch (err) {
+      setEditorError('Không thể lưu thay đổi.');
+    } finally {
+      setSaveBusy(false);
+    }
+  };
+
   const displaySubtotal = useMemo(() => {
     return enrichedItems.reduce((sum, item) => sum + Number(item.soLuong || 0) * Number(item.displayUnitPrice || 0), 0);
   }, [enrichedItems]);
@@ -204,6 +344,7 @@ const CartPage = () => {
                             </div>
                             <div className="d-flex align-items-center gap-3">
                               <div className="fw-semibold">{lineTotal.toLocaleString()} đ</div>
+                              <Button variant="outline-primary" size="sm" onClick={() => openEditor(item)}>Sửa</Button>
                               <Button variant="outline-danger" size="sm" onClick={() => remove(item.key)}>Xóa</Button>
                             </div>
                           </div>
@@ -244,6 +385,115 @@ const CartPage = () => {
           </Row>
         )}
       </Container>
+      {/* Edit Item Modal */}
+      <Modal show={!!editingItem} onHide={closeEditor} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Sửa sản phẩm trong giỏ</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editorLoading && (
+            <div className="d-flex align-items-center gap-2"><Spinner animation="border" size="sm" /> Đang tải dữ liệu...</div>
+          )}
+          {!editorLoading && editorError && (
+            <div className="alert alert-danger py-2 small mb-2">{editorError}</div>
+          )}
+          {!editorLoading && editorFood && (
+            <div className="d-flex flex-column gap-4">
+              <div className="d-flex gap-3">
+                <div style={{ width: 140, height: 140 }} className="rounded overflow-hidden bg-light flex-shrink-0">
+                  {(() => {
+                    const raw = editorFood?.HinhAnh;
+                    if (!raw) return <div className="text-muted small d-flex align-items-center justify-content-center h-100">No image</div>;
+                    const path = String(raw).startsWith('/') ? String(raw) : `/images/AnhMonAn/${raw}`;
+                    return <img src={assetUrl(path)} alt={editorFood.TenMonAn} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                  })()}
+                </div>
+                <div className="flex-grow-1">
+                  <h5 className="mb-2">{editorFood.TenMonAn}</h5>
+                  <div className="text-muted small">Chỉnh sửa kích thước, đế, tùy chọn và số lượng.</div>
+                </div>
+              </div>
+
+              {/* Size selection */}
+              {editorSizes.length > 0 && (
+                <div>
+                  <div className="fw-semibold mb-2">Kích thước</div>
+                  <div className="d-flex flex-wrap gap-2">
+                    {editorSizes.map(s => {
+                      const variant = editorVariants.find(v => v.Size?.MaSize === s.MaSize);
+                      const price = variantPrice(variant);
+                      const active = sizeId === s.MaSize;
+                      return (
+                        <Button key={s.MaSize} variant={active ? 'danger' : 'outline-secondary'} size="sm" onClick={() => setSizeId(s.MaSize)}>
+                          {s.TenSize}{price > 0 && ` (${price.toLocaleString()} đ)`}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Crust selection */}
+              {editorCrusts.length > 0 && (
+                <div>
+                  <div className="fw-semibold mb-2">Đế bánh</div>
+                  <div className="d-flex flex-wrap gap-2">
+                    {editorCrusts.map(c => (
+                      <Button key={c.MaDeBanh} variant={crustId === c.MaDeBanh ? 'danger' : 'outline-secondary'} size="sm" onClick={() => setCrustId(c.MaDeBanh)}>
+                        {c.TenDeBanh}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Options */}
+              {Object.keys(groupedEditorOptions).length > 0 && (
+                <div>
+                  <div className="fw-semibold mb-2">Tùy chọn thêm</div>
+                  {Object.entries(groupedEditorOptions).map(([group, opts]) => (
+                    <div key={group} className="mb-3">
+                      <div className="small text-uppercase text-muted mb-1">{group}</div>
+                      <div className="d-flex flex-column gap-1">
+                        {opts.map(o => {
+                          const extra = optionExtraForSize(o, sizeId);
+                          const checked = !!selectedOptions[o.MaTuyChon];
+                          return (
+                            <div key={o.MaTuyChon} className={`d-flex justify-content-between align-items-center px-2 py-1 rounded border ${checked ? 'border-danger bg-light' : 'border-secondary'}`} style={{ cursor: 'pointer' }} onClick={() => toggleOption(o.MaTuyChon)}>
+                              <div className="d-flex align-items-center gap-2">
+                                <div style={{ width: 18, height: 18 }} className={`rounded border d-flex align-items-center justify-content-center ${checked ? 'bg-danger text-white' : ''}`}>{checked ? '✓' : ''}</div>
+                                <span className="small">{o.TenTuyChon}</span>
+                              </div>
+                              {extra > 0 && <span className="small text-muted">+{extra.toLocaleString()} đ</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quantity & Total */}
+              <div className="d-flex justify-content-between align-items-center mt-2">
+                <div className="d-inline-flex align-items-center border rounded overflow-hidden">
+                  <Button variant="light" className="px-2" onClick={() => setEditQty(Math.max(1, editQty - 1))}>−</Button>
+                  <Form.Control value={editQty} onChange={(e) => setEditQty(Math.max(1, Number(e.target.value || 1)))} type="number" min={1} style={{ width: 64, textAlign: 'center', border: 0, boxShadow: 'none' }} />
+                  <Button variant="light" className="px-2" onClick={() => setEditQty(editQty + 1)}>+</Button>
+                </div>
+                <div className="text-end">
+                  <div className="fw-semibold">{editorTotal.toLocaleString()} đ</div>
+                  <div className="small text-muted">Tổng tạm tính</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeEditor} disabled={saveBusy}>Hủy</Button>
+          <Button variant="danger" onClick={saveEditedItem} disabled={saveBusy || editorLoading || !editorFood}>Lưu thay đổi</Button>
+        </Modal.Footer>
+      </Modal>
     </section>
   );
 };

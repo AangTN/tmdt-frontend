@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Form, Spinner, Badge } from 'react-bootstrap';
+import { Container, Spinner } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import EmptyState from '../components/ui/EmptyState';
 import { fetchFoods, fetchTypes } from '../services/api';
+import styles from './MenuPage.module.css';
 
 const MenuPage = () => {
   const [loading, setLoading] = useState(true);
@@ -15,6 +16,8 @@ const MenuPage = () => {
   const [query, setQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
+  const [sort, setSort] = useState('default');
+  const [showDrawer, setShowDrawer] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -30,7 +33,7 @@ const MenuPage = () => {
           setTypes(Array.isArray(typesData) ? typesData : []);
           // Auto select first type
           if (typesData && typesData.length > 0) {
-            setSelectedType(typesData[0].MaLoaiMonAn);
+            setSelectedType(String(typesData[0].MaLoaiMonAn));
           }
         }
       } catch (e) {
@@ -47,11 +50,12 @@ const MenuPage = () => {
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const categoryParam = params.get('category');
+  const typeParam = params.get('type');
 
-  // Get available categories for selected type
+  // Available categories based on selected type
   const availableCategories = useMemo(() => {
     if (!selectedType) return [];
-    const foodsOfType = pizzas.filter(p => p.MaLoaiMonAn === selectedType);
+    const foodsOfType = pizzas.filter(p => String(p.MaLoaiMonAn) === String(selectedType));
     const categoryMap = new Map();
     foodsOfType.forEach(food => {
       if (Array.isArray(food.DanhMuc)) {
@@ -65,130 +69,212 @@ const MenuPage = () => {
     return Array.from(categoryMap.values());
   }, [pizzas, selectedType]);
 
-  const filtered = pizzas.filter(p => {
-    const nameOk = p.TenMonAn?.toLowerCase().includes(query.toLowerCase());
-    const typeOk = selectedType ? p.MaLoaiMonAn === selectedType : true;
-    const categoryOk = selectedCategory
-      ? Array.isArray(p.DanhMuc) && p.DanhMuc.some(dm => dm.MaDanhMuc === selectedCategory)
-      : true;
-    return nameOk && typeOk && categoryOk;
-  });
+  // Sync selected type with ?type param
+  useEffect(() => {
+    if (!types || types.length === 0) return;
+    if (typeParam) {
+      const exists = types.some(t => String(t.MaLoaiMonAn) === String(typeParam));
+      if (exists && String(selectedType) !== String(typeParam)) {
+        setSelectedType(String(typeParam));
+        setSelectedCategory(null);
+      }
+    }
+  }, [types, typeParam]);
 
-  const currentTypeName = types.find(t => t.MaLoaiMonAn === selectedType)?.TenLoaiMonAn || 'Tất cả';
+  // Filtering
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return pizzas.filter(p => {
+      const nameOk = p.TenMonAn?.toLowerCase().includes(q);
+      if (q.length > 0) return nameOk; // global search ignores type/category
+      const typeOk = selectedType ? String(p.MaLoaiMonAn) === String(selectedType) : true;
+      const categoryOk = selectedCategory
+        ? Array.isArray(p.DanhMuc) && p.DanhMuc.some(dm => dm.MaDanhMuc === selectedCategory)
+        : true;
+      return nameOk && typeOk && categoryOk;
+    });
+  }, [pizzas, query, selectedType, selectedCategory]);
 
+  const hasQuery = query.trim().length > 0;
+  const currentTypeName = hasQuery
+    ? 'Kết quả tìm kiếm'
+    : (types.find(t => String(t.MaLoaiMonAn) === String(selectedType))?.TenLoaiMonAn || 'Tất cả');
+  const currentCategoryName = useMemo(() => {
+    if (!selectedCategory) return '';
+    const cat = availableCategories.find(c => c.MaDanhMuc === selectedCategory);
+    return cat ? cat.TenDanhMuc : '';
+  }, [selectedCategory, availableCategories]);
+  const headingTitle = hasQuery
+    ? currentTypeName
+    : (selectedCategory && currentCategoryName
+      ? `${currentTypeName} (${currentCategoryName})`
+      : currentTypeName);
+
+  // Sorting (approximate by name/price if available in item variants)
+  const getMinPrice = (item) => {
+    if (Array.isArray(item?.BienTheMonAn) && item.BienTheMonAn.length > 0) {
+      const nums = item.BienTheMonAn.map(v => Number(v?.GiaBan)).filter(n => !Number.isNaN(n));
+      if (nums.length > 0) return Math.min(...nums);
+    }
+    return Number.POSITIVE_INFINITY; // unknown price goes last in price sorts
+  };
+  const renderList = useMemo(() => {
+    const clone = [...filtered];
+    switch (sort) {
+      case 'name.asc':
+        return clone.sort((a, b) => String(a.TenMonAn || '').localeCompare(String(b.TenMonAn || ''), 'vi'));
+      case 'name.desc':
+        return clone.sort((a, b) => String(b.TenMonAn || '').localeCompare(String(a.TenMonAn || ''), 'vi'));
+      case 'price.asc':
+        return clone.sort((a, b) => getMinPrice(a) - getMinPrice(b));
+      case 'price.desc':
+        return clone.sort((a, b) => getMinPrice(b) - getMinPrice(a));
+      default:
+        return clone;
+    }
+  }, [filtered, sort]);
   return (
     <section className="py-4">
       <Container>
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0">Thực đơn</h2>
-          <Form.Control style={{ maxWidth: 320 }} placeholder="Tìm món ăn..." value={query} onChange={(e) => setQuery(e.target.value)} />
+        {/* Mobile filter toggle */}
+        <button className={styles.mobileFiltersToggle} onClick={() => setShowDrawer(true)}>☰ Bộ lọc</button>
+        <div className={styles.topBar}>
+          <div className={styles.searchBox}>
+            <span className={styles.searchIcon}>🔍</span>
+            <input
+              placeholder="Tìm món (gõ để tìm toàn bộ)..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <select className={styles.sortSelect} value={sort} onChange={(e)=>setSort(e.target.value)}>
+            <option value="default">Sắp xếp</option>
+            <option value="name.asc">Tên A-Z</option>
+            <option value="name.desc">Tên Z-A</option>
+            <option value="price.asc">Giá tăng dần</option>
+            <option value="price.desc">Giá giảm dần</option>
+          </select>
         </div>
-
-        {/* Type Tabs */}
-        {!loading && types.length > 0 && (
-          <div className="mb-4 d-flex gap-2 flex-wrap">
-            {types.map(type => (
-              <Badge
-                key={type.MaLoaiMonAn}
-                bg={selectedType === type.MaLoaiMonAn ? 'danger' : 'light'}
-                text={selectedType === type.MaLoaiMonAn ? 'white' : 'dark'}
-                style={{ 
-                  cursor: 'pointer', 
-                  padding: '0.75rem 1.5rem', 
-                  fontSize: '1rem',
-                  fontWeight: selectedType === type.MaLoaiMonAn ? 700 : 600,
-                  transition: 'all 0.3s ease',
-                  border: selectedType === type.MaLoaiMonAn ? 'none' : '2px solid #dee2e6'
-                }}
-                onClick={() => {
-                  setSelectedType(type.MaLoaiMonAn);
-                  setSelectedCategory(null); // Reset category when changing type
-                }}
-              >
-                {type.TenLoaiMonAn}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {/* Category Chips */}
-        {!loading && availableCategories.length > 0 && (
-          <div className="mb-4">
-            <div className="text-muted small mb-2" style={{ fontWeight: 600 }}>Lọc theo danh mục:</div>
-            <div className="d-flex gap-2 flex-wrap">
-              <Badge
-                bg={selectedCategory === null ? 'dark' : 'secondary'}
-                style={{ 
-                  cursor: 'pointer', 
-                  padding: '0.5rem 1rem', 
-                  fontSize: '0.9rem',
-                  fontWeight: selectedCategory === null ? 700 : 500,
-                  transition: 'all 0.3s ease',
-                  opacity: selectedCategory === null ? 1 : 0.6
-                }}
-                onClick={() => setSelectedCategory(null)}
-              >
-                Tất cả
-              </Badge>
-              {availableCategories.map(cat => (
-                <Badge
-                  key={cat.MaDanhMuc}
-                  bg={selectedCategory === cat.MaDanhMuc ? 'dark' : 'secondary'}
-                  style={{ 
-                    cursor: 'pointer', 
-                    padding: '0.5rem 1rem', 
-                    fontSize: '0.9rem',
-                    fontWeight: selectedCategory === cat.MaDanhMuc ? 700 : 500,
-                    transition: 'all 0.3s ease',
-                    opacity: selectedCategory === cat.MaDanhMuc ? 1 : 0.6
-                  }}
-                  onClick={() => setSelectedCategory(cat.MaDanhMuc)}
-                >
-                  {cat.TenDanhMuc}
-                </Badge>
-              ))}
+        <div className={styles.menuLayout}>
+          {/* Sidebar */}
+          <aside className={styles.sidebar}>
+            <div>
+              <div className={styles.sidebarSectionTitle}>Loại món ăn</div>
+              <div className={styles.typeList}>
+                {types.map(type => {
+                  const active = String(selectedType) === String(type.MaLoaiMonAn);
+                  return (
+                    <div
+                      key={type.MaLoaiMonAn}
+                      className={`${styles.filterItem} ${active ? styles.active : ''}`}
+                      onClick={() => { setSelectedType(String(type.MaLoaiMonAn)); setSelectedCategory(null); }}
+                    >
+                      <span>{type.TenLoaiMonAn}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <button className={styles.clearFiltersBtn} onClick={() => { setSelectedType(null); setSelectedCategory(null); }}>Xóa lọc loại</button>
             </div>
-          </div>
-        )}
+            {!hasQuery && availableCategories.length > 0 && (
+              <div>
+                <div className={styles.sidebarSectionTitle}>Danh mục</div>
+                <div className={styles.categoryList}>
+                  <div
+                    className={`${styles.filterItem} ${selectedCategory === null ? styles.active : ''}`}
+                    onClick={() => setSelectedCategory(null)}
+                  >Tất cả</div>
+                  {availableCategories.map(cat => {
+                    const active = selectedCategory === cat.MaDanhMuc;
+                    return (
+                      <div
+                        key={cat.MaDanhMuc}
+                        className={`${styles.filterItem} ${active ? styles.active : ''}`}
+                        onClick={() => setSelectedCategory(cat.MaDanhMuc)}
+                      >{cat.TenDanhMuc}</div>
+                    );
+                  })}
+                </div>
+                <button className={styles.clearFiltersBtn} onClick={() => setSelectedCategory(null)}>Xóa lọc danh mục</button>
+              </div>
+            )}
+          </aside>
 
-        {categoryParam && (
-          <div className="mb-3">
-            <small className="text-muted">
-              Bộ lọc: Danh mục #{categoryParam}
-              <button className="btn btn-link btn-sm ms-2 p-0 align-baseline" onClick={() => navigate('/menu')}>Xóa lọc</button>
-            </small>
-          </div>
-        )}
-
-        {loading && (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="danger" />
-            <p className="mt-3 text-muted">Đang tải menu từ server...</p>
-            <small className="text-muted">Free tier có thể mất 5-10 giây lần đầu</small>
-          </div>
-        )}
-        {!loading && error && (
-          <div className="alert alert-warning d-flex align-items-center" role="alert">
-            <Spinner animation="border" size="sm" className="me-2" />
-            <div>{error}</div>
-          </div>
-        )}
-        {!loading && !error && filtered.length === 0 && (
-          <EmptyState title="Không tìm thấy món ăn" description="Hãy thử từ khóa khác hoặc chọn loại món khác." />
-        )}
-        {!loading && !error && filtered.length > 0 && (
+          {/* Content */}
           <div>
-            <h3 className="mb-4 pb-2 border-bottom border-danger" style={{ color: 'var(--primary)', fontWeight: 700 }}>
-              {currentTypeName}
-            </h3>
-            <Row xs={1} sm={2} md={3} lg={4} className="g-3">
-              {filtered.map(pizza => (
-                <Col key={pizza.MaMonAn}>
-                  <ProductCard pizza={pizza} />
-                </Col>
-              ))}
-            </Row>
+            <h2 style={{ fontWeight: 800, marginBottom: '1.2rem' }}>{headingTitle}</h2>
+            {loading && (
+              <div className={styles.grid}>
+                {Array.from({ length: 8 }).map((_, i) => <div key={i} className={styles.skeletonCard} />)}
+              </div>
+            )}
+            {!loading && error && (
+              <div className="alert alert-warning d-flex align-items-center" role="alert">
+                <Spinner animation="border" size="sm" className="me-2" />
+                <div>{error}</div>
+              </div>
+            )}
+            {!loading && !error && filtered.length === 0 && (
+              <div className={styles.emptyWrap}>
+                <EmptyState title="Không tìm thấy món ăn" description="Thử từ khóa khác hoặc bỏ bớt bộ lọc." />
+              </div>
+            )}
+            {!loading && !error && filtered.length > 0 && (
+              <div className={styles.grid}>
+                {filtered.map(pizza => (
+                  <ProductCard key={pizza.MaMonAn} pizza={pizza} />
+                ))}
+              </div>
+            )}
           </div>
+        </div>
+        {showDrawer && (
+          <>
+            <div className={styles.backdrop} onClick={() => setShowDrawer(false)} />
+            <div className={styles.mobileDrawer}>
+              <div className={styles.drawerHeader}>
+                <strong>Bộ lọc</strong>
+                <button className={styles.closeBtn} onClick={() => setShowDrawer(false)}>Đóng</button>
+              </div>
+              <div>
+                <div className={styles.sidebarSectionTitle}>Loại món ăn</div>
+                <div className={styles.typeList}>
+                  {types.map(type => {
+                    const active = String(selectedType) === String(type.MaLoaiMonAn);
+                    return (
+                      <div
+                        key={type.MaLoaiMonAn}
+                        className={`${styles.filterItem} ${active ? styles.active : ''}`}
+                        onClick={() => { setSelectedType(String(type.MaLoaiMonAn)); setSelectedCategory(null); }}
+                      >{type.TenLoaiMonAn}</div>
+                    );
+                  })}
+                </div>
+              </div>
+              {!hasQuery && availableCategories.length > 0 && (
+                <div>
+                  <div className={styles.sidebarSectionTitle}>Danh mục</div>
+                  <div className={styles.categoryList}>
+                    <div
+                      className={`${styles.filterItem} ${selectedCategory === null ? styles.active : ''}`}
+                      onClick={() => setSelectedCategory(null)}
+                    >Tất cả</div>
+                    {availableCategories.map(cat => {
+                      const active = selectedCategory === cat.MaDanhMuc;
+                      return (
+                        <div
+                          key={cat.MaDanhMuc}
+                          className={`${styles.filterItem} ${active ? styles.active : ''}`}
+                          onClick={() => setSelectedCategory(cat.MaDanhMuc)}
+                        >{cat.TenDanhMuc}</div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <button className={styles.clearFiltersBtn} onClick={() => { setSelectedType(null); setSelectedCategory(null); }}>Xóa tất cả bộ lọc</button>
+            </div>
+          </>
         )}
       </Container>
     </section>

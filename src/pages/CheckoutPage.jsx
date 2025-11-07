@@ -28,6 +28,11 @@ const CheckoutPage = () => {
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
   const [locLoading, setLocLoading] = useState({ p: false, d: false, w: false });
+  const ALLOWED_CITY_REGEX = useMemo(() => ({
+    HN: /Hà\s*Nội|Ha\s*Noi/i,
+    HCM: /Hồ\s*Chí\s*Minh|Ho\s*Chi\s*Minh|HCM/i
+  }), []);
+  const isAllowedCityName = (name = '') => ALLOWED_CITY_REGEX.HN.test(name) || ALLOWED_CITY_REGEX.HCM.test(name);
   
   // Voucher state
   const [voucherCode, setVoucherCode] = useState('');
@@ -64,7 +69,8 @@ const CheckoutPage = () => {
       try {
         setLocLoading((s) => ({ ...s, p: true }));
         const list = await getProvinces();
-        if (!cancelled) setProvinces(list);
+        const filtered = Array.isArray(list) ? list.filter(p => isAllowedCityName(p.name)) : [];
+        if (!cancelled) setProvinces(filtered);
       } finally {
         if (!cancelled) setLocLoading((s) => ({ ...s, p: false }));
       }
@@ -78,6 +84,10 @@ const CheckoutPage = () => {
     setFormData((prev) => ({ ...prev, thanhPho: selected?.name || '', quanHuyen: '', phuongXa: '' }));
     setDistricts([]); setWards([]);
     if (!code) return;
+    if (!isAllowedCityName(selected?.name || '')) {
+      // Guard: should not happen because we filter UI, but keep safety
+      return;
+    }
     setLocLoading((s) => ({ ...s, d: true }));
     try {
       const ds = await getDistricts(code);
@@ -178,10 +188,14 @@ const CheckoutPage = () => {
 
   // Debounce shipping quote when all fields are available
   useEffect(() => {
-  const { soNhaDuong, phuongXa, quanHuyen, thanhPho } = formData;
-  const ready = soNhaDuong && phuongXa && quanHuyen && thanhPho;
+    const { soNhaDuong, phuongXa, quanHuyen, thanhPho } = formData;
+    const ready = soNhaDuong && phuongXa && quanHuyen && thanhPho;
     if (!ready) {
       setShipping((prev) => ({ ...prev, data: null, error: null }));
+      return;
+    }
+    if (!isAllowedCityName(thanhPho)) {
+      setShipping({ loading: false, data: null, error: 'Chúng tôi chỉ giao hàng tại TP. Hồ Chí Minh và Hà Nội' });
       return;
     }
     setShipping((prev) => ({ ...prev, loading: true, error: null }));
@@ -368,7 +382,7 @@ const CheckoutPage = () => {
                       </Col>
                     </Row>
                     <div className="small text-muted mt-2">
-                      Hệ thống sẽ tự động ước tính phí giao hàng khi bạn nhập số nhà, đường và chọn đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.
+                      Hệ thống sẽ tự động ước tính phí giao hàng khi bạn nhập số nhà, đường và chọn đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã. Hiện tại chỉ hỗ trợ giao tại <strong>TP. Hồ Chí Minh</strong> và <strong>Hà Nội</strong>.
                     </div>
                   </Col>
                   <Col md={12}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
@@ -64,6 +64,21 @@ const ProductCard = ({ pizza, onView }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pizza?.MaMonAn]);
 
+  // Rating handling
+  const avg = Number(pizza?.SoSaoTrungBinh || 0);
+  const count = Number(pizza?.SoDanhGia || 0);
+  const starIcons = useMemo(() => {
+    if (!count) return 'Chưa có đánh giá';
+    // Build 5 star display with half-star support (simple approximation)
+    const full = Math.floor(avg);
+    const half = avg - full >= 0.25 && avg - full < 0.75; // treat mid range as half
+    const stars = [];
+    for (let i = 0; i < full; i++) stars.push('★');
+    if (half) stars.push('☆');
+    while (stars.length < 5) stars.push('✩');
+    return stars.join('');
+  }, [avg, count]);
+
   return (
     <Link to={`/foods/${pizza.MaMonAn}`} className={styles.card} style={{ textDecoration: 'none' }}>
       <div className={`${styles.imageWrapper} ratio ratio-4x3`}>
@@ -77,7 +92,14 @@ const ProductCard = ({ pizza, onView }) => {
       </div>
       <div className={styles.cardBody}>
         <div className={styles.ratingStars}>
-          ⭐⭐⭐⭐⭐ <span className="text-muted small">(4.8)</span>
+          {count ? (
+            <>
+              <span className={styles.stars}>{starIcons}</span>{' '}
+              <span className="text-muted small">{avg.toFixed(1)} ({count})</span>
+            </>
+          ) : (
+            <span className="text-muted small">Chưa có đánh giá</span>
+          )}
         </div>
         <h5 className={styles.title}>{pizza?.TenMonAn}</h5>
         {typeof price === 'number' && price > 0 ? (

@@ -81,7 +81,15 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    try {
+      // Clear all app-related storage to ensure full sign-out
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth:credentials');
+      localStorage.removeItem('cart');
+      localStorage.removeItem('cart:compact');
+      localStorage.removeItem('adminSession');
+      // Note: We intentionally do NOT remove 'adminCredentials' to preserve admin bootstrap, unless needed
+    } catch {}
     dispatch({ type: 'LOGOUT' });
   };
 

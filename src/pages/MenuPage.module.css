@@ -1,0 +1,240 @@
+.menuLayout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 992px) {
+  .menuLayout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    display: none;
+  }
+  .mobileFiltersToggle {
+    display: flex;
+  }
+}
+
+.sidebar {
+  position: sticky;
+  top: 90px;
+  align-self: start;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem 1.25rem 1.5rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sidebarSectionTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.typeList, .categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filterItem {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+  color: #334155;
+}
+
+.filterItem:hover {
+  border-color: #fca5a5;
+}
+
+.filterItem.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(255,77,79,0.35);
+}
+
+.clearFiltersBtn {
+  margin-top: 0.25rem;
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.topBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.searchBox {
+  flex: 1 1 260px;
+  position: relative;
+}
+
+.searchBox input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: #94a3b8;
+}
+
+.sortSelect {
+  min-width: 160px;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.promoBanner {
+  background: linear-gradient(90deg, #ff4d4f 0%, #d32029 100%);
+  color: white;
+  padding: 1.1rem 1.4rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.promoBanner::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulse 6s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.85; }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.skeletonCard {
+  border-radius: 14px;
+  background: #f1f5f9;
+  height: 250px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeletonCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.emptyWrap {
+  padding: 3rem 1rem;
+  text-align: center;
+  border: 2px dashed #e2e8f0;
+  border-radius: 20px;
+}
+
+.mobileFiltersToggle {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobileDrawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  padding: 1.2rem 1rem 2rem;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.closeBtn {
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  z-index: 100;
+}

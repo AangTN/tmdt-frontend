@@ -1,8 +1,8 @@
 /* Hero About Section */
 .aboutHero {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff4d4f 40%, #d32029 80%);
-  color: white;
-  padding: 4rem 0 3rem;
+  background: linear-gradient(135deg,#ff4d4f 0%,#ff6b6b 40%,#ff914d 100%);
+  color: #fff;
+  padding: 5rem 0 3rem;
   position: relative;
   overflow: hidden;
 }
@@ -19,22 +19,48 @@
 }
 
 .heroTitle {
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.15;
 }
 
 .heroSubtitle {
-  font-size: 1.2rem;
-  opacity: 0.95;
-  max-width: 600px;
+  font-size: 1.15rem;
+  opacity: .95;
+  max-width: 620px;
+  font-weight: 500;
 }
 
-/* Story Section */
-.storySection {
-  padding: 4rem 0;
-  background: #fff;
+.heroCTAGroup { margin-top: 1.5rem; display: flex; gap: 1rem; }
+.primaryCTA { font-weight: 700 !important; box-shadow: 0 6px 16px rgba(255,255,255,.25); }
+.secondaryCTA { backdrop-filter: blur(4px); }
+
+.heroVisual { position: relative; height: 260px; }
+.heroBubbleOne, .heroBubbleTwo {
+  position: absolute; border-radius: 50%; filter: blur(4px); opacity: .6;
 }
+.heroBubbleOne { width: 180px; height: 180px; background: radial-gradient(circle,#fff,#ffd0d0); top: 10px; right: 30px; animation: float 6s ease-in-out infinite; }
+.heroBubbleTwo { width: 120px; height: 120px; background: radial-gradient(circle,#fff,#ffe1c9); bottom: 0; left: 20px; animation: float 7s ease-in-out infinite; }
+.heroMockPizza { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; font-size: 6rem; animation: gentle-rotate 18s linear infinite; }
+
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+@keyframes gentle-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.kpiRow { margin-top: 3rem; }
+.kpiCol { text-align: center; }
+.kpiCard { background: rgba(255,255,255,.15); backdrop-filter: blur(6px); padding: 1rem 0.75rem; border-radius: 14px; border: 1px solid rgba(255,255,255,.35); }
+.kpiValue { font-size: 1.65rem; font-weight: 800; line-height: 1; }
+.kpiLabel { font-size: .75rem; letter-spacing: 1px; text-transform: uppercase; opacity: .85; font-weight: 600; }
+
+/* Story Section */
+/* USP Section */
+.uspSection { padding: 3.5rem 0 2.5rem; background: #fff; }
+.uspCard { border: none; background: #fff; box-shadow: 0 4px 22px rgba(0,0,0,.08); border-radius: 18px; padding: 1.75rem 1.25rem; height:100%; position:relative; overflow:hidden; }
+.uspCard::before { content:''; position:absolute; inset:0; background: linear-gradient(140deg, rgba(255,77,79,0.12), transparent 55%); }
+.uspIcon { font-size: 2.4rem; margin-bottom: .75rem; }
+.uspCard h3 { font-size: 1.15rem; font-weight: 700; color:#d32029; margin-bottom:.5rem; }
+.uspCard p { font-size:.9rem; color:#555; margin:0; line-height:1.5; }
 
 .storyCard {
   background: white;
@@ -137,11 +163,32 @@
 }
 
 /* Values Section */
-.valuesSection {
-  padding: 4rem 0;
-  background: white;
-}
+/* Best Sellers */
+.bestSection { padding: 3.5rem 0; background: linear-gradient(to bottom,#fff,#fff,#fff,#fdf5f5); }
+.bestTitle { font-weight:800; font-size:2.1rem; }
+.bestSubtitle { color:#666; max-width:600px; margin:0 auto; }
+.foodCard { background:#fff; border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,.08); overflow:hidden; display:flex; flex-direction:column; height:100%; position:relative; }
+.foodImageWrap { position:relative; padding-top:65%; overflow:hidden; }
+.foodImage { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; transition:transform .5s; }
+.foodCard:hover .foodImage { transform:scale(1.08); }
+.foodBody { padding:1rem 1rem 1.25rem; display:flex; flex-direction:column; flex:1; }
+.foodName { font-weight:600; font-size:1rem; line-height:1.3; min-height:2.4em; }
+.foodType { font-size:.7rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#ff4d4f; margin-top:.35rem; }
+.foodPrice { font-weight:700; color:#d32029; margin-top:.5rem; }
 
+/* Testimonials */
+.testimonialSection { padding:4rem 0 3.5rem; background: linear-gradient(100deg,#fff,#ffecec 60%,#fff); }
+.testimonialCard { background:#fff; border-radius:18px; padding:2rem 1.5rem 1.75rem; box-shadow:0 4px 24px rgba(0,0,0,.08); position:relative; height:100%; }
+.quoteMark { position:absolute; top:10px; left:14px; font-size:3.5rem; line-height:1; color:#ffb3b3; font-weight:800; font-family:serif; opacity:.35; }
+.testimonialCard p { margin:0 0 1.25rem; font-size:.95rem; line-height:1.6; font-weight:500; color:#444; }
+.reviewer { font-size:.85rem; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#d32029; }
+
+/* Final CTA */
+.finalCTA { background: linear-gradient(135deg,#ff4d4f,#ff6b6b 60%,#ff914d); color:#fff; padding:4rem 0 4.5rem; position:relative; overflow:hidden; }
+.finalCTA::after { content:''; position:absolute; inset:0; background: radial-gradient(circle at 75% 20%, rgba(255,255,255,.25), transparent 60%); }
+.finalCTA h2 { font-size:2.2rem; font-weight:800; }
+
+/* Existing Delivery Notice + Map section keep styles */
 .valueCard {
   text-align: center;
   padding: 2rem;
@@ -175,6 +222,108 @@
   margin: 0;
 }
 
+/* Delivery Notice Section */
+.deliveryNotice {
+  background: linear-gradient(90deg,#fff 0%,#fff 40%, #ffe5e5 100%);
+  padding: 3rem 0;
+}
+
+.deliveryBanner {
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 2px dashed #ffb3b3;
+  border-radius: 20px;
+  padding: 2rem 2.5rem;
+  position: relative;
+}
+
+.deliveryBanner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 20px;
+  background: radial-gradient(circle at 85% 25%, rgba(255,77,79,0.15), transparent 60%);
+}
+
+.deliveryText h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0.5rem 0 0.75rem;
+  color: #d32029;
+}
+
+.deliveryText p {
+  margin: 0;
+  color: #555;
+  max-width: 420px;
+}
+
+.deliveryKicker {
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #ff4d4f;
+  background: #ffe5e5;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.deliveryCities {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cityPill {
+  background: linear-gradient(135deg,#ff6b6b,#ff4d4f);
+  color: #fff;
+  padding: 0.85rem 1.1rem;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 14px rgba(255,77,79,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.cityPill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg,rgba(255,255,255,0.25),transparent);
+}
+
+.deliveryTag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(255,77,79,0.4);
+}
+
+@media (max-width: 992px) {
+  .deliveryText h2 { font-size: 1.5rem; }
+  .heroTitle { font-size:2.25rem; }
+}
+
 @media (max-width: 768px) {
   .heroTitle {
     font-size: 2rem;
@@ -191,4 +340,10 @@
   .storyCard {
     margin-bottom: 1rem;
   }
+  .deliveryBanner { padding: 1.75rem 1.5rem; }
+  .deliveryCities { width: 100%; }
+  .kpiRow { margin-top:2rem; }
+  .kpiCard { margin-bottom:.75rem; }
+  .bestTitle { font-size:1.75rem; }
+  .finalCTA h2 { font-size:1.75rem; }
 }

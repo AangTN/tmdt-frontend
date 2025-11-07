@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
 import { api, assetUrl } from '../services/api';
 import { useCart } from '../contexts/CartContext';
@@ -44,6 +44,7 @@ const ProductDetail = () => {
     return () => { mounted = false; };
   }, [id]);
 
+
   const imageUrl = useMemo(() => {
     if (!food?.HinhAnh) return '/placeholder.svg';
     const raw = String(food.HinhAnh);
@@ -54,7 +55,13 @@ const ProductDetail = () => {
   const variants = food?.BienTheMonAn || [];
   const sizes = variants.map(v => v.Size).filter(Boolean);
   const type = food?.LoaiMonAn; // single type of this product
-  const categories = (food?.MonAn_DanhMuc || []).map(md => md.DanhMuc);
+  // adapt to new payload: `DanhMuc` is an array of categories; keep backward compat
+  const categories = useMemo(() => {
+    const legacy = (food?.MonAn_DanhMuc || []).map(md => md.DanhMuc).filter(Boolean);
+    if (legacy.length > 0) return legacy;
+    if (Array.isArray(food?.DanhMuc)) return food.DanhMuc;
+    return [];
+  }, [food]);
   const crusts = (food?.MonAn_DeBanh || []).map(mdb => mdb.DeBanh);
 
   const baseVariant = variants.find(v => v.Size?.MaSize === sizeId) || null;
@@ -143,6 +150,17 @@ const ProductDetail = () => {
   return (
     <section className={styles.detailContainer}>
       <Container className="py-5">
+        {/* Breadcrumb */}
+        <nav className={styles.breadcrumb} aria-label="breadcrumb">
+          <ol>
+            <li><Link to="/">Trang chủ</Link></li>
+            <li><Link to="/menu">Thực đơn</Link></li>
+            {food?.LoaiMonAn && (
+              <li><Link to={`/menu?type=${food.LoaiMonAn.MaLoaiMonAn}`}>{food.LoaiMonAn.TenLoaiMonAn}</Link></li>
+            )}
+            <li aria-current="page" className={styles.active}>{food.TenMonAn}</li>
+          </ol>
+        </nav>
         <Row className="g-5">
           {/* Image Section */}
           <Col lg={5}>
@@ -150,12 +168,27 @@ const ProductDetail = () => {
               <div className={`${styles.mainImage} ratio ratio-1x1`}>
                 <img src={imageUrl} alt={food.TenMonAn} style={{ objectFit: 'cover' }} />
               </div>
+              <div className={styles.sideMeta}>
+                {type && <div className={styles.metaItem}><span>Loại:</span> {type.TenLoaiMonAn}</div>}
+                {categories.length > 0 && <div className={styles.metaItem}><span>Danh mục:</span> {categories.map(c => c.TenDanhMuc).join(', ')}</div>}
+              </div>
             </div>
           </Col>
 
           {/* Details Section */}
           <Col lg={7}>
             <h1 className={styles.productTitle}>{food.TenMonAn}</h1>
+            <div className={styles.subToolbar}>
+              <div className={styles.ratingStub}>
+                {Number(food?.SoDanhGia || 0) > 0 ? (
+                  <>⭐ {Number(food.SoSaoTrungBinh || 0).toFixed(1)} <span>({Number(food.SoDanhGia)} đánh giá)</span></>
+                ) : (
+                  <span className="text-muted">Chưa có đánh giá</span>
+                )}
+              </div>
+              <button className={styles.iconBtn} type="button" aria-label="Yêu thích">❤</button>
+              <button className={styles.iconBtn} type="button" aria-label="Chia sẻ">↗</button>
+            </div>
             
             <div className={styles.badgeGroup}>
               {type && <span className={styles.typeBadge}>{type.TenLoaiMonAn}</span>}
@@ -165,7 +198,7 @@ const ProductDetail = () => {
             </div>
 
             {food.MoTa && (
-              <p className="text-muted mb-4" style={{ fontSize: '1.05rem', lineHeight: '1.7' }}>
+              <p className="text-muted mb-4" style={{ fontSize: '1.15rem', lineHeight: '1.75', fontWeight: 500 }}>
                 {food.MoTa}
               </p>
             )}
@@ -277,7 +310,36 @@ const ProductDetail = () => {
             </div>
           </Col>
         </Row>
+
+        {/* Reviews Section */}
+        {Array.isArray(food?.DanhGiaMonAn) && food.DanhGiaMonAn.length > 0 && (
+          <div className="mt-5">
+            <h3 className={styles.sectionTitle}>Đánh giá từ khách hàng</h3>
+            <div className="d-flex flex-column gap-3">
+              {food.DanhGiaMonAn.map(r => (
+                <div key={r.MaDanhGiaMonAn} className="border rounded p-3">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <div className="fw-semibold">Ẩn danh</div>
+                    <div className="small text-muted">{new Date(r.NgayDanhGia).toLocaleDateString('vi-VN')}</div>
+                  </div>
+                  <div className="mb-1" style={{ color: '#ff4d4f' }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i}>{i < Number(r.SoSao || 0) ? '★' : '☆'}</span>
+                    ))}
+                  </div>
+                  <div className="text-muted">{r.NoiDung}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Container>
+      {/* Mobile Sticky Bar */}
+      <div className={styles.mobileBar}>
+        <div className={styles.mobilePrice}>{total.toLocaleString()} đ</div>
+        <div className={styles.mobileQty}>SL: {qty}</div>
+        <button onClick={addToCart} className={styles.mobileAddBtn}>Thêm vào giỏ</button>
+      </div>
     </section>
   );
 };

@@ -37,6 +37,7 @@ const HomePage = () => {
 
   const featured = useMemo(() => foods.slice(0, 8), [foods]);
   const bannerUrls = useMemo(() => (Array.isArray(banners) ? banners : []).map(p => assetUrl(p)), [banners]);
+  const firstTypeId = useMemo(() => (types && types.length > 0 ? types[0].MaLoaiMonAn : null), [types]);
 
   return (
     <>
@@ -79,16 +80,14 @@ const HomePage = () => {
               </Col>
               <Col md={4}>
                 <div className={styles.ctaBtnGroup}>
-                  <Link to="/menu">
+                  <Link to={firstTypeId ? `/menu?type=${firstTypeId}` : '/menu'}>
                     <Button size="lg" variant="danger">
                       Đặt ngay
                     </Button>
                   </Link>
-                  <Link to="/menu">
-                    <Button size="lg" variant="outline-danger">
-                      Xem menu
-                    </Button>
-                  </Link>
+                  <a href="#featured" className="btn btn-outline-secondary btn-lg">
+                    Khám phá món nổi bật
+                  </a>
                 </div>
               </Col>
             </Row>
@@ -96,37 +95,33 @@ const HomePage = () => {
         </Container>
       </section>
 
-      {/* QUICK FILTERS */}
+      {/* QUICK EXPLORE (unified styling) */}
       <section className={`${styles.quickFilterSection} py-4`}>
         <Container>
-          <Row className="gy-2 align-items-center">
-            <Col md={2}>
-              <div className="fw-bold text-dark">🔍 Khám phá nhanh:</div>
-            </Col>
-            <Col md={10}>
-              <div className="d-flex flex-wrap gap-2">
-                {types.slice(0, 4).map(t => (
-                  <Link key={t.MaLoaiMonAn} to={`/menu?type=${t.MaLoaiMonAn}`}>
-                    <Button variant="outline-danger" size="sm" className={styles.filterBtn}>
+          <div className={styles.quickCard}>
+            <Row className="align-items-center g-3">
+              <Col md={3} sm={12}>
+                <div className={styles.quickTitle}>
+                  <span className={styles.quickIcon}>�</span>
+                  Khám phá nhanh
+                </div>
+              </Col>
+              <Col md={9} sm={12}>
+                <div className={styles.chipGroup}>
+                  {types.slice(0, 6).map(t => (
+                    <Link key={t.MaLoaiMonAn} to={`/menu?type=${t.MaLoaiMonAn}`} className={`${styles.chip} ${styles.chipPrimary}`}>
                       {t.TenLoaiMonAn}
-                    </Button>
-                  </Link>
-                ))}
-                {categories.slice(0, 4).map(c => (
-                  <Link key={c.MaDanhMuc} to={`/menu?category=${c.MaDanhMuc}`}>
-                    <Button variant="outline-secondary" size="sm" className={styles.filterBtn}>
-                      {c.TenDanhMuc}
-                    </Button>
-                  </Link>
-                ))}
-              </div>
-            </Col>
-          </Row>
+                    </Link>
+                  ))}
+                </div>
+              </Col>
+            </Row>
+          </div>
         </Container>
       </section>
 
       {/* FEATURED FOODS */}
-      <section className="py-5 bg-white">
+  <section id="featured" className="py-5 bg-white">
         <Container>
           <div className="d-flex justify-content-between align-items-end mb-4">
             <div>

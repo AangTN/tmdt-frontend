@@ -11,6 +11,7 @@ import AboutPage from './pages/AboutPage.jsx';
 import TrackOrderPage from './pages/TrackOrderPage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import ProfileEditPage from './pages/ProfileEditPage.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -42,6 +43,7 @@ function App() {
           <Route path="/order-success" element={<OrderSuccessPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
+          <Route path="/profile/edit" element={<ProfileEditPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
