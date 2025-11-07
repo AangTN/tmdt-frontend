@@ -4,14 +4,19 @@ const CartContext = createContext();
 
 const initialState = {
   // items: [{
-  //   key,               // derived identity: monAnId|bienTheId|deBanhId|[sorted tuyChonThem]
+  //   key,               // derived identity: loai|id
+  //   loai,              // 'SP' (sản phẩm) | 'CB' (combo)
+  //   
+  //   // For loai='SP':
   //   monAnId,           // number
   //   bienTheId,         // number|null
-  //   soLuong,           // number
   //   deBanhId,          // number|null
   //   tuyChonThem,       // number[]
-  //   unitPrice,         // number (base variant price + options extras for selected size)
-  //   name, image        // display helpers
+  //   
+  //   // For loai='CB':
+  //   comboId,           // number
+  //   
+  //   soLuong,           // number
   // }]
   items: []
 };
@@ -24,7 +29,7 @@ function loadInitialState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed && Array.isArray(parsed.items) && parsed.items.every(it => it?.monAnId != null)) {
+      if (parsed && Array.isArray(parsed.items) && parsed.items.every(it => it?.loai && (it.monAnId != null || it.comboId != null))) {
         const items = parsed.items.map(it => ({ ...it, key: it.key || buildKey(it) }));
         return { items };
       }
@@ -34,14 +39,8 @@ function loadInitialState() {
       const rawItems = JSON.parse(compact);
       if (Array.isArray(rawItems)) {
         const items = rawItems
-          .filter(it => it && it.monAnId != null)
-          .map(it => normalizeItem({
-            monAnId: it.monAnId,
-            bienTheId: it.bienTheId ?? null,
-            soLuong: it.soLuong ?? 1,
-            deBanhId: it.deBanhId ?? null,
-            tuyChonThem: Array.isArray(it.tuyChonThem) ? it.tuyChonThem : [],
-          }));
+          .filter(it => it && it.loai && (it.monAnId != null || it.comboId != null))
+          .map(it => normalizeItem(it));
         if (items.length > 0) return { items };
       }
     }
@@ -50,22 +49,37 @@ function loadInitialState() {
 }
 
 function buildKey(item) {
+  const loai = item.loai || 'SP';
+  if (loai === 'CB') {
+    return `CB|${item.comboId}`;
+  }
+  // For SP: include variant, crust, and options to allow different configurations
   const opts = Array.isArray(item.tuyChonThem) ? [...item.tuyChonThem].sort((a, b) => a - b) : [];
   const deBanh = item.deBanhId == null ? 'null' : String(item.deBanhId);
   const bienThe = item.bienTheId == null ? 'null' : String(item.bienTheId);
-  return `${item.monAnId}|${bienThe}|${deBanh}|[${opts.join(',')}]`;
+  return `SP|${item.monAnId}|${bienThe}|${deBanh}|[${opts.join(',')}]`;
 }
 
 function normalizeItem(payload) {
+  const loai = payload.loai || 'SP';
+  
+  if (loai === 'CB') {
+    const base = {
+      loai: 'CB',
+      comboId: Number(payload.comboId),
+      soLuong: Math.max(1, Number(payload.soLuong || 1))
+    };
+    return { ...base, key: buildKey(base) };
+  }
+  
+  // For SP
   const base = {
-    monAnId: payload.monAnId,
-    bienTheId: payload.bienTheId ?? null,
-    soLuong: Math.max(1, Number(payload.soLuong || 1)),
-    deBanhId: payload.deBanhId ?? null,
+    loai: 'SP',
+    monAnId: Number(payload.monAnId),
+    bienTheId: payload.bienTheId != null ? Number(payload.bienTheId) : null,
+    deBanhId: payload.deBanhId != null ? Number(payload.deBanhId) : null,
     tuyChonThem: Array.isArray(payload.tuyChonThem) ? payload.tuyChonThem.map(Number) : [],
-    unitPrice: Number(payload.unitPrice || 0),
-    name: payload.name || '',
-    image: payload.image || ''
+    soLuong: Math.max(1, Number(payload.soLuong || 1))
   };
   return { ...base, key: buildKey(base) };
 }
@@ -105,29 +119,33 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      const compactItems = state.items.map(({ monAnId, bienTheId, soLuong, deBanhId, tuyChonThem }) => ({
-        monAnId,
-        bienTheId,
-        soLuong,
-        deBanhId,
-        tuyChonThem,
-      }));
+      const compactItems = state.items.map(item => {
+        if (item.loai === 'CB') {
+          return { loai: 'CB', comboId: item.comboId, soLuong: item.soLuong };
+        }
+        return {
+          loai: 'SP',
+          monAnId: item.monAnId,
+          bienTheId: item.bienTheId,
+          deBanhId: item.deBanhId,
+          tuyChonThem: item.tuyChonThem,
+          soLuong: item.soLuong
+        };
+      });
       localStorage.setItem(COMPACT_KEY, JSON.stringify(compactItems));
     } catch {}
   }, [state]);
 
   const totalQuantity = useMemo(() => state.items.reduce((sum, i) => sum + Number(i.soLuong || 0), 0), [state.items]);
-  const subtotal = useMemo(() => state.items.reduce((sum, i) => sum + Number(i.soLuong || 0) * Number(i.unitPrice || 0), 0), [state.items]);
 
   const value = useMemo(() => ({
     items: state.items,
     totalQuantity,
-    subtotal,
     add: (item) => dispatch({ type: 'ADD', payload: item }),
     remove: (key) => dispatch({ type: 'REMOVE', payload: { key } }),
     setQty: (key, soLuong) => dispatch({ type: 'SET_QTY', payload: { key, soLuong } }),
     clear: () => dispatch({ type: 'CLEAR' })
-  }), [state.items, totalQuantity, subtotal]);
+  }), [state.items, totalQuantity]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

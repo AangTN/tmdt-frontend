@@ -1,8 +1,8 @@
 /* Hero About Section */
 .aboutHero {
-  background: linear-gradient(135deg,#ff4d4f 0%,#ff6b6b 40%,#ff914d 100%);
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #ff6b6b 100%);
   color: #fff;
-  padding: 5rem 0 3rem;
+  padding: 5rem 0 3.5rem;
   position: relative;
   overflow: hidden;
 }
@@ -23,6 +23,7 @@
   font-weight: 800;
   margin-bottom: 1.25rem;
   line-height: 1.15;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .heroSubtitle {
@@ -30,6 +31,7 @@
   opacity: .95;
   max-width: 620px;
   font-weight: 500;
+  line-height: 1.6;
 }
 
 .heroCTAGroup { margin-top: 1.5rem; display: flex; gap: 1rem; }
@@ -56,25 +58,67 @@
 /* Story Section */
 /* USP Section */
 .uspSection { padding: 3.5rem 0 2.5rem; background: #fff; }
-.uspCard { border: none; background: #fff; box-shadow: 0 4px 22px rgba(0,0,0,.08); border-radius: 18px; padding: 1.75rem 1.25rem; height:100%; position:relative; overflow:hidden; }
-.uspCard::before { content:''; position:absolute; inset:0; background: linear-gradient(140deg, rgba(255,77,79,0.12), transparent 55%); }
-.uspIcon { font-size: 2.4rem; margin-bottom: .75rem; }
-.uspCard h3 { font-size: 1.15rem; font-weight: 700; color:#d32029; margin-bottom:.5rem; }
-.uspCard p { font-size:.9rem; color:#555; margin:0; line-height:1.5; }
+.uspCard { 
+  border: none; 
+  background: #fff; 
+  box-shadow: 0 4px 20px rgba(220, 53, 69, 0.08); 
+  border-radius: 18px; 
+  padding: 2rem 1.5rem; 
+  height: 100%; 
+  position: relative; 
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.uspCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(220, 53, 69, 0.15);
+}
+.uspCard::before { 
+  content: ''; 
+  position: absolute; 
+  inset: 0; 
+  background: linear-gradient(140deg, rgba(220, 53, 69, 0.08), transparent 60%); 
+}
+.uspIcon { 
+  font-size: 2.8rem; 
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 2px 4px rgba(220, 53, 69, 0.2));
+}
+.uspCard h3 { 
+  font-size: 1.2rem; 
+  font-weight: 700; 
+  color: #dc3545; 
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+.uspCard p { 
+  font-size: 0.95rem; 
+  color: #555; 
+  margin: 0; 
+  line-height: 1.6;
+  position: relative;
+}
 
 .storyCard {
   background: white;
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(220, 53, 69, 0.08);
   border: none;
   height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.storyCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(220, 53, 69, 0.15);
 }
 
 .storyCard h3 {
-  color: #ff4d4f;
+  color: #dc3545;
   font-weight: 700;
   margin-bottom: 1rem;
+  font-size: 1.3rem;
 }
 
 .storyCard p {
@@ -85,6 +129,7 @@
 .storyIcon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  filter: drop-shadow(0 2px 4px rgba(220, 53, 69, 0.2));
 }
 
 /* Branches Map Section */
@@ -95,10 +140,10 @@
 
 .mapTitle {
   text-align: center;
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 800;
   margin-bottom: 1rem;
-  color: #333;
+  color: #dc3545;
 }
 
 .mapSubtitle {
@@ -134,7 +179,7 @@
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.08);
   border: none;
   transition: all 0.3s ease;
   height: 100%;
@@ -142,11 +187,11 @@
 
 .branchCard:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(255, 77, 79, 0.2);
+  box-shadow: 0 8px 20px rgba(220, 53, 69, 0.2);
 }
 
 .branchCard h5 {
-  color: #ff4d4f;
+  color: #dc3545;
   font-weight: 700;
   margin-bottom: 1rem;
 }
@@ -164,29 +209,70 @@
 
 /* Values Section */
 /* Best Sellers */
-.bestSection { padding: 3.5rem 0; background: linear-gradient(to bottom,#fff,#fff,#fff,#fdf5f5); }
-.bestTitle { font-weight:800; font-size:2.1rem; }
-.bestSubtitle { color:#666; max-width:600px; margin:0 auto; }
-.foodCard { background:#fff; border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,.08); overflow:hidden; display:flex; flex-direction:column; height:100%; position:relative; }
-.foodImageWrap { position:relative; padding-top:65%; overflow:hidden; }
-.foodImage { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; transition:transform .5s; }
-.foodCard:hover .foodImage { transform:scale(1.08); }
-.foodBody { padding:1rem 1rem 1.25rem; display:flex; flex-direction:column; flex:1; }
-.foodName { font-weight:600; font-size:1rem; line-height:1.3; min-height:2.4em; }
-.foodType { font-size:.7rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#ff4d4f; margin-top:.35rem; }
-.foodPrice { font-weight:700; color:#d32029; margin-top:.5rem; }
+.bestSection { padding: 3.5rem 0; background: linear-gradient(to bottom, #fff, #fff, #fff, #fff8f8); }
+.bestTitle { font-weight: 800; font-size: 2.2rem; color: #dc3545; }
+.bestSubtitle { color: #666; max-width: 600px; margin: 0 auto; }
+.foodCard { 
+  background: #fff; 
+  border-radius: 16px; 
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.08); 
+  overflow: hidden; 
+  display: flex; 
+  flex-direction: column; 
+  height: 100%; 
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.foodCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(220, 53, 69, 0.15);
+}
+.foodImageWrap { position: relative; padding-top: 65%; overflow: hidden; }
+.foodImage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+.foodCard:hover .foodImage { transform: scale(1.08); }
+.foodBody { padding: 1rem 1rem 1.25rem; display: flex; flex-direction: column; flex: 1; }
+.foodName { font-weight: 600; font-size: 1rem; line-height: 1.3; min-height: 2.4em; }
+.foodType { font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #dc3545; margin-top: 0.35rem; }
+.foodPrice { font-weight: 700; color: #dc3545; margin-top: 0.5rem; }
 
 /* Testimonials */
-.testimonialSection { padding:4rem 0 3.5rem; background: linear-gradient(100deg,#fff,#ffecec 60%,#fff); }
-.testimonialCard { background:#fff; border-radius:18px; padding:2rem 1.5rem 1.75rem; box-shadow:0 4px 24px rgba(0,0,0,.08); position:relative; height:100%; }
-.quoteMark { position:absolute; top:10px; left:14px; font-size:3.5rem; line-height:1; color:#ffb3b3; font-weight:800; font-family:serif; opacity:.35; }
-.testimonialCard p { margin:0 0 1.25rem; font-size:.95rem; line-height:1.6; font-weight:500; color:#444; }
-.reviewer { font-size:.85rem; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#d32029; }
+.testimonialSection { padding: 4rem 0 3.5rem; background: linear-gradient(100deg, #fff, #fff8f8 60%, #fff); }
+.testimonialCard { 
+  background: #fff; 
+  border-radius: 18px; 
+  padding: 2rem 1.5rem 1.75rem; 
+  box-shadow: 0 4px 24px rgba(220, 53, 69, 0.08); 
+  position: relative; 
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.testimonialCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(220, 53, 69, 0.15);
+}
+.quoteMark { position: absolute; top: 10px; left: 14px; font-size: 3.5rem; line-height: 1; color: #ffb3b3; font-weight: 800; font-family: serif; opacity: 0.35; }
+.testimonialCard p { margin: 0 0 1.25rem; font-size: 0.95rem; line-height: 1.6; font-weight: 500; color: #444; }
+.reviewer { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #dc3545; }
 
 /* Final CTA */
-.finalCTA { background: linear-gradient(135deg,#ff4d4f,#ff6b6b 60%,#ff914d); color:#fff; padding:4rem 0 4.5rem; position:relative; overflow:hidden; }
-.finalCTA::after { content:''; position:absolute; inset:0; background: radial-gradient(circle at 75% 20%, rgba(255,255,255,.25), transparent 60%); }
-.finalCTA h2 { font-size:2.2rem; font-weight:800; }
+.finalCTA { 
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #ff6b6b 100%); 
+  color: #fff; 
+  padding: 4rem 0 4.5rem; 
+  position: relative; 
+  overflow: hidden; 
+}
+.finalCTA::after { 
+  content: ''; 
+  position: absolute; 
+  inset: 0; 
+  background: radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.15), transparent 60%); 
+}
+.finalCTA h2 { 
+  font-size: 2.4rem; 
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
 /* Existing Delivery Notice + Map section keep styles */
 .valueCard {
@@ -194,15 +280,15 @@
   padding: 2rem;
   border-radius: 16px;
   background: white;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.06);
   transition: all 0.3s ease;
   border: 2px solid transparent;
 }
 
 .valueCard:hover {
-  border-color: #ff4d4f;
+  border-color: #dc3545;
   transform: translateY(-8px);
-  box-shadow: 0 8px 24px rgba(255, 77, 79, 0.15);
+  box-shadow: 0 8px 24px rgba(220, 53, 69, 0.15);
 }
 
 .valueIcon {
