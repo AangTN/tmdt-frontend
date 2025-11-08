@@ -148,7 +148,7 @@ const AdminSidebar = () => {
             >
               🍕
             </div>
-            {!isCollapsed && screenSize !== 'mobile' && (
+            {(!isCollapsed || screenSize === 'mobile') && (
               <div>
                 <h3 
                   style={{
@@ -278,7 +278,7 @@ const AdminSidebar = () => {
               </span>
               
               {/* Content */}
-              {!isCollapsed && screenSize !== 'mobile' && (
+              {(!isCollapsed || screenSize === 'mobile') && (
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ 
                     fontWeight: 'inherit',
@@ -287,19 +287,21 @@ const AdminSidebar = () => {
                   }}>
                     {item.label}
                   </div>
-                  <div style={{ 
-                    fontSize: 'var(--admin-font-size-xs)',
-                    opacity: 0.8,
-                    marginTop: '1px',
-                    fontWeight: 'var(--admin-font-weight-normal)'
-                  }}>
-                    {item.description}
-                  </div>
+                  {screenSize !== 'mobile' && (
+                    <div style={{ 
+                      fontSize: 'var(--admin-font-size-xs)',
+                      opacity: 0.8,
+                      marginTop: '1px',
+                      fontWeight: 'var(--admin-font-weight-normal)'
+                    }}>
+                      {item.description}
+                    </div>
+                  )}
                 </div>
               )}
               
               {/* Hover Arrow */}
-              {!isCollapsed && screenSize !== 'mobile' && (
+              {(!isCollapsed || screenSize === 'mobile') && screenSize !== 'mobile' && (
                 <span 
                   style={{
                     fontSize: '12px',
@@ -316,7 +318,7 @@ const AdminSidebar = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        {!isCollapsed && screenSize !== 'mobile' && (
+        {(!isCollapsed || screenSize === 'mobile') && (
           <div 
             style={{
               padding: 'var(--admin-space-md)',
@@ -355,13 +357,15 @@ const AdminSidebar = () => {
                 }}>
                   Cài đặt
                 </div>
-                <div style={{ 
-                  fontSize: 'var(--admin-font-size-xs)',
-                  color: 'var(--admin-text-tertiary)',
-                  marginTop: '1px'
-                }}>
-                  Tùy chọn hệ thống
-                </div>
+                {screenSize !== 'mobile' && (
+                  <div style={{ 
+                    fontSize: 'var(--admin-font-size-xs)',
+                    color: 'var(--admin-text-tertiary)',
+                    marginTop: '1px'
+                  }}>
+                    Tùy chọn hệ thống
+                  </div>
+                )}
               </div>
             </div>
           </div>

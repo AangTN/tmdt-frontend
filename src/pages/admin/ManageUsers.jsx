@@ -3,6 +3,8 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
+import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
+import { BusinessCard } from '../../components/admin/AdminTableCard';
 
 const mockUsers = [
   {
@@ -102,6 +104,41 @@ const ManageUsers = () => {
     });
   }, [roleFilter, search, statusFilter]);
 
+  // Action handlers
+  const handleView = (userId) => {
+    console.log('View user details:', userId);
+    // TODO: Implement view functionality
+  };
+
+  const handleToggleStatus = (userId) => {
+    console.log('Toggle user status:', userId);
+    // TODO: Implement toggle status functionality
+  };
+
+  const handleResetPassword = (userId) => {
+    console.log('Reset password for user:', userId);
+    // TODO: Implement reset password functionality
+  };
+
+  // Card component for responsive view
+  const cardComponent = (
+    <div className={styles.adminTableCards}>
+      {filteredUsers.map((user, index) => (
+        <BusinessCard
+          key={user.id}
+          data={user}
+          type="user"
+          onView={() => handleView(user.id)}
+          onToggleStatus={() => handleToggleStatus(user.id)}
+          onResetPassword={() => handleResetPassword(user.id)}
+          index={index}
+          animate={true}
+          showTimeline={true}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="admin-animate-fade-in">
       {/* Header Section */}
@@ -163,207 +200,222 @@ const ManageUsers = () => {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
-        <div className={styles.tableResponsive}>
-          <table className={`${styles.table} ${styles.tableRowHover}`}>
-            <thead className={styles.tableHeaderPrimary}>
-              <tr>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Mã người dùng</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Họ tên</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Email</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Số điện thoại</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Vai trò</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Đơn đã đặt</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Đơn gần nhất</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Trạng thái</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Lần đăng nhập cuối</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 200 }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length === 0 ? (
+      {/* Table Section with Enhanced Responsive Container */}
+      <AdminResponsiveContainer 
+        data={filteredUsers}
+        loading={false}
+        empty={filteredUsers.length === 0}
+        cardComponent={cardComponent}
+        onResponsiveChange={(responsiveInfo) => {
+          console.log('Users view changed:', responsiveInfo);
+        }}
+        accessibility={{
+          announceViewChanges: true,
+          viewChangeMessage: 'Users view changed to {view}'
+        }}
+        className="users-responsive-container"
+      >
+        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+          <div className={styles.tableResponsive}>
+            <table className={`${styles.table} ${styles.tableRowHover}`}>
+              <thead className={styles.tableHeaderPrimary}>
                 <tr>
-                  <td colSpan={10}>
-                    <div className={styles.tableEmpty}>
-                      <div className={styles.tableEmptyIcon}>👥</div>
-                      <div className={styles.tableEmptyTitle}>Không có người dùng</div>
-                      <div className={styles.tableEmptyDescription}>
-                        {search || roleFilter !== 'all' || statusFilter !== 'all' 
-                          ? 'Chưa có người dùng phù hợp với bộ lọc được chọn.' 
-                          : 'Chưa có dữ liệu người dùng.'}
-                      </div>
-                      <button 
-                        className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
-                        onClick={() => {
-                          setSearch('');
-                          setRoleFilter('all');
-                          setStatusFilter('all');
-                        }}
-                      >
-                        Xóa bộ lọc
-                      </button>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Mã người dùng</span>
+                      <span className={styles.tableSortIcon}></span>
                     </div>
-                  </td>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Họ tên</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Email</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Số điện thoại</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Vai trò</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Đơn đã đặt</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Đơn gần nhất</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Trạng thái</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Lần đăng nhập cuối</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 200 }}>Thao tác</th>
                 </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="admin-animate-slide-up">
-                    <td className={styles.tableCellBold}>
-                      <span className="badge bg-light text-dark border">
-                        {user.id}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="d-flex align-items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <div 
-                            className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
-                            style={{ 
-                              width: 48, 
-                              height: 48,
-                              background: user.role === 'admin' 
-                                ? 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
-                                : user.role === 'staff'
-                                ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
-                                : 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
-                            }}
-                          >
-                            <span style={{ fontSize: 20 }}>
-                              {user.role === 'admin' ? '👑' : user.role === 'staff' ? '👨‍💼' : '👤'}
-                            </span>
-                          </div>
+              </thead>
+              <tbody>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={10}>
+                      <div className={styles.tableEmpty}>
+                        <div className={styles.tableEmptyIcon}>👥</div>
+                        <div className={styles.tableEmptyTitle}>Không có người dùng</div>
+                        <div className={styles.tableEmptyDescription}>
+                          {search || roleFilter !== 'all' || statusFilter !== 'all' 
+                            ? 'Chưa có người dùng phù hợp với bộ lọc được chọn.' 
+                            : 'Chưa có dữ liệu người dùng.'}
                         </div>
-                        <div>
-                          <div className={`${styles.tableCellBold} mb-1`}>{user.name}</div>
-                          <small className={styles.tableCellMuted}>ID: {user.id}</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td className={styles.tableCellText}>{user.email}</td>
-                    <td className={styles.tableCellMuted}>{user.phone}</td>
-                    <td>
-                      <span className={`${styles.tableBadge} ${
-                        user.role === 'admin' ? styles.tableBadgeWarning :
-                        user.role === 'staff' ? styles.tableBadgeInfo :
-                        styles.tableBadgeActive
-                      }`}>
-                        {roleLabels[user.role]}
-                      </span>
-                    </td>
-                    <td className={styles.tableCellSuccess}>{user.totalOrders}</td>
-                    <td className={styles.tableCellMuted}>{user.lastOrder}</td>
-                    <td>
-                      <span className={`${styles.tableBadge} ${statusVariant[user.status] || styles.tableBadgeInfo}`}>
-                        {statusLabels[user.status] || user.status}
-                      </span>
-                    </td>
-                    <td className={styles.tableCellMuted}>
-                      <small>{user.lastLogin}</small>
-                    </td>
-                    <td>
-                      <div className={styles.tableActions}>
                         <button 
-                          className={`${styles.tableAction} ${styles.tableActionSuccess}`}
-                          title="Xem chi tiết"
-                          disabled
+                          className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                          onClick={() => {
+                            setSearch('');
+                            setRoleFilter('all');
+                            setStatusFilter('all');
+                          }}
                         >
-                          👁️
-                        </button>
-                        <button 
-                          className={styles.tableAction}
-                          title="Đặt lại mật khẩu"
-                          disabled
-                        >
-                          🔑
-                        </button>
-                        <button 
-                          className={`${styles.tableAction} ${styles.tableActionDanger}`}
-                          title={user.status === 'suspended' ? 'Mở khóa' : 'Khóa tài khoản'}
-                          disabled
-                        >
-                          {user.status === 'suspended' ? '🔓' : '🔒'}
+                          Xóa bộ lọc
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Table Footer with Pagination */}
-        {filteredUsers.length > 0 && (
-          <div className={styles.tablePagination}>
-            <div className={styles.tablePaginationInfo}>
-              Hiển thị {filteredUsers.length} trên {totalUsers} người dùng
-            </div>
-            <div className={styles.tablePaginationControls}>
-              <button 
-                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
-                disabled
-              >
-                ←
-              </button>
-              <span className="px-3 py-1">
-                <strong>1</strong> / 1
-              </span>
-              <button 
-                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
-                disabled
-              >
-                →
-              </button>
-            </div>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="admin-animate-slide-up">
+                      <td className={styles.tableCellBold}>
+                        <span className="badge bg-light text-dark border">
+                          {user.id}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <div 
+                              className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
+                              style={{ 
+                                width: 48, 
+                                height: 48,
+                                background: user.role === 'admin' 
+                                  ? 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
+                                  : user.role === 'staff'
+                                  ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
+                                  : 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
+                              }}
+                            >
+                              <span style={{ fontSize: 20 }}>
+                                {user.role === 'admin' ? '👑' : user.role === 'staff' ? '👨‍💼' : '👤'}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className={`${styles.tableCellBold} mb-1`}>{user.name}</div>
+                            <small className={styles.tableCellMuted}>ID: {user.id}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={styles.tableCellText}>{user.email}</td>
+                      <td className={styles.tableCellMuted}>{user.phone}</td>
+                      <td>
+                        <span className={`${styles.tableBadge} ${
+                          user.role === 'admin' ? styles.tableBadgeWarning :
+                          user.role === 'staff' ? styles.tableBadgeInfo :
+                          styles.tableBadgeActive
+                        }`}>
+                          {roleLabels[user.role]}
+                        </span>
+                      </td>
+                      <td className={styles.tableCellSuccess}>{user.totalOrders}</td>
+                      <td className={styles.tableCellMuted}>{user.lastOrder}</td>
+                      <td>
+                        <span className={`${styles.tableBadge} ${statusVariant[user.status] || styles.tableBadgeInfo}`}>
+                          {statusLabels[user.status] || user.status}
+                        </span>
+                      </td>
+                      <td className={styles.tableCellMuted}>
+                        <small>{user.lastLogin}</small>
+                      </td>
+                      <td>
+                        <div className={styles.tableActions}>
+                          <button 
+                            className={`${styles.tableAction} ${styles.tableActionSuccess}`}
+                            title="Xem chi tiết"
+                            onClick={() => handleView(user.id)}
+                          >
+                            👁️
+                          </button>
+                          <button 
+                            className={styles.tableAction}
+                            title="Đặt lại mật khẩu"
+                            onClick={() => handleResetPassword(user.id)}
+                          >
+                            🔑
+                          </button>
+                          <button 
+                            className={`${styles.tableAction} ${styles.tableActionDanger}`}
+                            title={user.status === 'suspended' ? 'Mở khóa' : 'Khóa tài khoản'}
+                            onClick={() => handleToggleStatus(user.id)}
+                          >
+                            {user.status === 'suspended' ? '🔓' : '🔒'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+          
+          {/* Table Footer with Pagination */}
+          {filteredUsers.length > 0 && (
+            <div className={styles.tablePagination}>
+              <div className={styles.tablePaginationInfo}>
+                Hiển thị {filteredUsers.length} trên {totalUsers} người dùng
+              </div>
+              <div className={styles.tablePaginationControls}>
+                <button 
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                  disabled
+                >
+                  ←
+                </button>
+                <span className="px-3 py-1">
+                  <strong>1</strong> / 1
+                </span>
+                <button 
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                  disabled
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </AdminResponsiveContainer>
 
       {/* Quick Stats */}
       <div className="row g-3 mt-4">

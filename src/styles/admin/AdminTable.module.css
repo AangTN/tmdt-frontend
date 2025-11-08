@@ -419,7 +419,7 @@
   }
   
   .table th,
-  .table td {
+.table td {
     padding: var(--admin-space-sm);
     font-size: var(--admin-font-size-xs);
   }
@@ -487,10 +487,12 @@
 .tableFocusable tbody tr:focus {
   outline: 2px solid var(--admin-primary);
   outline-offset: -2px;
-}
+  }
 
 .tableFocusable tbody tr:focus:not(:focus-visible) {
   outline: none;
+}
+
 /* Table Column Priority Classes */
 .tableColumnCritical {
   min-width: 120px;
@@ -534,6 +536,7 @@
   display: none;
 }
 
+/* Mobile Card Grid */
 .tableMobileCardGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -649,4 +652,384 @@
     padding: var(--admin-space-xs);
   }
 }
+
+/* ======================================== */
+/* ENHANCED RESPONSIVE TABLE-TO-CARD CONVERSION SYSTEM */
+/* ======================================== */
+/* STANDARDIZED MOBILE RESPONSIVE CLASSES */
+/* ======================================== */
+
+/* Standard mobile hiding classes - consistent across all admin pages */
+.adminTableHideOnMobile {
+  display: block;
+}
+
+.adminTableShowOnMobile {
+  display: none;
+}
+
+.adminTableHideOnTablet {
+  display: block;
+}
+
+.adminTableShowOnTablet {
+  display: none;
+}
+
+/* Enhanced responsive breakpoints */
+@media (max-width: 767px) {
+  .adminTableHideOnMobile {
+    display: none !important;
+  }
+  
+  .adminTableShowOnMobile {
+    display: block !important;
+  }
+  
+  .tableContainer,
+  .tableContainerPremium {
+    border-radius: var(--admin-radius-md);
+    margin-bottom: var(--admin-space-md);
+  }
+  
+  .table th,
+  .table td {
+    padding: var(--admin-space-sm);
+    font-size: var(--admin-font-size-xs);
+  }
+  
+  .tableActions {
+    flex-direction: column;
+    gap: var(--admin-space-xs);
+  }
+  
+  .tablePagination {
+    flex-direction: column;
+    gap: var(--admin-space-md);
+  }
+  
+  .tablePaginationControls {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .adminTableHideOnTablet {
+    display: none !important;
+  }
+  
+  .adminTableShowOnTablet {
+    display: block !important;
+  }
+  
+  .table th,
+  .table td {
+    padding: calc(var(--admin-space-sm) + 2px);
+    font-size: var(--admin-font-size-sm);
+  }
+}
+
+@media (min-width: 768px) {
+  .adminTableHideOnMobile {
+    display: block !important;
+  }
+  
+  .adminTableShowOnMobile {
+    display: none !important;
+  }
+  
+  .tablePagination {
+    flex-direction: row;
+    gap: var(--admin-space-sm);
+  }
+  
+  .tablePaginationControls {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
+
+/* ======================================== */
+/* ENHANCED MOBILE CARD GRID SYSTEM */
+/* ======================================== */
+
+/* ======================================== */
+
+/* Responsive Container Classes */
+.adminTableDesktop {
+  display: block;
+}
+
+.adminTableCards {
+  display: none;
+}
+
+.adminTableMobileCardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--admin-space-md);
+  padding: var(--admin-space-md);
+  transition: var(--admin-transition-base);
+}
+
+/* Mobile Card Grid Styles */
+.adminTableMobileCardGrid {
+  background: var(--admin-bg-primary);
+  border: 1px solid var(--admin-border-light);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-sm);
+  overflow: hidden;
+  transition: var(--admin-transition-base);
+}
+
+.adminTableMobileCardGrid--loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.adminTableMobileCardGrid--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Responsive Utilities */
+.adminTableHideOnMobile {
+  display: block;
+}
+
+.adminTableHideOnDesktop {
+  display: none;
+}
+
+.adminTableShowOnMobile {
+  display: block;
+}
+
+.adminTableShowOnDesktop {
+  display: block;
+}
+
+/* Animation Classes */
+.adminTableCardEntry {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: var(--admin-transition-slow);
+}
+
+.adminTableCardExit {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: var(--admin-transition-slow);
+}
+
+.adminTableCardStagger {
+  transition-delay: calc(var(--stagger-index) * var(--stagger-delay));
+}
+
+/* Loading States */
+.adminTableCardShimmer {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: admin-shimmer 2s infinite;
+}
+
+.adminTableCardSkeleton {
+  background: var(--admin-bg-secondary);
+  border-radius: var(--admin-radius-sm);
+  margin-bottom: var(--admin-space-sm);
+}
+
+/* Responsive Breakpoint Integration */
+@media (max-width: 768px) {
+  .adminTableDesktop { 
+    display: none; 
+  }
+  
+  .adminTableCards { 
+    display: grid; 
+  }
+  
+  .adminTableMobileCardGrid {
+    grid-template-columns: 1fr;
+    padding: var(--admin-space-sm);
+  }
+  
+  .tablePagination {
+    flex-direction: column;
+    gap: var(--admin-space-md);
+  }
+  
+  .tablePaginationControls {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+  @media (min-width: 769px) {
+  .adminTableDesktop { 
+    display: block; 
+  }
+  
+  .adminTableCards { 
+    display: none; 
+  }
+  
+  .tablePagination {
+    flex-direction: row;
+    gap: var(--admin-space-sm);
+  }
+  
+  .tablePaginationControls {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
+
+/* Dark Theme Support for Mobile Cards */
+@media (prefers-color-scheme: dark) {
+  .adminTableMobileCardGrid {
+    background: var(--admin-bg-dark);
+    border-color: var(--admin-border-dark);
+  }
+  
+  .adminTableCardShimmer {
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      rgba(255, 255, 255, 0.05) 100%);
+  }
+
+  .adminTableCardSkeleton {
+    background: var(--admin-bg-tertiary);
+  }
+}
+
+/* Hover States and Micro-interactions */
+.adminTableMobileCardGrid:hover .adminTableCardEntry {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.adminTableMobileCardGrid:hover .adminTableCardExit {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+/* Keyframe Animations */
+@keyframes admin-fade-in {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  } 
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  } 
+}
+
+@keyframes admin-slide-up {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  } 
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  } 
+}
+
+@keyframes admin-shimmer {
+  0% { 
+    background-position: -200% 0; 
+  } 
+  100% { 
+    background-position: 200% 0; 
+  } 
+}
+
+/* CSS Variables for Stagger System */
+.adminTableMobileCardGrid {
+  --stagger-index: 0;
+}
+
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(1) { --stagger-index: 1; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(2) { --stagger-index: 2; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(3) { --stagger-index: 3; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(4) { --stagger-index: 4; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(5) { --stagger-index: 5; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(6) { --stagger-index: 6; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(7) { --stagger-index: 7; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(8) { --stagger-index: 8; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(9) { --stagger-index: 9; }
+.adminTableMobileCardGrid .adminTableCardEntry:nth-child(10) { --stagger-index: 10; }
+
+/* CSS Variables for Animation Delays */
+.adminTableMobileCardGrid {
+  --stagger-delay: 0.1s;
+}
+
+/* Additional Responsive Enhancements */
+@media (max-width: 1024px) {
+  .tableResponsiveEnhanced {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .tableResponsiveEnhanced {
+    display: none;
+  }
+}
+
+/* Focus Management for Mobile Cards */
+.adminTableMobileCardGrid:focus-within {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+  border-radius: var(--admin-radius-md);
+}
+
+/* Performance Optimizations */
+.adminTableMobileCardGrid * {
+  will-change: transform, opacity;
+}
+
+/* Integration with existing tableResponsive class */
+.tableResponsive .adminTableDesktop,
+.tableResponsive .adminTableCards {
+  display: none;
+}
+
+.tableResponsive .adminTableMobileCardGrid {
+  display: grid;
+}
+
+
+/* Ensure proper stacking context */
+.adminTableMobileCardGrid {
+  transform-style: preserve-3d;
+}
+
+/* Accessibility Enhancements */
+.adminTableMobileCardGrid:focus-within {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .adminTableCardEntry,
+  .adminTableCardExit {
+    transition: none;
+  }
+  
+  .adminTableCardStagger {
+    transition-delay: 0s;
+  }
 }
