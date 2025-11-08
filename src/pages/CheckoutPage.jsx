@@ -1,16 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Form, Button, Card, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getShippingQuote } from '../services/shippingService';
-import { api } from '../services/api';
+import { api, assetUrl, fetchFoods, fetchCombos, fetchVariants, fetchOptionPrices, fetchCrusts, fetchVoucherByCode, fetchComboById } from '../services/api';
 import { getProvinces, getDistricts, getWards } from '../services/locationService';
 
 const CheckoutPage = () => {
-  const { items, subtotal, clear } = useCart();
+  const { items, clear } = useCart();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Master data for pricing
+  const [foodsMap, setFoodsMap] = useState({});
+  const [combosMap, setCombosMap] = useState({});
+  const [variantsMap, setVariantsMap] = useState({});
+  const [optionPricesMap, setOptionPricesMap] = useState({});
+  const [crustsMap, setCrustsMap] = useState({});
+  const [dataLoading, setDataLoading] = useState(false);
   const [formData, setFormData] = useState({
     hoTen: '',
     soDienThoai: '',
@@ -43,6 +51,48 @@ const CheckoutPage = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
+
+  // Fetch master data for pricing
+  useEffect(() => {
+    if (items.length === 0) return;
+    let active = true;
+    setDataLoading(true);
+    (async () => {
+      try {
+        const [foodsData, combosData, variantsData, optionPricesData, crustsData] = await Promise.all([
+          fetchFoods(),
+          fetchCombos(),
+          fetchVariants(),
+          fetchOptionPrices(),
+          fetchCrusts()
+        ]);
+        if (!active) return;
+        const fMap = {};
+        (Array.isArray(foodsData) ? foodsData : []).forEach(f => { fMap[f.MaMonAn] = f; });
+        const cMap = {};
+        (Array.isArray(combosData) ? combosData : []).forEach(c => { cMap[c.MaCombo] = c; });
+        const vMap = {};
+        (Array.isArray(variantsData) ? variantsData : []).forEach(v => { vMap[v.MaBienThe] = v; });
+        const oMap = {};
+        (Array.isArray(optionPricesData) ? optionPricesData : []).forEach(op => {
+          const key = `${op.MaTuyChon}_${op.MaSize}`;
+          oMap[key] = op;
+        });
+        const crMap = {};
+        (Array.isArray(crustsData) ? crustsData : []).forEach(cr => { crMap[cr.MaDeBanh] = cr; });
+        setFoodsMap(fMap);
+        setCombosMap(cMap);
+        setVariantsMap(vMap);
+        setOptionPricesMap(oMap);
+        setCrustsMap(crMap);
+      } catch (err) {
+        console.error('Failed to load pricing data:', err);
+      } finally {
+        if (active) setDataLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [items.length]);
 
   useEffect(() => {
     // Auto-fill if user is logged in
@@ -130,11 +180,10 @@ const CheckoutPage = () => {
     setVoucherSuccess('');
     
     try {
-      const response = await fetch(`http://localhost:3001/api/vouchers/${voucherCode.trim()}`);
-      const result = await response.json();
+      const result = await fetchVoucherByCode(voucherCode.trim());
 
-      if (!response.ok || !result.data) {
-        throw new Error(result.message || 'Voucher không tồn tại');
+      if (!result || !result.data) {
+        throw new Error(result?.message || 'Voucher không tồn tại');
       }
 
       const voucherData = result.data;
@@ -210,6 +259,52 @@ const CheckoutPage = () => {
     return () => clearTimeout(t);
   }, [formData.soNhaDuong, formData.phuongXa, formData.quanHuyen, formData.thanhPho]);
 
+  // Enrich cart items with pricing data
+  const enrichedItems = useMemo(() => {
+    return items.map(item => {
+      if (item.loai === 'CB') {
+        const combo = combosMap[item.comboId];
+        if (!combo) return { ...item, displayName: `Combo #${item.comboId}`, displayPrice: 0, displayTotal: 0 };
+        const price = Number(combo.GiaCombo || 0);
+        return { ...item, displayName: combo.TenCombo, displayPrice: price, displayTotal: price * item.soLuong };
+      }
+      const food = foodsMap[item.monAnId];
+      if (!food) return { ...item, displayName: `Món #${item.monAnId}`, displayPrice: 0, displayTotal: 0 };
+      const variant = item.bienTheId ? variantsMap[item.bienTheId] : null;
+      const basePrice = variant ? Number(variant.GiaBan || 0) : 0;
+      const sizeId = variant?.Size?.MaSize;
+      const sizeName = variant?.Size?.TenSize || '';
+      const crust = item.deBanhId ? crustsMap[item.deBanhId] : null;
+      const crustName = crust?.TenDeBanh || '';
+      let optionsExtra = 0;
+      const optionNames = [];
+      if (Array.isArray(item.tuyChonThem) && item.tuyChonThem.length > 0 && sizeId) {
+        item.tuyChonThem.forEach(optId => {
+          const key = `${optId}_${sizeId}`;
+          const optionPrice = optionPricesMap[key];
+          if (optionPrice && optionPrice.TuyChon) {
+            const extra = Number(optionPrice.GiaThem || 0);
+            optionsExtra += extra;
+            optionNames.push(optionPrice.TuyChon.TenTuyChon);
+          }
+        });
+      }
+      const unitPrice = basePrice + optionsExtra;
+      const total = unitPrice * item.soLuong;
+      const segments = [];
+      if (sizeName) segments.push(sizeName);
+      if (crustName) segments.push(crustName);
+      if (optionNames.length > 0) segments.push(optionNames.join(', '));
+      const detailLine = segments.join(' • ');
+      const rawImg = food.HinhAnh;
+      const imgPath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
+      const displayImage = imgPath ? assetUrl(imgPath) : '/placeholder.svg';
+      return { ...item, displayName: food.TenMonAn, displayImage, displayPrice: unitPrice, displayTotal: total, displayDetails: detailLine };
+    });
+  }, [items, foodsMap, combosMap, variantsMap, optionPricesMap, crustsMap]);
+
+  const subtotal = useMemo(() => enrichedItems.reduce((sum, item) => sum + (item.displayTotal || 0), 0), [enrichedItems]);
+
   // Calculate discount
   const discount = useMemo(() => {
     if (!voucher) return 0;
@@ -238,7 +333,43 @@ const CheckoutPage = () => {
     try {
       // Send Vietnamese labels for payment method to backend as requested
       const paymentMethod = formData.phuongThucThanhToan === 'bank' ? 'Chuyển Khoản' : 'Tiền Mặt';
-      const isBankTransfer = formData.phuongThucThanhToan === 'bank';
+      
+      // Build items with correct format
+      const formattedItems = await Promise.all(items.map(async (it) => {
+        if (it.loai === 'CB') {
+          // Fetch full combo details with Items
+          const comboDetail = await fetchComboById(it.comboId);
+          const combo = comboDetail?.data || comboDetail;
+          
+          // Build chiTietCombo from combo.Items
+          const chiTietCombo = (combo?.Items || []).map(comboItem => {
+            const detail = {
+              maBienThe: comboItem.BienTheMonAn?.MaBienThe || comboItem.MaBienThe,
+              soLuong: Number(comboItem.SoLuong || 1)
+            };
+            if (comboItem.MaDeBanh) {
+              detail.maDeBanh = comboItem.MaDeBanh;
+            }
+            return detail;
+          });
+
+          return {
+            loai: 'CB',
+            maCombo: it.comboId,
+            soLuong: Number(it.soLuong || 1),
+            chiTietCombo
+          };
+        }
+        // Product (SP)
+        return {
+          loai: 'SP',
+          maBienThe: it.bienTheId ?? null,
+          maDeBanh: it.deBanhId ?? null,
+          soLuong: Number(it.soLuong || 1),
+          tuyChon: Array.isArray(it.tuyChonThem) ? it.tuyChonThem.map(id => ({ maTuyChon: Number(id) })) : []
+        };
+      }));
+
       const payload = {
         maNguoiDung: isAuthenticated && user?.maNguoiDung ? user.maNguoiDung : null,
         soNhaDuong: formData.soNhaDuong || '',
@@ -253,14 +384,10 @@ const CheckoutPage = () => {
         phiShip: Number(shippingFee) || 0,
         tongTien: Number(total) || 0,
         ghiChu: formData.ghiChu || '',
-        items: items.map(it => ({
-          maBienThe: it.bienTheId ?? null,
-          maDeBanh: it.deBanhId ?? null,
-          soLuong: Number(it.soLuong || 0),
-          tuyChon: Array.isArray(it.tuyChonThem) ? it.tuyChonThem.map(id => ({ maTuyChon: Number(id) })) : []
-        })),
+        items: formattedItems,
         payment: { phuongThuc: paymentMethod }
       };
+      console.log('Submitting order payload:', payload);
 
       const res = await api.post('/api/orders', payload);
       const data = res.data;
@@ -458,23 +585,23 @@ const CheckoutPage = () => {
               {submitSuccess && (
                 <Alert variant="success" className="py-2 px-3 small mt-2">{submitSuccess}</Alert>
               )}
+              {dataLoading && (
+                <div className="text-center py-3">
+                  <Spinner animation="border" size="sm" /> Đang tải thông tin giỏ hàng...
+                </div>
+              )}
               <ul className="list-unstyled small mt-3 mb-0">
-                {items.map(i => {
-                  const segments = [];
-                  if (i.sizeName) segments.push(`Size: ${i.sizeName}`);
-                  if (i.crustName) segments.push(`Đế: ${i.crustName}`);
-                  if (Array.isArray(i.optionsDetail) && i.optionsDetail.length > 0) {
-                    const opts = i.optionsDetail
-                      .map(o => `${o.name}${Number(o.extra) > 0 ? ` (+${Number(o.extra).toLocaleString()} đ)` : ''}`)
-                      .join(', ');
-                    segments.push(`Tùy chọn: ${opts}`);
-                  }
-                  const detailLine = segments.length > 0 ? ` (${segments.join('; ')})` : '';
+                {enrichedItems.map(i => {
+                  const isCombo = i.loai === 'CB';
                   return (
                     <li key={i.key} className="border-bottom py-2">
                       <div className="d-flex justify-content-between">
-                        <span className="fw-semibold">{i.name}{detailLine} x {i.soLuong}</span>
-                        <span>{(Number(i.soLuong) * Number(i.unitPrice)).toLocaleString()} đ</span>
+                        <span className="fw-semibold">
+                          {isCombo && <span className="badge bg-danger me-1">COMBO</span>}
+                          {i.displayName}
+                          {i.displayDetails && ` (${i.displayDetails})`} x {i.soLuong}
+                        </span>
+                        <span>{i.displayTotal.toLocaleString()} đ</span>
                       </div>
                     </li>
                   );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar, Nav, Container, Badge, Dropdown } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { Cart3, PersonCircle } from 'react-bootstrap-icons';
+import { Cart3, PersonCircle, HouseDoor, CardList, InfoCircle, GeoAlt, Box } from 'react-bootstrap-icons';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -22,38 +22,55 @@ const Header = () => {
       <Navbar expand="lg" className={styles.navBar}>
         <Container>
           <LinkContainer to="/">
-            <Navbar.Brand className={`text-danger ${styles.brand}`}>
+            <Navbar.Brand className={styles.brand}>
               <img src="/logo.svg" alt="logo" /> 
-              <span className="gradient-text">Secret Pizza</span>
+              <span className="d-none d-md-inline">Secret Pizza</span>
             </Navbar.Brand>
           </LinkContainer>
 
           <Navbar.Toggle aria-controls="main-navbar" />
           <Navbar.Collapse id="main-navbar">
-            <Nav className="me-auto ms-lg-4">
+            <Nav className="me-auto ms-lg-3">
               <LinkContainer to="/">
-                <Nav.Link className={styles.navLink}>Trang chủ</Nav.Link>
+                <Nav.Link className={styles.navLink}>
+                  <HouseDoor size={18} className="me-1" />
+                  <span className="d-none d-lg-inline">Trang chủ</span>
+                </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/menu">
-                <Nav.Link className={styles.navLink}>Menu</Nav.Link>
+                <Nav.Link className={styles.navLink}>
+                  <CardList size={18} className="me-1" />
+                  <span className="d-none d-lg-inline">Menu</span>
+                </Nav.Link>
+              </LinkContainer>
+              <LinkContainer to="/combos">
+                <Nav.Link className={styles.navLink}>
+                  <Box size={18} className="me-1" />
+                  <span className="d-none d-lg-inline">Combo</span>
+                </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/about">
-                <Nav.Link className={styles.navLink}>Giới thiệu</Nav.Link>
+                <Nav.Link className={styles.navLink}>
+                  <InfoCircle size={18} className="me-1" />
+                  <span className="d-none d-lg-inline">Về chúng tôi</span>
+                </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/track-order">
-                <Nav.Link className={styles.navLink}>Theo dõi đơn</Nav.Link>
+                <Nav.Link className={styles.navLink}>
+                  <GeoAlt size={18} className="me-1" />
+                  <span className="d-none d-lg-inline">Đơn hàng</span>
+                </Nav.Link>
               </LinkContainer>
             </Nav>
-            <Nav className="d-flex align-items-center gap-3">
+            <Nav className="d-flex align-items-center gap-2">
               {isAuthenticated ? (
                 <Dropdown align="end">
                   <Dropdown.Toggle 
                     variant="link" 
-                    className={`text-decoration-none d-flex align-items-center ${styles.navLink}`}
-                    style={{ color: 'inherit' }}
+                    className={`text-decoration-none d-flex align-items-center ${styles.userBtn}`}
                   >
-                    <PersonCircle size={24} className="me-2" />
-                    <span>{user?.hoTen || user?.email}</span>
+                    <PersonCircle size={22} className="me-1" />
+                    <span className="d-none d-xl-inline">{user?.hoTen || user?.email}</span>
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <LinkContainer to="/profile/edit">
@@ -68,19 +85,19 @@ const Header = () => {
                 </Dropdown>
               ) : (
                 <LinkContainer to="/login">
-                  <Nav.Link className={`d-flex align-items-center ${styles.navLink}`}>
-                    <PersonCircle size={24} className="me-2" />
-                    <span>Đăng nhập</span>
+                  <Nav.Link className={styles.userBtn}>
+                    <PersonCircle size={22} className="me-1" />
+                    <span className="d-none d-xl-inline">Đăng nhập</span>
                   </Nav.Link>
                 </LinkContainer>
               )}
               
               <LinkContainer to="/cart">
-                <Nav.Link className={`d-flex align-items-center ${styles.cartBadge}`}>
-                  <Cart3 size={22} className="me-2" />
-                  <span className="fw-semibold">Giỏ hàng</span>
+                <Nav.Link className={styles.cartBtn}>
+                  <Cart3 size={20} />
+                  <span className="d-none d-sm-inline ms-2">Giỏ hàng</span>
                   {totalQuantity > 0 && (
-                    <Badge bg="danger" pill className="ms-2">{totalQuantity}</Badge>
+                    <Badge bg="light" text="danger" pill className={styles.cartCount}>{totalQuantity}</Badge>
                   )}
                 </Nav.Link>
               </LinkContainer>

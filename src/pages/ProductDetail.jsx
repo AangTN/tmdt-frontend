@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Container, Row, Col, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Spinner, Card, Button, Form, Badge, Alert, Toast, ToastContainer } from 'react-bootstrap';
 import { api, assetUrl } from '../services/api';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import styles from './ProductDetail.module.css';
 
 function variantPrice(variant) {
@@ -18,12 +19,22 @@ function optionExtraForSize(option, sizeId) {
 const ProductDetail = () => {
   const { id } = useParams();
   const { add } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [food, setFood] = useState(null);
   const [sizeId, setSizeId] = useState(null);
   const [crustId, setCrustId] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState({}); // key: MaTuyChon boolean
   const [qty, setQty] = useState(1);
+
+  // Review states
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -101,33 +112,72 @@ const ProductDetail = () => {
     const optIds = Object.keys(selectedOptions)
       .filter(k => selectedOptions[k])
       .map(k => Number(k));
-    // build display details
-    const sizeName = baseVariant?.Size?.TenSize || null;
-    const crust = crusts.find(c => c.MaDeBanh === crustId);
-    const crustName = crust ? crust.TenDeBanh : null;
-    const allOpts = (food?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
-    const optionsDetail = optIds.map(idNum => {
-      const o = allOpts.find(x => x.MaTuyChon === idNum);
-      return o ? {
-        id: idNum,
-        name: o.TenTuyChon,
-        extra: optionExtraForSize(o, sizeId)
-      } : { id: idNum, name: `Tùy chọn #${idNum}`, extra: 0 };
-    });
     const item = {
+      loai: 'SP',
       monAnId: food.MaMonAn,
       bienTheId: baseVariant?.MaBienThe ?? null,
-      soLuong: qty,
       deBanhId: crustId ?? null,
       tuyChonThem: optIds,
-      unitPrice: basePrice + optionsExtra,
-      name: food.TenMonAn,
-      image: imageUrl,
-      sizeName,
-      crustName,
-      optionsDetail,
+      soLuong: qty
     };
     add(item);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      setReviewError('Vui lòng đăng nhập để viết đánh giá');
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewError('');
+    setReviewSuccess('');
+
+    try {
+      // Build payload in the backend-expected shape and log it for debugging
+      const payloadBackend = {
+        MaMonAn: food.MaMonAn,
+        MaTaiKhoan: user.maNguoiDung,
+        SoSao: Number(reviewRating),
+        NoiDung: reviewContent.trim()
+      };
+
+      // Log the exact JSON we will send to backend
+      // This helps debugging / backend contract verification
+      // (user requested to console.log this structure)
+      // eslint-disable-next-line no-console
+      console.log('Review payload (to backend):', JSON.stringify(payloadBackend, null, 2));
+
+      const res = await api.post('/api/reviews', payloadBackend);
+
+      // Backend returns either { message } or { message, data }
+      const backendMessage = res?.data?.message || 'Đã gửi đánh giá';
+
+      if (res?.data?.data) {
+        // Success path (review created or queued)
+        setReviewSuccess(backendMessage);
+        setShowSuccessToast(true);
+        setReviewContent('');
+        setReviewRating(5);
+        setShowReviewForm(false);
+
+        // Add the newly created review to the reviews list immediately
+        // Backend returns the full review object with TaiKhoan and status
+        const newReview = res.data.data;
+        setFood(prev => ({
+          ...prev,
+          DanhGiaMonAn: [newReview, ...(prev?.DanhGiaMonAn || [])]
+        }));
+      } else {
+        // Backend only returned a message (e.g., cannot review yet)
+        setReviewError(backendMessage);
+      }
+    } catch (error) {
+      setReviewError(error?.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -149,196 +199,427 @@ const ProductDetail = () => {
 
   return (
     <section className={styles.detailContainer}>
-      <Container className="py-5">
+      {/* Success Toast Notification */}
+      <ToastContainer position="bottom-end" className="p-3" style={{ zIndex: 9999 }}>
+        <Toast 
+          show={showSuccessToast} 
+          onClose={() => setShowSuccessToast(false)} 
+          delay={4000} 
+          autohide
+          bg="success"
+        >
+          <Toast.Header>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="me-2">
+              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </svg>
+            <strong className="me-auto">Thành công</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">
+            {reviewSuccess || 'Đánh giá của bạn đã được gửi!'}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+
+      <Container className="py-4">
         {/* Breadcrumb */}
-        <nav className={styles.breadcrumb} aria-label="breadcrumb">
-          <ol>
-            <li><Link to="/">Trang chủ</Link></li>
-            <li><Link to="/menu">Thực đơn</Link></li>
+        <nav className="mb-3" aria-label="breadcrumb">
+          <ol className="breadcrumb mb-0">
+            <li className="breadcrumb-item"><Link to="/" className="text-decoration-none">Trang chủ</Link></li>
+            <li className="breadcrumb-item"><Link to="/menu" className="text-decoration-none">Thực đơn</Link></li>
             {food?.LoaiMonAn && (
-              <li><Link to={`/menu?type=${food.LoaiMonAn.MaLoaiMonAn}`}>{food.LoaiMonAn.TenLoaiMonAn}</Link></li>
+              <li className="breadcrumb-item"><Link to={`/menu?type=${food.LoaiMonAn.MaLoaiMonAn}`} className="text-decoration-none">{food.LoaiMonAn.TenLoaiMonAn}</Link></li>
             )}
-            <li aria-current="page" className={styles.active}>{food.TenMonAn}</li>
+            <li className="breadcrumb-item active">{food.TenMonAn}</li>
           </ol>
         </nav>
-        <Row className="g-5">
+
+        <Row className="g-4">
           {/* Image Section */}
           <Col lg={5}>
-            <div className={styles.imageSection}>
-              <div className={`${styles.mainImage} ratio ratio-1x1`}>
-                <img src={imageUrl} alt={food.TenMonAn} style={{ objectFit: 'cover' }} />
+            <Card className="border-0 shadow-sm sticky-top" style={{ top: '100px' }}>
+              <div className="ratio ratio-1x1">
+                <img 
+                  src={imageUrl} 
+                  alt={food.TenMonAn} 
+                  style={{ 
+                    objectFit: 'cover', 
+                    borderRadius: '12px',
+                    transition: 'transform 0.3s ease'
+                  }} 
+                  className={styles.mainImage}
+                />
               </div>
-              <div className={styles.sideMeta}>
-                {type && <div className={styles.metaItem}><span>Loại:</span> {type.TenLoaiMonAn}</div>}
-                {categories.length > 0 && <div className={styles.metaItem}><span>Danh mục:</span> {categories.map(c => c.TenDanhMuc).join(', ')}</div>}
-              </div>
-            </div>
+            </Card>
           </Col>
 
           {/* Details Section */}
           <Col lg={7}>
-            <h1 className={styles.productTitle}>{food.TenMonAn}</h1>
-            <div className={styles.subToolbar}>
-              <div className={styles.ratingStub}>
+            <div className="mb-4">
+              <h1 className={styles.productTitle}>{food.TenMonAn}</h1>
+              
+              {/* Type, Categories, Rating */}
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                {type && (
+                  <Badge bg="danger" className="px-3 py-2">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                      <path d="M4.285 9.567a.5.5 0 0 1 .683.183A3.498 3.498 0 0 0 8 11.5a3.498 3.498 0 0 0 3.032-1.75.5.5 0 1 1 .866.5A4.498 4.498 0 0 1 8 12.5a4.498 4.498 0 0 1-3.898-2.25.5.5 0 0 1 .183-.683zM7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5zm4 0c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5z"/>
+                    </svg>
+                    {type.TenLoaiMonAn}
+                  </Badge>
+                )}
+                
+                {categories.length > 0 && categories.map(c => (
+                  <Badge key={c.MaDanhMuc} bg="light" text="dark" className="px-2 py-1">
+                    {c.TenDanhMuc}
+                  </Badge>
+                ))}
+                
                 {Number(food?.SoDanhGia || 0) > 0 ? (
-                  <>⭐ {Number(food.SoSaoTrungBinh || 0).toFixed(1)} <span>({Number(food.SoDanhGia)} đánh giá)</span></>
+                  <div className="d-flex align-items-center gap-1">
+                    <span className="text-warning fw-bold">
+                      ⭐ {Number(food.SoSaoTrungBinh || 0).toFixed(1)}
+                    </span>
+                    <span className="text-muted">({Number(food.SoDanhGia)} đánh giá)</span>
+                  </div>
                 ) : (
-                  <span className="text-muted">Chưa có đánh giá</span>
+                  <span className="small text-muted">Chưa có đánh giá</span>
                 )}
               </div>
-              <button className={styles.iconBtn} type="button" aria-label="Yêu thích">❤</button>
-              <button className={styles.iconBtn} type="button" aria-label="Chia sẻ">↗</button>
+              
+              {food.MoTa && (
+                <p className="text-muted mb-3" style={{ fontSize: '1.05rem', lineHeight: '1.7' }}>
+                  {food.MoTa}
+                </p>
+              )}
             </div>
-            
-            <div className={styles.badgeGroup}>
-              {type && <span className={styles.typeBadge}>{type.TenLoaiMonAn}</span>}
-              {categories.map(c => (
-                <span key={c.MaDanhMuc} className={styles.categoryBadge}>{c.TenDanhMuc}</span>
-              ))}
-            </div>
-
-            {food.MoTa && (
-              <p className="text-muted mb-4" style={{ fontSize: '1.15rem', lineHeight: '1.75', fontWeight: 500 }}>
-                {food.MoTa}
-              </p>
-            )}
 
             {/* Size Selection */}
             {sizes.length > 0 && (
-              <div className="mb-4">
-                <h3 className={styles.sectionTitle}>Chọn kích thước</h3>
-                <Row className="g-3">
-                  {sizes.map(s => {
-                    const variant = variants.find(v => v.Size?.MaSize === s.MaSize);
-                    const price = variantPrice(variant);
-                    return (
-                      <Col xs={6} md={4} key={s.MaSize}>
-                        <div
-                          className={`${styles.optionCard} ${sizeId === s.MaSize ? styles.selected : ''}`}
-                          onClick={() => setSizeId(s.MaSize)}
-                        >
-                          <div className={styles.optionLabel}>{s.TenSize}</div>
-                          {price > 0 && (
-                            <div className={styles.optionPrice}>{price.toLocaleString()} đ</div>
-                          )}
-                        </div>
-                      </Col>
-                    );
-                  })}
-                </Row>
-              </div>
+              <Card className="border-0 shadow-sm mb-3">
+                <Card.Body className="p-3">
+                  <h5 className="fw-bold mb-3 d-flex align-items-center">
+                    <svg width="20" height="20" fill="#dc3545" viewBox="0 0 16 16" className="me-2">
+                      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    </svg>
+                    Chọn kích thước <span className="text-danger ms-1">*</span>
+                  </h5>
+                  <Row className="g-2">
+                    {sizes.map(s => {
+                      const variant = variants.find(v => v.Size?.MaSize === s.MaSize);
+                      const price = variantPrice(variant);
+                      const isSelected = sizeId === s.MaSize;
+                      return (
+                        <Col xs={4} key={s.MaSize}>
+                          <div
+                            className={`${styles.sizeOption} ${isSelected ? styles.sizeSelected : ''}`}
+                            onClick={() => setSizeId(s.MaSize)}
+                          >
+                            <div className={styles.sizeName}>{s.TenSize}</div>
+                            {price > 0 && (
+                              <div className={styles.sizePrice}>{price.toLocaleString()}đ</div>
+                            )}
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </Card.Body>
+              </Card>
             )}
 
             {/* Crust Selection */}
             {crusts.length > 0 && (
-              <div className="mb-4">
-                <h3 className={styles.sectionTitle}>Chọn đế bánh</h3>
-                <Row className="g-3">
-                  {crusts.map(d => (
-                    <Col xs={6} md={4} key={d.MaDeBanh}>
-                      <div
-                        className={`${styles.optionCard} ${crustId === d.MaDeBanh ? styles.selected : ''}`}
-                        onClick={() => setCrustId(d.MaDeBanh)}
-                      >
-                        <div className={styles.optionLabel}>{d.TenDeBanh}</div>
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
+              <Card className="border-0 shadow-sm mb-3">
+                <Card.Body className="p-3">
+                  <h5 className="fw-bold mb-3 d-flex align-items-center">
+                    <svg width="20" height="20" fill="#dc3545" viewBox="0 0 16 16" className="me-2">
+                      <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    </svg>
+                    Chọn đế bánh <span className="text-danger ms-1">*</span>
+                  </h5>
+                  <Row className="g-2">
+                    {crusts.map(d => {
+                      const isSelected = crustId === d.MaDeBanh;
+                      return (
+                        <Col xs={4} key={d.MaDeBanh}>
+                          <div
+                            className={`${styles.crustOption} ${isSelected ? styles.crustSelected : ''}`}
+                            onClick={() => setCrustId(d.MaDeBanh)}
+                          >
+                            {d.TenDeBanh}
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </Card.Body>
+              </Card>
             )}
 
             {/* Options */}
             {Object.keys(groupedOptions).length > 0 && (
-              <div className="mb-4">
-                <h3 className={styles.sectionTitle}>Tùy chọn thêm</h3>
-                {Object.entries(groupedOptions).map(([group, opts]) => (
-                  <div key={group} className={styles.optionsGroup}>
-                    <div className={styles.optionsGroupTitle}>{group}</div>
-                    <div className="d-flex flex-column gap-2">
+              <Card className="border-0 shadow-sm mb-3">
+                <Card.Body className="p-3">
+                  <h5 className="fw-bold mb-3 d-flex align-items-center">
+                    <svg width="20" height="20" fill="#dc3545" viewBox="0 0 16 16" className="me-2">
+                      <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z"/>
+                    </svg>
+                    Tùy chọn thêm
+                  </h5>
+                  {Object.entries(groupedOptions).map(([group, opts]) => (
+                    <div key={group} className="mb-3">
+                      <div className="small text-muted fw-semibold mb-2">{group}</div>
                       {opts.map(o => {
                         const extra = optionExtraForSize(o, sizeId);
                         const isChecked = !!selectedOptions[o.MaTuyChon];
                         return (
-                          <div
+                          <Form.Check
                             key={o.MaTuyChon}
-                            className={`${styles.checkboxCard} ${isChecked ? styles.checked : ''}`}
-                            onClick={() => toggleOption(o.MaTuyChon)}
-                          >
-                            <div className="d-flex align-items-center">
-                              <div className={styles.checkIcon}>
-                                {isChecked && '✓'}
+                            type="checkbox"
+                            id={`option-${o.MaTuyChon}`}
+                            checked={isChecked}
+                            onChange={() => toggleOption(o.MaTuyChon)}
+                            label={
+                              <div className="d-flex justify-content-between align-items-center w-100">
+                                <span>{o.TenTuyChon}</span>
+                                {extra > 0 && (
+                                  <span className="text-danger fw-semibold">+{extra.toLocaleString()}đ</span>
+                                )}
                               </div>
-                              <div className={styles.checkboxLabel}>{o.TenTuyChon}</div>
-                            </div>
-                            {extra > 0 && (
-                              <div className={styles.checkboxPrice}>
-                                +{extra.toLocaleString()} đ
-                              </div>
-                            )}
-                          </div>
+                            }
+                            className="mb-2"
+                          />
                         );
                       })}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </Card.Body>
+              </Card>
             )}
 
             {/* Price and Add to Cart */}
-            <div className={styles.priceSection}>
-              <div className={styles.priceLabel}>Tổng giá trị</div>
-              <div className={styles.currentPrice}>
-                {total.toLocaleString()} đ
-              </div>
+            <Card className="border-0 shadow-sm bg-light">
+              <Card.Body className="p-4">
+                <Row className="align-items-center g-3">
+                  <Col md={4}>
+                    <div className="small text-muted mb-1">Tổng giá trị</div>
+                    <div className={styles.totalPrice}>
+                      {total.toLocaleString()} đ
+                    </div>
+                  </Col>
+                  
+                  <Col md={3}>
+                    <div className="small text-muted mb-1">Số lượng</div>
+                    <div className="d-flex align-items-center gap-2">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="rounded-circle"
+                        style={{ width: 36, height: 36 }}
+                        onClick={() => setQty(Math.max(1, qty - 1))}
+                      >
+                        −
+                      </Button>
+                      <div className="fw-bold fs-5" style={{ minWidth: 30, textAlign: 'center' }}>{qty}</div>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="rounded-circle"
+                        style={{ width: 36, height: 36 }}
+                        onClick={() => setQty(qty + 1)}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </Col>
 
-              <div className={styles.quantityControl}>
-                <button className={styles.qtyBtn} onClick={() => setQty(Math.max(1, qty - 1))}>
-                  −
-                </button>
-                <div className={styles.qtyDisplay}>{qty}</div>
-                <button className={styles.qtyBtn} onClick={() => setQty(qty + 1)}>
-                  +
-                </button>
-              </div>
-
-              <button className={styles.addToCartBtn} onClick={addToCart}>
-                <span style={{ position: 'relative', zIndex: 1 }}>
-                  🛒 Thêm vào giỏ hàng
-                </span>
-              </button>
-            </div>
+                  <Col md={5}>
+                    <Button 
+                      variant="danger" 
+                      size="lg" 
+                      className="w-100 fw-bold"
+                      onClick={addToCart}
+                    >
+                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="me-2">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                      </svg>
+                      Thêm vào giỏ
+                    </Button>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
           </Col>
         </Row>
 
         {/* Reviews Section */}
-        {Array.isArray(food?.DanhGiaMonAn) && food.DanhGiaMonAn.length > 0 && (
-          <div className="mt-5">
-            <h3 className={styles.sectionTitle}>Đánh giá từ khách hàng</h3>
-            <div className="d-flex flex-column gap-3">
-              {food.DanhGiaMonAn.map(r => (
-                <div key={r.MaDanhGiaMonAn} className="border rounded p-3">
-                  <div className="d-flex justify-content-between align-items-center mb-1">
-                    <div className="fw-semibold">Ẩn danh</div>
-                    <div className="small text-muted">{new Date(r.NgayDanhGia).toLocaleDateString('vi-VN')}</div>
-                  </div>
-                  <div className="mb-1" style={{ color: '#ff4d4f' }}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i}>{i < Number(r.SoSao || 0) ? '★' : '☆'}</span>
+        <Row className="mt-5">
+          <Col lg={12}>
+            <Card className="border-0 shadow-sm">
+              <Card.Body className="p-4">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <h3 className="mb-0 fw-bold">
+                    <svg width="24" height="24" fill="#dc3545" viewBox="0 0 16 16" className="me-2">
+                      <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                    </svg>
+                    Đánh giá sản phẩm
+                  </h3>
+                  
+                  {isAuthenticated ? (
+                    <Button 
+                      variant="outline-danger"
+                      onClick={() => setShowReviewForm(!showReviewForm)}
+                    >
+                      {showReviewForm ? 'Đóng' : 'Viết đánh giá'}
+                    </Button>
+                  ) : (
+                    <Link to="/login">
+                      <Button variant="outline-secondary">
+                        Đăng nhập để đánh giá
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+
+                {/* Review Form */}
+                {showReviewForm && isAuthenticated && (
+                  <Card className="bg-light border-0 mb-4">
+                    <Card.Body className="p-3">
+                      <Form onSubmit={handleSubmitReview}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-semibold">Đánh giá của bạn</Form.Label>
+                          <div className="d-flex gap-2 mb-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                onClick={() => setReviewRating(star)}
+                                style={{
+                                  fontSize: '2rem',
+                                  cursor: 'pointer',
+                                  color: star <= reviewRating ? '#ffc107' : '#dee2e6'
+                                }}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-semibold">Nhận xét</Form.Label>
+                          <Form.Control
+                            as="textarea"
+                            rows={4}
+                            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                            value={reviewContent}
+                            onChange={(e) => setReviewContent(e.target.value)}
+                            required
+                          />
+                        </Form.Group>
+
+                        {reviewError && (
+                          <Alert variant="danger" className="py-2 small">{reviewError}</Alert>
+                        )}
+                        {reviewSuccess && (
+                          <Alert variant="success" className="py-2 small">{reviewSuccess}</Alert>
+                        )}
+
+                        <div className="d-flex gap-2">
+                          <Button
+                            type="submit"
+                            variant="danger"
+                            disabled={reviewSubmitting || !reviewContent.trim()}
+                          >
+                            {reviewSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline-secondary"
+                            onClick={() => setShowReviewForm(false)}
+                          >
+                            Hủy
+                          </Button>
+                        </div>
+                      </Form>
+                    </Card.Body>
+                  </Card>
+                )}
+
+                {/* Reviews List */}
+                {Array.isArray(food?.DanhGiaMonAn) && food.DanhGiaMonAn.length > 0 ? (
+                  <div className="d-flex flex-column gap-3">
+                    {food.DanhGiaMonAn.map(r => (
+                      <Card key={r.MaDanhGiaMonAn} className="border-0 bg-light">
+                        <Card.Body className="p-3">
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <div className="d-flex align-items-center gap-2">
+                              <div className="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }}>
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                  <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                  <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                                </svg>
+                              </div>
+                              <div>
+                                <div className="d-flex align-items-center gap-2">
+                                  <span className="fw-semibold">{r.TaiKhoan?.NguoiDung?.HoTen || r.NguoiDung?.HoTen || 'Khách hàng'}</span>
+                                  {r.TrangThai === 'Chờ duyệt' && (
+                                    <Badge bg="warning" text="dark" className="px-2 py-1">
+                                      Chờ duyệt
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="small text-muted">
+                                  {new Date(r.NgayDanhGia).toLocaleDateString('vi-VN', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="text-warning" style={{ fontSize: '1.1rem' }}>
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <span key={i}>{i < Number(r.SoSao || 0) ? '★' : '☆'}</span>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <p className="mb-0 text-muted" style={{ lineHeight: '1.6' }}>
+                            {r.NoiDung}
+                          </p>
+                        </Card.Body>
+                      </Card>
                     ))}
                   </div>
-                  <div className="text-muted">{r.NoiDung}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                ) : (
+                  <div className="text-center py-5 text-muted">
+                    <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16" className="mb-3 opacity-50">
+                      <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                    </svg>
+                    <div className="fs-5">Chưa có đánh giá nào</div>
+                    <div className="small">Hãy là người đầu tiên đánh giá sản phẩm này!</div>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </Container>
+
       {/* Mobile Sticky Bar */}
       <div className={styles.mobileBar}>
-        <div className={styles.mobilePrice}>{total.toLocaleString()} đ</div>
-        <div className={styles.mobileQty}>SL: {qty}</div>
-        <button onClick={addToCart} className={styles.mobileAddBtn}>Thêm vào giỏ</button>
+        <div>
+          <div className="small text-muted">Tổng</div>
+          <div className={styles.mobilePrice}>{total.toLocaleString()}đ</div>
+        </div>
+        <Button variant="danger" size="lg" onClick={addToCart} className="flex-grow-1">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          </svg>
+          Thêm • SL: {qty}
+        </Button>
       </div>
     </section>
   );

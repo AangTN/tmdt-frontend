@@ -7,9 +7,12 @@ import MenuPage from './pages/MenuPage.jsx';
 import CartPage from './pages/CartPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
 import OrderSuccessPage from './pages/OrderSuccessPage.jsx';
+import PaymentFailedPage from './pages/PaymentFailedPage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
 import TrackOrderPage from './pages/TrackOrderPage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
+import CombosPage from './pages/CombosPage.jsx';
+import ComboDetailPage from './pages/ComboDetailPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ProfileEditPage from './pages/ProfileEditPage.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
@@ -38,9 +41,12 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/foods/:id" element={<ProductDetail />} />
+          <Route path="/combos" element={<CombosPage />} />
+          <Route path="/combos/:id" element={<ComboDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-success" element={<OrderSuccessPage />} />
+          <Route path="/payment-failed" element={<PaymentFailedPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />

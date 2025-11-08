@@ -84,3 +84,26 @@ export async function fetchBranches() {
     return res.data;
   });
 }
+
+// Combos
+export async function fetchCombos() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/combos');
+    return res.data;
+  });
+}
+
+export async function fetchComboById(id) {
+  return retryRequest(async () => {
+    const res = await api.get(`/api/combos/${id}`);
+    return res.data;
+  });
+}
+
+// Vouchers
+export async function fetchVoucherByCode(code) {
+  return retryRequest(async () => {
+    const res = await api.get(`/api/vouchers/${code}`);
+    return res.data;
+  });
+}
