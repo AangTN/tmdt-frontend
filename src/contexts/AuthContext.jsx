@@ -25,6 +25,11 @@ function authReducer(state, action) {
         isAuthenticated: true,
         loading: false
       };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: action.payload
+      };
     case 'LOGOUT':
       return {
         ...state,
@@ -37,42 +42,78 @@ function authReducer(state, action) {
   }
 }
 
+// Flag to prevent double auto-login in React StrictMode
+let autoLoginAttempted = false;
+
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  // Auto-login ONCE on mount using saved credentials
   useEffect(() => {
-    // Load user from localStorage on mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    // Prevent double execution in React StrictMode
+    if (autoLoginAttempted) {
+      console.log('Auto-login skipped (already attempted)');
+      return;
+    }
+    autoLoginAttempted = true;
+    console.log('Auto-login starting...');
+    
+    (async () => {
       try {
-        const user = JSON.parse(storedUser);
-        dispatch({ type: 'INIT', payload: user });
+        const raw = localStorage.getItem('auth:credentials');
+        
+        if (!raw) {
+          // No credentials saved
+          console.log('No saved credentials found');
+          dispatch({ type: 'INIT', payload: null });
+          return;
+        }
+        
+        const creds = JSON.parse(raw);
+        if (!creds?.email || !creds?.matKhau) {
+          console.log('Invalid credentials format');
+          dispatch({ type: 'INIT', payload: null });
+          return;
+        }
+        
+        // Auto-login with saved credentials
+        console.log('Calling auto-login API...');
+        const res = await api.post('/api/auth/login', { 
+          email: creds.email, 
+          matKhau: creds.matKhau 
+        });
+        
+        console.log('Auto-login response:', res.status, res.data);
+        
+        if (res.data?.user) {
+          console.log('Auto-login SUCCESS, user:', res.data.user);
+          dispatch({ type: 'INIT', payload: res.data.user });
+        } else {
+          // Login failed but KEEP credentials (might be temporary server error)
+          console.log('Auto-login FAILED, no user data');
+          dispatch({ type: 'INIT', payload: null });
+        }
       } catch (e) {
+        // Login error but KEEP credentials (might be network issue)
+        console.error('Auto-login error:', e);
         dispatch({ type: 'INIT', payload: null });
       }
-    } else {
-      dispatch({ type: 'INIT', payload: null });
-    }
-  }, []);
+    })();
+  }, []); // Empty dependency - only run ONCE on mount
 
-  const login = (userData) => {
-    // Backwards-compatible local login helper (keeps existing callers working)
-    localStorage.setItem('user', JSON.stringify(userData));
-    dispatch({ type: 'LOGIN', payload: userData });
-  };
-
-  // Real login that talks to backend
-  const loginWithApi = async ({ email, matKhau }) => {
+  // Login function - only save credentials to localStorage
+  const login = async ({ email, matKhau }) => {
     try {
       const res = await api.post('/api/auth/login', { email, matKhau });
       const data = res.data;
+      
       if (res.status === 200 && data && data.user) {
-        // Persist user and credentials (note: storing password locally is sensitive; ensure secure context)
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // ONLY save credentials (email + password), NOT user data
         localStorage.setItem('auth:credentials', JSON.stringify({ email, matKhau }));
         dispatch({ type: 'LOGIN', payload: data.user });
         return { ok: true, user: data.user, message: data.message };
       }
+      
       return { ok: false, message: data?.message || 'Đăng nhập thất bại' };
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Lỗi khi đăng nhập';
@@ -81,15 +122,10 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    try {
-      // Clear all app-related storage to ensure full sign-out
-      localStorage.removeItem('user');
-      localStorage.removeItem('auth:credentials');
-      localStorage.removeItem('cart');
-      localStorage.removeItem('cart:compact');
-      localStorage.removeItem('adminSession');
-      // Note: We intentionally do NOT remove 'adminCredentials' to preserve admin bootstrap, unless needed
-    } catch {}
+    // Clear credentials to prevent auto-login next time
+    localStorage.removeItem('auth:credentials');
+    localStorage.removeItem('cart');
+    localStorage.removeItem('cart:compact');
     dispatch({ type: 'LOGOUT' });
   };
 
@@ -98,12 +134,14 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.post('/api/auth/register', { email, hoTen, matKhau, soDienThoai });
       const data = res.data;
-      // If backend returns a user object on register, persist and set auth
+      
+      // If backend returns a user object on register, save credentials and set auth
       if (res.status === 200 && data && data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('auth:credentials', JSON.stringify({ email, matKhau }));
         dispatch({ type: 'LOGIN', payload: data.user });
         return { ok: true, user: data.user, message: data.message };
       }
+      
       return { ok: false, message: data?.message || 'Đăng ký thất bại' };
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Lỗi khi đăng ký';
@@ -111,42 +149,19 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Auto-login on mount using saved credentials if available
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        if (state.isAuthenticated) return; // already logged in from persisted user
-        const raw = localStorage.getItem('auth:credentials');
-        if (!raw) return;
-        const creds = JSON.parse(raw);
-        if (!creds?.email || !creds?.matKhau) return;
-        const res = await api.post('/api/auth/login', { email: creds.email, matKhau: creds.matKhau });
-        const data = res.data;
-        if (!cancelled && res.status === 200 && data && data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          dispatch({ type: 'LOGIN', payload: data.user });
-        }
-      } catch (e) {
-        // Optional: clear bad credentials
-        // localStorage.removeItem('auth:credentials');
-      }
-    })();
-    return () => { cancelled = true; };
-    // re-run only if auth state changes from logged-out
-  }, [state.isAuthenticated]);
+  const updateUser = (updatedUserData) => {
+    dispatch({ type: 'UPDATE_USER', payload: updatedUserData });
+  };
 
   return (
     <AuthContext.Provider value={{ 
       user: state.user, 
       isAuthenticated: state.isAuthenticated,
       loading: state.loading,
-      // primary login function: talks to backend
-      login: loginWithApi,
-      // convenience local login helper (if some callers still pass a user object)
-      loginLocal: login,
+      login,
       logout,
       register,
+      updateUser,
     }}>
       {children}
     </AuthContext.Provider>

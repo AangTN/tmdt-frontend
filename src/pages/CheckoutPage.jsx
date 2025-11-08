@@ -94,17 +94,6 @@ const CheckoutPage = () => {
     return () => { active = false; };
   }, [items.length]);
 
-  useEffect(() => {
-    // Auto-fill if user is logged in
-    if (isAuthenticated && user) {
-      setFormData(prev => ({
-        ...prev,
-        hoTen: user.hoTen || '',
-        soDienThoai: user.soDienThoai || ''
-      }));
-    }
-  }, [isAuthenticated, user]);
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -127,6 +116,51 @@ const CheckoutPage = () => {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Prefill user data after provinces loaded
+  useEffect(() => {
+    if (!user || provinces.length === 0) return;
+    
+    // Fill basic info and address text fields
+    setFormData(prev => ({
+      ...prev,
+      hoTen: user.hoTen || '',
+      soDienThoai: user.soDienThoai || '',
+      soNhaDuong: user.soNhaDuong || '',
+      thanhPho: user.thanhPho || '',
+      quanHuyen: user.quanHuyen || '',
+      phuongXa: user.phuongXa || ''
+    }));
+
+    // Find matching province to load dropdowns
+    const matchedProvince = provinces.find(p => p.name === user.thanhPho);
+    if (!matchedProvince) return;
+
+    // Load districts for matched province
+    (async () => {
+      setLocLoading(s => ({ ...s, d: true }));
+      try {
+        const ds = await getDistricts(matchedProvince.code);
+        setDistricts(ds);
+        
+        // Find matching district
+        const matchedDistrict = ds.find(d => d.name === user.quanHuyen);
+        if (!matchedDistrict) {
+          setLocLoading(s => ({ ...s, d: false }));
+          return;
+        }
+
+        // Load wards for matched district
+        setLocLoading(s => ({ ...s, w: true }));
+        const ws = await getWards(matchedDistrict.code);
+        setWards(ws);
+      } catch (err) {
+        console.error('Failed to load location data:', err);
+      } finally {
+        setLocLoading(s => ({ ...s, d: false, w: false }));
+      }
+    })();
+  }, [user, provinces]);
 
   const handleProvinceSelect = async (e) => {
     const code = e.target.value;

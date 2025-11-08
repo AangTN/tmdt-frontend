@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Container, Row, Col, Button, Spinner, Carousel } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import { fetchFoods, fetchTypes, fetchCategories, fetchBanners, assetUrl } from '../services/api';
 import styles from './HomePage.module.css';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [foods, setFoods] = useState([]);
   const [types, setTypes] = useState([]);
@@ -22,11 +23,14 @@ const HomePage = () => {
           fetchCategories(),
           fetchBanners(),
         ]);
+        console.log('Raw banners from API:', b);
         if (mounted) {
           setFoods(Array.isArray(f) ? f : []);
           setTypes(Array.isArray(t) ? t : []);
           setCategories(Array.isArray(c) ? c : []);
-          setBanners(Array.isArray(b) ? b : []);
+          const bannerData = Array.isArray(b?.data) ? b.data : (Array.isArray(b) ? b : []);
+          setBanners(bannerData);
+          console.log('Banners set to state:', bannerData);
         }
       } finally {
         setLoading(false);
@@ -36,7 +40,6 @@ const HomePage = () => {
   }, []);
 
   const featured = useMemo(() => foods.slice(0, 8), [foods]);
-  const bannerUrls = useMemo(() => (Array.isArray(banners) ? banners : []).map(p => assetUrl(p)), [banners]);
   const firstTypeId = useMemo(() => (types && types.length > 0 ? types[0].MaLoaiMonAn : null), [types]);
 
   return (
@@ -45,20 +48,29 @@ const HomePage = () => {
       <section className={styles.bannerSection}>
         <Container fluid className="px-0">
           <div className={`${styles.bannerWrap} ${styles.bannerCarousel}`}>
-            {bannerUrls.length > 0 ? (
+            {banners.length > 0 ? (
               <Carousel interval={3500} controls indicators fade pause="hover" touch wrap>
-                {bannerUrls.map((url, idx) => (
-                  <Carousel.Item key={idx}>
-                    <div className={styles.bannerFrame}>
-                      <img
-                        src={url}
-                        alt={`Banner ${idx + 1}`}
-                        loading="lazy"
-                        onError={(e)=>{ try { e.currentTarget.onerror=null; e.currentTarget.src='/placeholder.svg'; } catch{} }}
-                      />
-                    </div>
-                  </Carousel.Item>
-                ))}
+                {banners.map((banner, idx) => {
+                  const imageUrl = `${import.meta.env.VITE_API_BASE_URL}${banner.AnhBanner}`;
+                  console.log(`Banner ${idx + 1}:`, banner);
+                  console.log(`Image URL: ${imageUrl}`);
+                  return (
+                    <Carousel.Item key={idx}>
+                      <div 
+                        className={styles.bannerFrame} 
+                        onClick={() => banner.DuongDan && navigate(banner.DuongDan)}
+                        style={{ cursor: banner.DuongDan ? 'pointer' : 'default' }}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Banner ${idx + 1}`}
+                          loading="lazy"
+                          onError={(e)=>{ try { e.currentTarget.onerror=null; e.currentTarget.src='/placeholder.svg'; } catch{} }}
+                        />
+                      </div>
+                    </Carousel.Item>
+                  );
+                })}
               </Carousel>
             ) : (
               <div className={styles.bannerFrame}>
