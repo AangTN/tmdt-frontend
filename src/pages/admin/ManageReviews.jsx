@@ -3,6 +3,8 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
+import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
+import { ReviewCard } from '../../components/admin/AdminTableCard';
 
 const mockReviews = [
   {
@@ -60,6 +62,39 @@ const ManageReviews = () => {
     return 'Error';
   };
 
+  // Action handlers
+  const handleReply = (reviewId) => {
+    console.log('Reply to review:', reviewId);
+    // TODO: Implement reply functionality
+  };
+
+  const handleHide = (reviewId) => {
+    console.log('Hide review:', reviewId);
+    // TODO: Implement hide functionality
+  };
+
+  const handleView = (reviewId) => {
+    console.log('View review details:', reviewId);
+    // TODO: Implement view functionality
+  };
+
+  // Card component for responsive view
+  const cardComponent = (
+    <div className={styles.adminTableCards}>
+      {filteredReviews.map((review, index) => (
+        <ReviewCard
+          key={review.id}
+          data={review}
+          onReply={() => handleReply(review.id)}
+          onHide={() => handleHide(review.id)}
+          onView={() => handleView(review.id)}
+          index={index}
+          animate={true}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="admin-animate-fade-in">
       {/* Header Section */}
@@ -110,166 +145,183 @@ const ManageReviews = () => {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
-        <div className={styles.tableResponsive}>
-          <table className={`${styles.table} ${styles.tableRowHover}`}>
-            <thead className={styles.tableHeaderPrimary}>
-              <tr>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Mã đánh giá</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Mã đơn</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Khách hàng</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Số sao</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Nhận xét</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 160 }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredReviews.length === 0 ? (
+      {/* Table Section with Enhanced Responsive Container */}
+      <AdminResponsiveContainer 
+        data={filteredReviews}
+        loading={false}
+        empty={filteredReviews.length === 0}
+        cardComponent={cardComponent}
+        onResponsiveChange={(responsiveInfo) => {
+          console.log('Reviews view changed:', responsiveInfo);
+        }}
+        accessibility={{
+          announceViewChanges: true,
+          viewChangeMessage: 'Reviews view changed to {view}'
+        }}
+        className="reviews-responsive-container"
+      >
+        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+          <div className={styles.tableResponsive}>
+            <table className={`${styles.table} ${styles.tableRowHover}`}>
+              <thead className={styles.tableHeaderPrimary}>
                 <tr>
-                  <td colSpan={6}>
-                    <div className={styles.tableEmpty}>
-                      <div className={styles.tableEmptyIcon}>⭐</div>
-                      <div className={styles.tableEmptyTitle}>Chưa có đánh giá phù hợp</div>
-                      <div className={styles.tableEmptyDescription}>
-                        {search || ratingFilter !== 'all' 
-                          ? 'Thử thay đổi bộ lọc tìm kiếm' 
-                          : 'Chưa có đánh giá nào từ khách hàng'}
-                      </div>
-                      <button 
-                        className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
-                        onClick={() => {
-                          setSearch('');
-                          setRatingFilter('all');
-                        }}
-                      >
-                        Xóa bộ lọc
-                      </button>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Mã đánh giá</span>
+                      <span className={styles.tableSortIcon}></span>
                     </div>
-                  </td>
+                  </th>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Mã đơn</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Khách hàng</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Số sao</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Nhận xét</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 160 }}>Thao tác</th>
                 </tr>
-              ) : (
-                filteredReviews.map((review, index) => (
-                  <tr key={review.id} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
-                    <td className={styles.tableCellBold}>
-                      <span className={`${styles.tableBadge} ${styles.tableBadgeInfo}`}>
-                        {review.id}
-                      </span>
-                    </td>
-                    <td>
-                      <div className={styles.tableCellMuted}>
-                        🧾 {review.orderId}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="d-flex align-items-center gap-3">
-                        <div 
-                          className="rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: 36, 
-                            height: 36,
-                            background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
-                            color: 'white',
-                            fontSize: 14,
-                            fontWeight: 'bold'
+              </thead>
+              <tbody>
+                {filteredReviews.length === 0 ? (
+                  <tr>
+                    <td colSpan={6}>
+                      <div className={styles.tableEmpty}>
+                        <div className={styles.tableEmptyIcon}>⭐</div>
+                        <div className={styles.tableEmptyTitle}>Chưa có đánh giá phù hợp</div>
+                        <div className={styles.tableEmptyDescription}>
+                          {search || ratingFilter !== 'all' 
+                            ? 'Thử thay đổi bộ lọc tìm kiếm' 
+                            : 'Chưa có đánh giá nào từ khách hàng'}
+                        </div>
+                        <button 
+                          className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                          onClick={() => {
+                            setSearch('');
+                            setRatingFilter('all');
                           }}
                         >
-                          {review.customer.charAt(0)}
-                        </div>
-                        <div>
-                          <div className={styles.tableCellBold}>{review.customer}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="d-flex align-items-center gap-2">
-                        <div className="d-flex">
-                          {getRatingStars(review.rating)}
-                        </div>
-                        <span className={`${styles.tableBadge} ${styles[`tableBadge${getRatingVariant(review.rating)}`]}`}>
-                          {review.rating}/5
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={`${styles.tableCellMuted} text-truncate`} style={{ maxWidth: 300 }}>
-                        {review.comment}
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.tableActions}>
-                        <button 
-                          className={`${styles.tableAction} ${styles.tableActionSuccess}`}
-                          title="Trả lời"
-                        >
-                          💬
-                        </button>
-                        <button 
-                          className={`${styles.tableAction} ${styles.tableActionDanger}`}
-                          title="Ẩn đánh giá"
-                        >
-                          👁️‍🗨️
+                          Xóa bộ lọc
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Table Footer with Pagination */}
-        {filteredReviews.length > 0 && (
-          <div className={styles.tablePagination}>
-            <div className={styles.tablePaginationInfo}>
-              Hiển thị {filteredReviews.length} trên {mockReviews.length} đánh giá
-            </div>
-            <div className={styles.tablePaginationControls}>
-              <button 
-                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
-                disabled
-              >
-                ←
-              </button>
-              <span className="px-3 py-1">
-                <strong>1</strong> / 1
-              </span>
-              <button 
-                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
-                disabled
-              >
-                →
-              </button>
-            </div>
+                ) : (
+                  filteredReviews.map((review, index) => (
+                    <tr key={review.id} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
+                      <td className={styles.tableCellBold}>
+                        <span className={`${styles.tableBadge} ${styles.tableBadgeInfo}`}>
+                          {review.id}
+                        </span>
+                      </td>
+                      <td>
+                        <div className={styles.tableCellMuted}>
+                          🧾 {review.orderId}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-3">
+                          <div 
+                            className="rounded-circle d-flex align-items-center justify-content-center"
+                            style={{ 
+                              width: 36, 
+                              height: 36,
+                              background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+                              color: 'white',
+                              fontSize: 14,
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            {review.customer.charAt(0)}
+                          </div>
+                          <div>
+                            <div className={styles.tableCellBold}>{review.customer}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <div className="d-flex">
+                            {getRatingStars(review.rating)}
+                          </div>
+                          <span className={`${styles.tableBadge} ${styles[`tableBadge${getRatingVariant(review.rating)}`]}`}>
+                            {review.rating}/5
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`${styles.tableCellMuted} text-truncate`} style={{ maxWidth: 300 }}>
+                          {review.comment}
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.tableActions}>
+                          <button 
+                            className={`${styles.tableAction} ${styles.tableActionSuccess}`}
+                            title="Trả lời"
+                            onClick={() => handleReply(review.id)}
+                          >
+                            💬
+                          </button>
+                          <button 
+                            className={`${styles.tableAction} ${styles.tableActionDanger}`}
+                            title="Ẩn đánh giá"
+                            onClick={() => handleHide(review.id)}
+                          >
+                            👁️‍🗨️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+          
+          {/* Table Footer with Pagination */}
+          {filteredReviews.length > 0 && (
+            <div className={styles.tablePagination}>
+              <div className={styles.tablePaginationInfo}>
+                Hiển thị {filteredReviews.length} trên {mockReviews.length} đánh giá
+              </div>
+              <div className={styles.tablePaginationControls}>
+                <button 
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                  disabled
+                >
+                  ←
+                </button>
+                <span className="px-3 py-1">
+                  <strong>1</strong> / 1
+                </span>
+                <button 
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                  disabled
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </AdminResponsiveContainer>
     </div>
   );
 };

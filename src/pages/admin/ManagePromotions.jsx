@@ -3,6 +3,8 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
+import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
+import { BusinessCard } from '../../components/admin/AdminTableCard';
 
 const initialPromotions = [
   {
@@ -71,6 +73,41 @@ const ManagePromotions = () => {
     return `${promo.value.toLocaleString()} đ`;
   };
 
+  // Action handlers
+  const handleEdit = (promotionCode) => {
+    console.log('Edit promotion:', promotionCode);
+    // TODO: Implement edit functionality
+  };
+
+  const handleToggleStatus = (promotionCode) => {
+    console.log('Toggle promotion status:', promotionCode);
+    // TODO: Implement toggle status functionality
+  };
+
+  const handleDelete = (promotionCode) => {
+    console.log('Delete promotion:', promotionCode);
+    // TODO: Implement delete functionality
+  };
+
+  // Card component for responsive view
+  const cardComponent = (
+    <div className={styles.adminTableCards}>
+      {filteredPromotions.map((promotion, index) => (
+        <BusinessCard
+          key={promotion.code}
+          data={promotion}
+          type="promotion"
+          onEdit={() => handleEdit(promotion.code)}
+          onToggleStatus={() => handleToggleStatus(promotion.code)}
+          onDelete={() => handleDelete(promotion.code)}
+          index={index}
+          animate={true}
+          compact={true}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="admin-animate-fade-in">
       {/* Header Section */}
@@ -122,184 +159,201 @@ const ManagePromotions = () => {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
-        <div className={styles.tableResponsive}>
-          <table className={`${styles.table} ${styles.tableRowHover}`}>
-            <thead className={styles.tableHeaderPrimary}>
-              <tr>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Mã</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th>
-                  <div className={styles.tableSortable}>
-                    <span>Tên chương trình</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 100 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Giá trị</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Đơn tối thiểu</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 180 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Thời gian</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 100 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Lượt sử dụng</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 120 }}>
-                  <div className={styles.tableSortable}>
-                    <span>Trạng thái</span>
-                    <span className={styles.tableSortIcon}></span>
-                  </div>
-                </th>
-                <th style={{ width: 180 }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPromotions.length === 0 ? (
+      {/* Table Section with Enhanced Responsive Container */}
+      <AdminResponsiveContainer 
+        data={filteredPromotions}
+        loading={false}
+        empty={filteredPromotions.length === 0}
+        cardComponent={cardComponent}
+        onResponsiveChange={(responsiveInfo) => {
+          console.log('Promotions view changed:', responsiveInfo);
+        }}
+        accessibility={{
+          announceViewChanges: true,
+          viewChangeMessage: 'Promotions view changed to {view}'
+        }}
+        className="promotions-responsive-container"
+      >
+        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+          <div className={styles.tableResponsive}>
+            <table className={`${styles.table} ${styles.tableRowHover}`}>
+              <thead className={styles.tableHeaderPrimary}>
                 <tr>
-                  <td colSpan={8}>
-                    <div className={styles.tableEmpty}>
-                      <div className={styles.tableEmptyIcon}>🎁</div>
-                      <div className={styles.tableEmptyTitle}>Không tìm thấy khuyến mãi</div>
-                      <div className={styles.tableEmptyDescription}>
-                        {query || statusFilter !== 'all' 
-                          ? 'Thử thay đổi bộ lọc tìm kiếm' 
-                          : 'Chưa có chương trình khuyến mãi nào'}
-                      </div>
-                      <button 
-                        className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
-                        onClick={() => {
-                          setQuery('');
-                          setStatusFilter('all');
-                        }}
-                      >
-                        Xóa bộ lọc
-                      </button>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Mã</span>
+                      <span className={styles.tableSortIcon}></span>
                     </div>
-                  </td>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
+                      <span>Tên chương trình</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 100 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Giá trị</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Đơn tối thiểu</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 180 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Thời gian</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 100 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Lượt sử dụng</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 120 }}>
+                    <div className={styles.tableSortable}>
+                      <span>Trạng thái</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th style={{ width: 180 }}>Thao tác</th>
                 </tr>
-              ) : (
-                filteredPromotions.map((promo, index) => (
-                  <tr key={promo.code} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
-                    <td className={styles.tableCellBold}>
-                      <span className={`${styles.tableBadge} ${styles.tableBadgeInfo}`}>
-                        {promo.code}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="d-flex align-items-center gap-3">
-                        <div 
-                          className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: 40, 
-                            height: 40,
-                            background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
+              </thead>
+              <tbody>
+                {filteredPromotions.length === 0 ? (
+                  <tr>
+                    <td colSpan={8}>
+                      <div className={styles.tableEmpty}>
+                        <div className={styles.tableEmptyIcon}>🎁</div>
+                        <div className={styles.tableEmptyTitle}>Không tìm thấy khuyến mãi</div>
+                        <div className={styles.tableEmptyDescription}>
+                          {query || statusFilter !== 'all' 
+                            ? 'Thử thay đổi bộ lọc tìm kiếm' 
+                            : 'Chưa có chương trình khuyến mãi nào'}
+                        </div>
+                        <button 
+                          className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                          onClick={() => {
+                            setQuery('');
+                            setStatusFilter('all');
                           }}
                         >
-                          <span style={{ fontSize: 18 }}>🎁</span>
-                        </div>
-                        <div>
-                          <div className={styles.tableCellBold}>{promo.title}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={`${styles.tableCellBold} ${styles.tableCellSuccess}`}>
-                        {formatDiscount(promo)}
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.tableCellMuted}>
-                        {promo.minOrder.toLocaleString()} đ
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.tableCellMuted}>
-                        <small>{promo.startDate}</small>
-                        <br />
-                        <small>→ {promo.endDate}</small>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.tableCellBold}>
-                        {promo.usage}
-                      </div>
-                      <small className={styles.tableCellMuted}>lượt</small>
-                    </td>
-                    <td>
-                      <span className={`${styles.tableBadge} ${styles[`tableBadge${statusVariant[promo.status]}`]}`}>
-                        <span className="me-1">{statusIcons[promo.status]}</span>
-                        {promo.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className={styles.tableActions}>
-                        <button 
-                          className={`${styles.tableAction} ${styles.tableActionSuccess}`}
-                          title="Chỉnh sửa"
-                        >
-                          ✏️
-                        </button>
-                        <button 
-                          className={`${promo.status === 'Đang áp dụng' ? styles.tableActionDanger : styles.tableActionWarning}`}
-                          title={promo.status === 'Đang áp dụng' ? 'Ngừng kích hoạt' : 'Kích hoạt lại'}
-                        >
-                          {promo.status === 'Đang áp dụng' ? '⏸️' : '▶️️'}
+                          Xóa bộ lọc
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Table Footer with Pagination */}
-        {filteredPromotions.length > 0 && (
-          <div className={styles.tablePagination}>
-            <div className={styles.tablePaginationInfo}>
-              Hiển thị {filteredPromotions.length} trên {promotions.length} khuyến mãi
-            </div>
-            <div className={styles.tablePaginationControls}>
-              <button 
-                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
-                disabled
-              >
-                ←
-              </button>
-              <span className="px-3 py-1">
-                <strong>1</strong> / 1
-              </span>
-              <button 
-                className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
-                disabled
-              >
-                →
-              </button>
-            </div>
+                ) : (
+                  filteredPromotions.map((promo, index) => (
+                    <tr key={promo.code} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
+                      <td className={styles.tableCellBold}>
+                        <span className={`${styles.tableBadge} ${styles.tableBadgeInfo}`}>
+                          {promo.code}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-3">
+                          <div 
+                            className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
+                            style={{ 
+                              width: 40, 
+                              height: 40,
+                              background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
+                            }}
+                          >
+                            <span style={{ fontSize: 18 }}>🎁</span>
+                          </div>
+                          <div>
+                            <div className={styles.tableCellBold}>{promo.title}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`${styles.tableCellBold} ${styles.tableCellSuccess}`}>
+                          {formatDiscount(promo)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.tableCellMuted}>
+                          {promo.minOrder.toLocaleString()} đ
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.tableCellMuted}>
+                          <small>{promo.startDate}</small>
+                          <br />
+                          <small>→ {promo.endDate}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.tableCellBold}>
+                          {promo.usage}
+                        </div>
+                        <small className={styles.tableCellMuted}>lượt</small>
+                      </td>
+                      <td>
+                        <span className={`${styles.tableBadge} ${styles[`tableBadge${statusVariant[promo.status]}`]}`}>
+                          <span className="me-1">{statusIcons[promo.status]}</span>
+                          {promo.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className={styles.tableActions}>
+                          <button 
+                            className={`${styles.tableAction} ${styles.tableActionSuccess}`}
+                            title="Chỉnh sửa"
+                            onClick={() => handleEdit(promo.code)}
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            className={`${promo.status === 'Đang áp dụng' ? styles.tableActionDanger : styles.tableActionWarning}`}
+                            title={promo.status === 'Đang áp dụng' ? 'Ngừng kích hoạt' : 'Kích hoạt lại'}
+                            onClick={() => handleToggleStatus(promo.code)}
+                          >
+                            {promo.status === 'Đang áp dụng' ? '⏸️' : '▶️️'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+          
+          {/* Table Footer with Pagination */}
+          {filteredPromotions.length > 0 && (
+            <div className={styles.tablePagination}>
+              <div className={styles.tablePaginationInfo}>
+                Hiển thị {filteredPromotions.length} trên {promotions.length} khuyến mãi
+              </div>
+              <div className={styles.tablePaginationControls}>
+                <button 
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                  disabled
+                >
+                  ←
+                </button>
+                <span className="px-3 py-1">
+                  <strong>1</strong> / 1
+                </span>
+                <button 
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline} ${buttonStyles.buttonSmall}`}
+                  disabled
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </AdminResponsiveContainer>
     </div>
   );
 };
