@@ -26,10 +26,10 @@
   position: relative;
 }
 
+/* Keep hover elevation and shadow only; do NOT strengthen border color */
 .cardPremium:hover {
   box-shadow: var(--admin-shadow-lg);
   transform: translateY(-4px);
-  border-color: var(--admin-primary);
 }
 
 .cardElevated {

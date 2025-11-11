@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import '../../styles/admin.css';
@@ -7,6 +7,7 @@ import '../../styles/admin.css';
 const AdminSidebar = () => {
   const { isOpen, isCollapsed, screenSize, closeSidebar } = useSidebar();
   const { admin } = useAdminAuth();
+  const location = useLocation();
 
   // Map permissions to navigation items
   const allNavItems = [
@@ -242,6 +243,9 @@ const AdminSidebar = () => {
               to={item.path}
               end={item.path === '/admin'}
               onClick={handleNavClick}
+              className={({ isActive }) => 
+                `admin-nav-link ${isActive ? 'admin-nav-link--active' : ''}`
+              }
               style={({ isActive }) => ({
                 display: 'flex',
                 alignItems: 'center',
@@ -275,9 +279,9 @@ const AdminSidebar = () => {
                 animationDelay: `${index * 0.05}s`,
                 minHeight: isCollapsed && screenSize !== 'mobile' ? '44px' : 'auto'
               })}
-              className={({ isActive }) => isActive ? 'admin-animate-scale-in' : ''}
               onMouseEnter={(e) => {
-                if (!e.currentTarget.classList.contains('active')) {
+                const isActive = e.currentTarget.classList.contains('admin-nav-link--active');
+                if (!isActive) {
                   e.currentTarget.style.background = 'rgba(255, 77, 79, 0.1)';
                   e.currentTarget.style.color = 'var(--admin-primary-light)';
                   e.currentTarget.style.transform = isCollapsed && screenSize !== 'mobile' ? 'scale(1.1)' : 'translateX(8px)';
@@ -285,7 +289,8 @@ const AdminSidebar = () => {
                 }
               }}
               onMouseLeave={(e) => {
-                if (!e.currentTarget.classList.contains('active')) {
+                const isActive = e.currentTarget.classList.contains('admin-nav-link--active');
+                if (!isActive) {
                   e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.color = 'var(--admin-text-primary)';
                   e.currentTarget.style.transform = isCollapsed && screenSize !== 'mobile' ? 'scale(1)' : 'translateX(0)';
@@ -296,6 +301,7 @@ const AdminSidebar = () => {
             >
               {/* Active Indicator */}
               <span 
+                className="admin-nav-indicator"
                 style={{
                   position: 'absolute',
                   left: 0,
@@ -305,7 +311,7 @@ const AdminSidebar = () => {
                   height: '20px',
                   background: 'var(--admin-white)',
                   borderRadius: '0 2px 2px 0',
-                  opacity: ({ isActive }) => isActive ? 1 : 0,
+                  opacity: 0,
                   transition: 'var(--admin-transition-base)'
                 }}
               />
@@ -319,7 +325,7 @@ const AdminSidebar = () => {
                   justifyContent: 'center',
                   width: '24px',
                   height: '24px',
-                  filter: ({ isActive }) => isActive ? 'none' : 'grayscale(0.5)',
+                  filter: 'grayscale(0.5)',
                   flexShrink: 0
                 }}
               >
@@ -439,6 +445,16 @@ const AdminSidebar = () => {
           }}
         />
       </aside>
+      
+      {/* Add custom styles for active states */}
+      <style jsx>{`
+        .admin-nav-link--active .admin-nav-indicator {
+          opacity: 1 !important;
+        }
+        .admin-nav-link--active span[style*="filter: grayscale"] {
+          filter: none !important;
+        }
+      `}</style>
     </>
   );
 };
