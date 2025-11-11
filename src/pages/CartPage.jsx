@@ -2,7 +2,8 @@
 import { Container, Row, Col, Card, Button, Form, Spinner, Modal } from 'react-bootstrap';
 import { useCart } from '../contexts/CartContext';
 import { Link } from 'react-router-dom';
-import { assetUrl, fetchFoods, fetchCombos, fetchVariants, fetchOptionPrices, fetchCrusts, api } from '../services/api';
+import { assetUrl, fetchFoods, fetchCombos, fetchVariants, fetchOptionPrices, fetchCrusts, fetchFeaturedFoods, api } from '../services/api';
+import ProductCard from '../components/ui/ProductCard';
 
 const CartPage = () => {
   const { items, remove, setQty, clear, add } = useCart();
@@ -13,6 +14,7 @@ const CartPage = () => {
   const [variantsMap, setVariantsMap] = useState({});
   const [optionPricesMap, setOptionPricesMap] = useState({});
   const [crustsMap, setCrustsMap] = useState({});
+  const [featuredFoods, setFeaturedFoods] = useState([]);
 
   // Edit modal state
   const [editingItem, setEditingItem] = useState(null);
@@ -22,6 +24,22 @@ const CartPage = () => {
   const [editCrustId, setEditCrustId] = useState(null);
   const [editOptions, setEditOptions] = useState({});
   const [editQty, setEditQty] = useState(1);
+
+  // Load featured foods
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const featured = await fetchFeaturedFoods();
+        if (active) {
+          setFeaturedFoods(Array.isArray(featured) ? featured.slice(0, 4) : []);
+        }
+      } catch (err) {
+        console.error('Failed to load featured foods:', err);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (items.length === 0) return;
@@ -209,44 +227,80 @@ const CartPage = () => {
   }, [editorFood]);
 
   return (
-    <section className="py-4 bg-light min-vh-100">
+    <section style={{ background: '#f8f9fa', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '4rem' }}>
       <Container>
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h2 className="mb-1">Giỏ hàng của bạn</h2>
-            <p className="text-muted mb-0">{items.length} sản phẩm</p>
+        {/* Header */}
+        <div className="mb-4 pb-3" style={{ borderBottom: '2px solid #dee2e6' }}>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 className="mb-2" style={{ fontWeight: '700', fontSize: '1.75rem' }}>
+                🛒 Giỏ hàng của bạn
+              </h2>
+              <p className="text-muted mb-0">
+                {items.length > 0 ? (
+                  <><strong>{items.length}</strong> sản phẩm</>
+                ) : (
+                  'Chưa có sản phẩm nào'
+                )}
+              </p>
+            </div>
+            {items.length > 0 && (
+              <Button 
+                variant="outline-danger" 
+                onClick={clear}
+                style={{ 
+                  borderRadius: '8px',
+                  padding: '0.5rem 1rem',
+                  fontWeight: '500'
+                }}
+              >
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-2">
+                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                  <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+                Xóa tất cả
+              </Button>
+            )}
           </div>
-          {items.length > 0 && (
-            <Button variant="outline-danger" size="sm" onClick={clear}>
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
-                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-              </svg>
-              Xóa tất cả
-            </Button>
-          )}
         </div>
 
         {items.length === 0 ? (
-          <Card className="border-0 shadow-sm text-center py-5">
-            <Card.Body>
-              <div className="mb-3">
-                <svg width="80" height="80" fill="#dee2e6" viewBox="0 0 16 16">
-                  <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          <div 
+            className="text-center py-5" 
+            style={{ 
+              background: '#fff', 
+              borderRadius: '16px', 
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              padding: '4rem 2rem'
+            }}
+          >
+            <div className="mb-4" style={{ fontSize: '5rem' }}>
+              🛒
+            </div>
+            <h3 className="mb-3" style={{ fontWeight: '600', color: '#212529' }}>
+              Giỏ hàng trống
+            </h3>
+            <p className="text-muted mb-4" style={{ fontSize: '1.1rem' }}>
+              Khám phá menu và thêm món yêu thích vào giỏ hàng nhé!
+            </p>
+            <Link to="/menu">
+              <Button 
+                variant="danger" 
+                size="lg"
+                style={{
+                  padding: '0.75rem 2.5rem',
+                  borderRadius: '50px',
+                  fontWeight: '600',
+                  fontSize: '1.1rem'
+                }}
+              >
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="me-2">
+                  <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
                 </svg>
-              </div>
-              <h4 className="text-muted mb-3">Giỏ hàng trống</h4>
-              <p className="text-muted mb-4">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-              <Link to="/menu">
-                <Button variant="danger" size="lg">
-                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-2">
-                    <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
-                  </svg>
-                  Khám phá menu
-                </Button>
-              </Link>
-            </Card.Body>
-          </Card>
+                Khám phá menu ngay
+              </Button>
+            </Link>
+          </div>
         ) : (
           <Row className="g-4">
             <Col lg={8}>
@@ -553,6 +607,30 @@ const CartPage = () => {
           <Button variant="danger" onClick={saveEdit} disabled={editorLoading || !editorFood}>Lưu thay đổi</Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Featured Foods Section (Recommended) */}
+      {featuredFoods.length > 0 && (
+        <div className="mt-5 pt-5 border-top" style={{ background: '#fff' }}>
+          <Container>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <h4 className="mb-1" style={{ fontWeight: '700' }}>⭐ Món được đề xuất</h4>
+                <p className="text-muted small mb-0">Có thể bạn sẽ thích</p>
+              </div>
+              <Link to="/menu" className="btn btn-sm btn-outline-danger">
+                Xem thêm →
+              </Link>
+            </div>
+            <Row xs={1} sm={2} md={4} className="g-4">
+              {featuredFoods.map(food => (
+                <Col key={food.MaMonAn}>
+                  <ProductCard pizza={food} />
+                </Col>
+              ))}
+            </Row>
+          </Container>
+        </div>
+      )}
     </section>
   );
 };

@@ -36,6 +36,20 @@ export async function fetchFoods() {
   });
 }
 
+export async function fetchBestSellingFoods() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/foods/best-selling/top');
+    return res.data;
+  });
+}
+
+export async function fetchFeaturedFoods() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/foods/featured/all');
+    return res.data;
+  });
+}
+
 export async function fetchTypes() {
   return retryRequest(async () => {
     const res = await api.get('/api/types');

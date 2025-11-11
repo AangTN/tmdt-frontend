@@ -60,16 +60,56 @@ function App() {
               </RequireAdmin>
             )}
           >
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<ManageProducts />} />
-            <Route path="categories" element={<ManageCategories />} />
-            <Route path="types" element={<ManageTypes />} />
-            <Route path="orders" element={<ManageOrders />} />
-            <Route path="users" element={<ManageUsers />} />
-            <Route path="options" element={<ManageOptions />} />
-            <Route path="reviews" element={<ManageReviews />} />
-            <Route path="promotions" element={<ManagePromotions />} />
-            <Route path="banners" element={<ManageBanners />} />
+            <Route index element={
+              <RequireAdmin requiredPermission="Tổng quan">
+                <AdminDashboard />
+              </RequireAdmin>
+            } />
+            <Route path="products" element={
+              <RequireAdmin requiredPermission="Quản lý sản phẩm">
+                <ManageProducts />
+              </RequireAdmin>
+            } />
+            <Route path="categories" element={
+              <RequireAdmin requiredPermission="Quản lý danh mục">
+                <ManageCategories />
+              </RequireAdmin>
+            } />
+            <Route path="types" element={
+              <RequireAdmin requiredPermission="Quản lý thể loại">
+                <ManageTypes />
+              </RequireAdmin>
+            } />
+            <Route path="orders" element={
+              <RequireAdmin requiredPermission="Quản lý đơn hàng">
+                <ManageOrders />
+              </RequireAdmin>
+            } />
+            <Route path="users" element={
+              <RequireAdmin requiredPermission="Quản lý người dùng">
+                <ManageUsers />
+              </RequireAdmin>
+            } />
+            <Route path="options" element={
+              <RequireAdmin requiredPermission="Quản lý tùy chọn">
+                <ManageOptions />
+              </RequireAdmin>
+            } />
+            <Route path="reviews" element={
+              <RequireAdmin requiredPermission="Quản lý đánh giá đơn hàng">
+                <ManageReviews />
+              </RequireAdmin>
+            } />
+            <Route path="promotions" element={
+              <RequireAdmin requiredPermission="Quản lý khuyến mãi">
+                <ManagePromotions />
+              </RequireAdmin>
+            } />
+            <Route path="banners" element={
+              <RequireAdmin requiredPermission="Quản lý banner">
+                <ManageBanners />
+              </RequireAdmin>
+            } />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

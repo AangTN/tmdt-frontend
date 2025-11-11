@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge, Modal } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import OrderDetail from '../components/ui/OrderDetail';
@@ -17,6 +17,14 @@ const TrackOrderPage = () => {
   // Modal detail
   const [selectedId, setSelectedId] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+
+  // Rating modal
+  const [showRating, setShowRating] = useState(false);
+  const [ratingOrderId, setRatingOrderId] = useState(null);
+  const [ratingStar, setRatingStar] = useState(5);
+  const [ratingComment, setRatingComment] = useState('');
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratingError, setRatingError] = useState('');
 
   const formatVnd = (n) => Number(n || 0).toLocaleString() + ' đ';
 
@@ -54,6 +62,89 @@ const TrackOrderPage = () => {
       return sorted[sorted.length - 1].TrangThai;
     } catch (e) {
       return o.LichSuTrangThaiDonHang[o.LichSuTrangThaiDonHang.length - 1].TrangThai;
+    }
+  };
+
+  const getPaymentStatus = (o) => {
+    // ThanhToan có thể là null, object, hoặc array
+    if (!o || !o.ThanhToan) return null;
+    if (Array.isArray(o.ThanhToan) && o.ThanhToan.length > 0) {
+      // Sắp xếp theo thời gian, lấy cái mới nhất
+      const sorted = [...o.ThanhToan].sort((a, b) => new Date(a.ThoiGianGiaoDich) - new Date(b.ThoiGianGiaoDich));
+      return sorted[sorted.length - 1].TrangThai;
+    }
+    if (o.ThanhToan.TrangThai) {
+      return o.ThanhToan.TrangThai;
+    }
+    return null;
+  };
+
+  const handlePayment = async (orderId, e) => {
+    e.stopPropagation(); // Prevent opening detail modal
+    try {
+      console.log('Creating payment URL for orderId:', orderId);
+      const res = await api.post('/api/payment/create-payment-url', { orderId });
+      console.log('Payment URL response:', res.data);
+      const paymentUrl = res.data?.data?.paymentUrl || res.data?.paymentUrl;
+      if (paymentUrl) {
+        console.log('Redirecting to:', paymentUrl);
+        window.location.href = paymentUrl;
+      } else {
+        console.log('No paymentUrl in response. Full data:', res.data);
+        alert('Không thể tạo link thanh toán');
+      }
+    } catch (err) {
+      console.error('Payment URL creation failed:', err);
+      console.error('Error response:', err?.response?.data);
+      alert(err?.response?.data?.message || err.message || 'Lỗi khi tạo link thanh toán');
+    }
+  };
+
+  const openRating = (orderId, e) => {
+    e.stopPropagation();
+    setRatingOrderId(orderId);
+    setRatingStar(5);
+    setRatingComment('');
+    setRatingError('');
+    setShowRating(true);
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!ratingOrderId || !user?.maNguoiDung) return;
+    
+    if (!ratingComment.trim()) {
+      setRatingError('Vui lòng nhập bình luận');
+      return;
+    }
+
+    setRatingSubmitting(true);
+    setRatingError('');
+
+    try {
+      const payload = {
+        MaNguoiDung: user.maNguoiDung,
+        SoSao: ratingStar,
+        BinhLuan: ratingComment.trim()
+      };
+      console.log('Rating payload:', payload);
+      
+      await api.post(`/api/orders/${ratingOrderId}/rate`, payload);
+      
+      // Success - close modal and refresh orders
+      setShowRating(false);
+      alert('Cảm ơn bạn đã đánh giá!');
+      
+      // Refresh order list
+      if (isAuthenticated && user?.maNguoiDung) {
+        const res = await api.get(`/api/orders/user/${user.maNguoiDung}`);
+        const data = res.data?.data;
+        setOrders(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Rating failed:', err);
+      setRatingError(err?.response?.data?.message || err.message || 'Không thể gửi đánh giá');
+    } finally {
+      setRatingSubmitting(false);
     }
   };
 
@@ -152,8 +243,11 @@ const TrackOrderPage = () => {
                       <div className="d-flex flex-column gap-3">
                         {orders.map(o => {
                           const lastStatus = getLastStatus(o);
+                          const paymentStatus = getPaymentStatus(o);
                           const statusLower = (lastStatus || '').toLowerCase();
                           const badgeVariant = statusLower.includes('hủy') ? 'danger' : (statusLower.includes('đã') || statusLower.includes('hoàn') ? 'success' : 'warning');
+                          const showPaymentButton = lastStatus === 'Chờ thanh toán';
+                          const showRatingButton = lastStatus === 'Đã giao';
                           
                           return (
                             <Card key={o.MaDonHang} className="border-0 shadow-sm hover-lift" style={{ transition: 'transform 0.2s ease', cursor: 'pointer' }} onClick={() => openDetail(o.MaDonHang)}>
@@ -171,7 +265,7 @@ const TrackOrderPage = () => {
                                     </div>
                                   </Col>
                                   
-                                  <Col md={3}>
+                                  <Col md={2}>
                                     <div className="small">
                                       <div className="text-muted mb-1">Ngày đặt</div>
                                       <div className="fw-semibold">
@@ -188,7 +282,16 @@ const TrackOrderPage = () => {
                                     <div className="small">
                                       <div className="text-muted mb-1">Trạng thái</div>
                                       <Badge bg={badgeVariant} className="px-2 py-1">
-                                        {lastStatus || (o?.ThanhToan?.TrangThai || 'Pending')}
+                                        {lastStatus || 'Đang xử lý'}
+                                      </Badge>
+                                    </div>
+                                  </Col>
+
+                                  <Col md={2}>
+                                    <div className="small">
+                                      <div className="text-muted mb-1">Thanh toán</div>
+                                      <Badge bg={paymentStatus ? 'info' : 'secondary'} className="px-2 py-1">
+                                        {paymentStatus || 'Chưa có'}
                                       </Badge>
                                     </div>
                                   </Col>
@@ -200,15 +303,44 @@ const TrackOrderPage = () => {
                                     </div>
                                   </Col>
 
-                                  <Col md={2} className="text-end">
+                                  <Col md={1} className="text-end">
                                     <Button size="sm" variant="outline-danger" className="rounded-pill">
-                                      Xem chi tiết
-                                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" className="ms-1">
-                                        <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
-                                      </svg>
+                                      Chi tiết
                                     </Button>
                                   </Col>
                                 </Row>
+                                
+                                {(showPaymentButton || showRatingButton) && (
+                                  <Row className="mt-3">
+                                    <Col className="text-end">
+                                      {showPaymentButton && (
+                                        <Button 
+                                          size="sm" 
+                                          variant="success" 
+                                          onClick={(e) => handlePayment(o.MaDonHang, e)}
+                                          className="me-2"
+                                        >
+                                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1H0V4zm0 3v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7H0zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1z"/>
+                                          </svg>
+                                          Thanh toán ngay
+                                        </Button>
+                                      )}
+                                      {showRatingButton && (
+                                        <Button 
+                                          size="sm" 
+                                          variant="warning" 
+                                          onClick={(e) => openRating(o.MaDonHang, e)}
+                                        >
+                                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                                            <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                          </svg>
+                                          Đánh giá
+                                        </Button>
+                                      )}
+                                    </Col>
+                                  </Row>
+                                )}
                               </Card.Body>
                             </Card>
                           );
@@ -319,8 +451,11 @@ const TrackOrderPage = () => {
                         <div className="d-flex flex-column gap-3">
                           {result.orders.map(o => {
                             const lastStatus = getLastStatus(o);
+                            const paymentStatus = getPaymentStatus(o);
                             const statusLower = (lastStatus || '').toLowerCase();
                             const badgeVariant = statusLower.includes('hủy') ? 'danger' : (statusLower.includes('đã') || statusLower.includes('hoàn') ? 'success' : 'warning');
+                            const showPaymentButton = lastStatus === 'Chờ thanh toán';
+                            const showRatingButton = lastStatus === 'Đã giao' && isAuthenticated;
                             
                             return (
                               <Card key={o.MaDonHang} className="border-0 shadow-sm hover-lift" style={{ transition: 'transform 0.2s ease', cursor: 'pointer' }} onClick={() => openDetail(o.MaDonHang)}>
@@ -338,7 +473,7 @@ const TrackOrderPage = () => {
                                       </div>
                                     </Col>
                                     
-                                    <Col md={3}>
+                                    <Col md={2}>
                                       <div className="small">
                                         <div className="text-muted mb-1">Ngày đặt</div>
                                         <div className="fw-semibold">
@@ -355,7 +490,16 @@ const TrackOrderPage = () => {
                                       <div className="small">
                                         <div className="text-muted mb-1">Trạng thái</div>
                                         <Badge bg={badgeVariant} className="px-2 py-1">
-                                          {lastStatus || (o?.ThanhToan?.TrangThai || 'Pending')}
+                                          {lastStatus || 'Đang xử lý'}
+                                        </Badge>
+                                      </div>
+                                    </Col>
+
+                                    <Col md={2}>
+                                      <div className="small">
+                                        <div className="text-muted mb-1">Thanh toán</div>
+                                        <Badge bg={paymentStatus ? 'info' : 'secondary'} className="px-2 py-1">
+                                          {paymentStatus || 'Chưa có'}
                                         </Badge>
                                       </div>
                                     </Col>
@@ -367,15 +511,44 @@ const TrackOrderPage = () => {
                                       </div>
                                     </Col>
 
-                                    <Col md={2} className="text-end">
+                                    <Col md={1} className="text-end">
                                       <Button size="sm" variant="outline-danger" className="rounded-pill">
-                                        Xem chi tiết
-                                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" className="ms-1">
-                                          <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
-                                        </svg>
+                                        Chi tiết
                                       </Button>
                                     </Col>
                                   </Row>
+                                  
+                                  {(showPaymentButton || showRatingButton) && (
+                                    <Row className="mt-3">
+                                      <Col className="text-end">
+                                        {showPaymentButton && (
+                                          <Button 
+                                            size="sm" 
+                                            variant="success" 
+                                            onClick={(e) => handlePayment(o.MaDonHang, e)}
+                                            className="me-2"
+                                          >
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                                              <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1H0V4zm0 3v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7H0zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1z"/>
+                                            </svg>
+                                            Thanh toán ngay
+                                          </Button>
+                                        )}
+                                        {showRatingButton && (
+                                          <Button 
+                                            size="sm" 
+                                            variant="warning" 
+                                            onClick={(e) => openRating(o.MaDonHang, e)}
+                                          >
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                                              <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            Đánh giá
+                                          </Button>
+                                        )}
+                                      </Col>
+                                    </Row>
+                                  )}
                                 </Card.Body>
                               </Card>
                             );
@@ -391,6 +564,69 @@ const TrackOrderPage = () => {
             )}
 
             <OrderDetail show={showDetail} onHide={() => setShowDetail(false)} orderId={selectedId} />
+
+            {/* Rating Modal */}
+            <Modal show={showRating} onHide={() => setShowRating(false)} centered>
+              <Modal.Header closeButton>
+                <Modal.Title>Đánh giá đơn hàng #{ratingOrderId}</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                {ratingError && (
+                  <Alert variant="danger" className="mb-3">
+                    {ratingError}
+                  </Alert>
+                )}
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Số sao *</Form.Label>
+                  <div className="d-flex gap-2">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRatingStar(star)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '32px',
+                          color: star <= ratingStar ? '#ffc107' : '#dee2e6'
+                        }}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Bình luận *</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={4}
+                    value={ratingComment}
+                    onChange={(e) => setRatingComment(e.target.value)}
+                    placeholder="Nhập đánh giá của bạn về đơn hàng này..."
+                    disabled={ratingSubmitting}
+                  />
+                </Form.Group>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={() => setShowRating(false)} disabled={ratingSubmitting}>
+                  Hủy
+                </Button>
+                <Button variant="danger" onClick={handleRatingSubmit} disabled={ratingSubmitting}>
+                  {ratingSubmitting ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    'Gửi đánh giá'
+                  )}
+                </Button>
+              </Modal.Footer>
+            </Modal>
           </Col>
         </Row>
       </Container>

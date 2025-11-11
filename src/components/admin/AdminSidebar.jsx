@@ -1,73 +1,123 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import '../../styles/admin.css';
 
 const AdminSidebar = () => {
   const { isOpen, isCollapsed, screenSize, closeSidebar } = useSidebar();
+  const { admin } = useAdminAuth();
 
-  const navItems = [
+  // Map permissions to navigation items
+  const allNavItems = [
     {
       path: '/admin',
       icon: '📊',
       label: 'Tổng quan',
-      description: 'Xem thống kê'
+      description: 'Thống kê tổng quan',
+      permission: 'Tổng quan'
+    },
+    {
+      path: '/admin/branch-overview',
+      icon: '�',
+      label: 'TQ Chi nhánh',
+      description: 'Tổng quan chi nhánh',
+      permission: 'Tổng quan chi nhánh'
     },
     {
       path: '/admin/products',
-      icon: '🍕',
-      label: 'Quản lý sản phẩm',
-      description: 'Sản phẩm pizza'
-    },
-    {
-      path: '/admin/categories',
-      icon: '🏷️',
-      label: 'Quản lý danh mục',
-      description: 'Phân loại'
+      icon: '�',
+      label: 'Sản phẩm',
+      description: 'Quản lý sản phẩm',
+      permission: 'Quản lý sản phẩm'
     },
     {
       path: '/admin/types',
       icon: '📂',
-      label: 'Quản lý thể loại',
-      description: 'Loại sản phẩm'
+      label: 'Thể loại',
+      description: 'Quản lý thể loại',
+      permission: 'Quản lý thể loại'
     },
     {
       path: '/admin/orders',
       icon: '🧾',
-      label: 'Quản lý đơn hàng',
-      description: 'Đơn đặt hàng'
+      label: 'Đơn hàng',
+      description: 'Quản lý đơn hàng',
+      permission: 'Quản lý đơn hàng'
+    },
+    {
+      path: '/admin/branch-orders',
+      icon: '📦',
+      label: 'ĐH Chi nhánh',
+      description: 'Đơn hàng chi nhánh',
+      permission: 'Quản lý đơn hàng chi nhánh'
+    },
+    {
+      path: '/admin/delivery',
+      icon: '🚚',
+      label: 'Giao hàng',
+      description: 'Quản lý giao hàng',
+      permission: 'Quản lý giao hàng'
     },
     {
       path: '/admin/users',
       icon: '👥',
-      label: 'Quản lý người dùng',
-      description: 'Tài khoản'
+      label: 'Người dùng',
+      description: 'Quản lý người dùng',
+      permission: 'Quản lý người dùng'
     },
     {
       path: '/admin/options',
       icon: '🧩',
-      label: 'Quản lý tùy chọn',
-      description: 'Tùy chọn thêm'
+      label: 'Tùy chọn',
+      description: 'Quản lý tùy chọn',
+      permission: 'Quản lý tùy chọn'
     },
     {
-      path: '/admin/reviews',
+      path: '/admin/product-reviews',
       icon: '⭐',
-      label: 'Đánh giá đơn hàng',
-      description: 'Phản hồi'
+      label: 'ĐG Sản phẩm',
+      description: 'Đánh giá sản phẩm',
+      permission: 'Quản lý đánh giá sản phẩm'
+    },
+    {
+      path: '/admin/order-reviews',
+      icon: '💬',
+      label: 'ĐG Đơn hàng',
+      description: 'Đánh giá đơn hàng',
+      permission: 'Quản lý đánh giá đơn hàng'
+    },
+    {
+      path: '/admin/branch-order-reviews',
+      icon: '📝',
+      label: 'ĐG ĐH CN',
+      description: 'Đánh giá chi nhánh',
+      permission: 'Quản lý đánh giá đơn hàng chi nhánh'
     },
     {
       path: '/admin/promotions',
       icon: '🎁',
       label: 'Khuyến mãi',
-      description: 'Ưu đãi'
+      description: 'Quản lý khuyến mãi',
+      permission: 'Quản lý khuyến mãi'
     },
     {
       path: '/admin/banners',
       icon: '🖼️',
-      label: 'Banner quảng cáo',
-      description: 'Hình ảnh'
+      label: 'Banner',
+      description: 'Quản lý banner',
+      permission: 'Quản lý banner'
     }
   ];
+
+  // Filter navigation items based on user permissions
+  const navItems = useMemo(() => {
+    if (!admin?.permissions) return [];
+    
+    return allNavItems.filter(item => 
+      admin.permissions.includes(item.permission)
+    );
+  }, [admin?.permissions]);
 
   // Don't render sidebar on mobile if it's closed
   if (screenSize === 'mobile' && !isOpen) {
@@ -76,12 +126,12 @@ const AdminSidebar = () => {
 
   const getSidebarStyles = () => {
     const baseStyles = {
-      background: 'linear-gradient(180deg, var(--admin-bg-sidebar) 0%, var(--admin-bg-dark) 100%)',
-      borderRight: '1px solid var(--admin-border-dark)',
+      background: 'var(--admin-bg-sidebar)',
+      borderRight: '1px solid var(--admin-border-base)',
       display: 'flex',
       flexDirection: 'column',
       position: screenSize === 'mobile' ? 'fixed' : 'relative',
-      boxShadow: 'var(--admin-shadow-lg)',
+      boxShadow: '2px 0 8px rgba(0,0,0,0.08)',
       transition: 'var(--admin-transition-base)',
       zIndex: screenSize === 'mobile' ? 'var(--admin-z-modal)' : 'auto'
     };
@@ -123,9 +173,8 @@ const AdminSidebar = () => {
         <div 
           style={{
             padding: isCollapsed && screenSize !== 'mobile' ? 'var(--admin-space-md)' : 'var(--admin-space-lg)',
-            borderBottom: '1px solid var(--admin-border-dark)',
-            background: 'rgba(255, 77, 79, 0.1)',
-            backdropFilter: 'blur(10px)',
+            borderBottom: '1px solid var(--admin-border-base)',
+            background: 'var(--admin-bg-secondary)',
             transition: 'var(--admin-transition-base)'
           }}
         >
@@ -155,7 +204,7 @@ const AdminSidebar = () => {
                     margin: 0,
                     fontSize: 'var(--admin-font-size-lg)',
                     fontWeight: 'var(--admin-font-weight-bold)',
-                    color: 'var(--admin-text-inverse)',
+                    color: 'var(--admin-text-primary)',
                     lineHeight: 'var(--admin-line-height-tight)'
                   }}
                 >
@@ -209,7 +258,7 @@ const AdminSidebar = () => {
                   : 'transparent',
                 color: isActive 
                   ? 'var(--admin-white)' 
-                  : 'var(--admin-text-tertiary)',
+                  : 'var(--admin-text-primary)',
                 fontWeight: isActive 
                   ? 'var(--admin-font-weight-semibold)' 
                   : 'var(--admin-font-weight-medium)',
@@ -238,7 +287,7 @@ const AdminSidebar = () => {
               onMouseLeave={(e) => {
                 if (!e.currentTarget.classList.contains('active')) {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--admin-text-tertiary)';
+                  e.currentTarget.style.color = 'var(--admin-text-primary)';
                   e.currentTarget.style.transform = isCollapsed && screenSize !== 'mobile' ? 'scale(1)' : 'translateX(0)';
                   e.currentTarget.style.borderColor = 'transparent';
                 }
@@ -322,8 +371,8 @@ const AdminSidebar = () => {
           <div 
             style={{
               padding: 'var(--admin-space-md)',
-              borderTop: '1px solid var(--admin-border-dark)',
-              background: 'rgba(0, 0, 0, 0.2)'
+              borderTop: '1px solid var(--admin-border-base)',
+              background: 'var(--admin-bg-secondary)'
             }}
           >
             <div 
@@ -347,23 +396,29 @@ const AdminSidebar = () => {
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span style={{ fontSize: '16px' }}>⚙️</span>
+              <span style={{ fontSize: '16px' }}>👤</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ 
                   fontSize: 'var(--admin-font-size-xs)',
                   fontWeight: 'var(--admin-font-weight-semibold)',
-                  color: 'var(--admin-text-inverse)',
-                  lineHeight: 'var(--admin-line-height-tight)'
+                  color: 'var(--admin-text-primary)',
+                  lineHeight: 'var(--admin-line-height-tight)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}>
-                  Cài đặt
+                  {admin?.hoTen || 'Admin'}
                 </div>
                 {screenSize !== 'mobile' && (
                   <div style={{ 
                     fontSize: 'var(--admin-font-size-xs)',
                     color: 'var(--admin-text-tertiary)',
-                    marginTop: '1px'
+                    marginTop: '1px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}>
-                    Tùy chọn hệ thống
+                    {admin?.role === 'SUPER_ADMIN' ? 'Quản trị viên' : admin?.role || 'Admin'}
                   </div>
                 )}
               </div>

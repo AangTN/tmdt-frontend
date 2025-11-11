@@ -32,24 +32,24 @@
   --admin-error: #ff4d4f;
   --admin-info: #1890ff;
   
-  /* Background Colors */
+  /* Background Colors - Light Mode */
   --admin-bg-primary: #ffffff;
-  --admin-bg-secondary: #fafafa;
+  --admin-bg-secondary: #f8f9fa;
   --admin-bg-tertiary: #f5f5f5;
-  --admin-bg-dark: #141414;
-  --admin-bg-sidebar: #1f1f1f;
+  --admin-bg-sidebar: #ffffff;
+  --admin-bg-header: #ffffff;
   
-  /* Text Colors */
-  --admin-text-primary: #262626;
-  --admin-text-secondary: #525252;
-  --admin-text-tertiary: #8c8c8c;
+  /* Text Colors - Light Mode */
+  --admin-text-primary: #212529;
+  --admin-text-secondary: #6c757d;
+  --admin-text-tertiary: #adb5bd;
   --admin-text-inverse: #ffffff;
-  --admin-text-disabled: #bfbfbf;
+  --admin-text-disabled: #dee2e6;
   
-  /* Border Colors */
+  /* Border Colors - Light Mode */
   --admin-border-light: #f0f0f0;
-  --admin-border-base: #d9d9d9;
-  --admin-border-dark: #434343;
+  --admin-border-base: #dee2e6;
+  --admin-border-medium: #adb5bd;
   
   /* Shadows */
   --admin-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
@@ -131,20 +131,7 @@
   line-height: var(--admin-line-height-normal);
   color: var(--admin-text-primary);
   background-color: var(--admin-bg-secondary);
-}
-
-/* Dark Theme Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --admin-bg-primary: #1f1f1f;
-    --admin-bg-secondary: #141414;
-    --admin-bg-tertiary: #262626;
-    --admin-text-primary: #ffffff;
-    --admin-text-secondary: #a3a3a3;
-    --admin-text-tertiary: #737373;
-    --admin-border-light: #434343;
-    --admin-border-base: #525252;
-  }
+  min-height: 100vh;
 }
 
 /* Responsive Design Utilities */

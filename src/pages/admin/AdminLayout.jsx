@@ -19,8 +19,8 @@ const AdminLayoutContent = () => {
         alignItems: 'center',
         width: '32px',
         height: '32px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        background: 'transparent',
+        border: '1px solid var(--admin-border-base)',
         borderRadius: 'var(--admin-radius-md)',
         cursor: 'pointer',
         transition: 'var(--admin-transition-base)',
@@ -28,11 +28,11 @@ const AdminLayoutContent = () => {
         gap: '3px'
       }}
       onMouseEnter={(e) => {
-        e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+        e.target.style.background = 'var(--admin-bg-secondary)';
         e.target.style.transform = 'scale(1.05)';
       }}
       onMouseLeave={(e) => {
-        e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+        e.target.style.background = 'transparent';
         e.target.style.transform = 'scale(1)';
       }}
     >
@@ -40,7 +40,7 @@ const AdminLayoutContent = () => {
         style={{
           width: '20px',
           height: '2px',
-          background: 'var(--admin-text-inverse)',
+          background: 'var(--admin-text-primary)',
           borderRadius: '1px',
           transition: 'var(--admin-transition-base)',
           transform: isOpen && screenSize === 'mobile' ? 'rotate(45deg) translate(5px, 5px)' : 'none'
@@ -50,7 +50,7 @@ const AdminLayoutContent = () => {
         style={{
           width: '20px',
           height: '2px',
-          background: 'var(--admin-text-inverse)',
+          background: 'var(--admin-text-primary)',
           borderRadius: '1px',
           transition: 'var(--admin-transition-base)',
           opacity: isOpen && screenSize === 'mobile' ? 0 : 1
@@ -60,7 +60,7 @@ const AdminLayoutContent = () => {
         style={{
           width: '20px',
           height: '2px',
-          background: 'var(--admin-text-inverse)',
+          background: 'var(--admin-text-primary)',
           borderRadius: '1px',
           transition: 'var(--admin-transition-base)',
           transform: isOpen && screenSize === 'mobile' ? 'rotate(-45deg) translate(7px, -6px)' : 'none'
@@ -74,17 +74,17 @@ const AdminLayoutContent = () => {
       {/* Modern Header */}
       <header 
         style={{
-          background: 'linear-gradient(135deg, var(--admin-bg-dark) 0%, var(--admin-bg-sidebar) 100%)',
-          color: 'var(--admin-text-inverse)',
+          background: 'var(--admin-bg-header)',
+          color: 'var(--admin-text-primary)',
           padding: 'var(--admin-space-md) var(--admin-space-lg)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: 'var(--admin-shadow-md)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
           position: 'sticky',
           top: 0,
           zIndex: 'var(--admin-z-sticky)',
-          borderBottom: '1px solid var(--admin-border-dark)'
+          borderBottom: '1px solid var(--admin-border-base)'
         }}
       >
         {/* Header Left - Hamburger, Logo and Title */}
