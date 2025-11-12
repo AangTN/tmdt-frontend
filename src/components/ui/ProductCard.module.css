@@ -110,3 +110,54 @@
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
+
+.badgeLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.promotionBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%);
+  color: #fff;
+  padding: 0.35rem 0.65rem;
+  border-radius: 9999px; /* pill */
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1.1;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 16px rgba(255, 77, 79, 0.35);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  z-index: 3;
+  /* Override Bootstrap .ratio > * width/height:100% rule */
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* don't block clicks on the card */
+}
+
+.priceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.originalPrice {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.discountedPrice {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 1.25rem;
+}

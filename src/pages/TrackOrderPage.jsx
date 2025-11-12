@@ -67,16 +67,22 @@ const TrackOrderPage = () => {
 
   const getPaymentStatus = (o) => {
     // ThanhToan có thể là null, object, hoặc array
-    if (!o || !o.ThanhToan) return null;
-    if (Array.isArray(o.ThanhToan) && o.ThanhToan.length > 0) {
+    // If order object missing -> consider unpaid
+    if (!o) return 'Chưa thanh toán';
+    // If ThanhToan is missing or null -> unpaid
+    if (!o.ThanhToan) return 'Chưa thanh toán';
+    // If ThanhToan is an array
+    if (Array.isArray(o.ThanhToan)) {
+      if (o.ThanhToan.length === 0) return 'Chưa thanh toán';
       // Sắp xếp theo thời gian, lấy cái mới nhất
-      const sorted = [...o.ThanhToan].sort((a, b) => new Date(a.ThoiGianGiaoDich) - new Date(b.ThoiGianGiaoDich));
-      return sorted[sorted.length - 1].TrangThai;
+      const sorted = [...o.ThanhToan].sort((a, b) => new Date(a.ThoiGianGiaoDich || a.ThoiGian || 0) - new Date(b.ThoiGianGiaoDich || b.ThoiGian || 0));
+      return sorted[sorted.length - 1].TrangThai || 'Chưa thanh toán';
     }
-    if (o.ThanhToan.TrangThai) {
+    // If ThanhToan is an object
+    if (o.ThanhToan && o.ThanhToan.TrangThai) {
       return o.ThanhToan.TrangThai;
     }
-    return null;
+    return 'Chưa thanh toán';
   };
 
   const handlePayment = async (orderId, e) => {

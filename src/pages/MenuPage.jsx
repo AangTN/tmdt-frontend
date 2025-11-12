@@ -3,7 +3,7 @@ import { Container, Spinner } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import EmptyState from '../components/ui/EmptyState';
-import { fetchFoods, fetchTypes } from '../services/api';
+import { fetchFoods, fetchTypes, fetchVariants } from '../services/api';
 import styles from './MenuPage.module.css';
 
 const MenuPage = () => {
@@ -24,12 +24,25 @@ const MenuPage = () => {
     (async () => {
       try {
         setError(''); // Clear previous errors
-        const [foodsData, typesData] = await Promise.all([
+        const [foodsData, typesData, variantsData] = await Promise.all([
           fetchFoods(),
-          fetchTypes()
+          fetchTypes(),
+          fetchVariants()
         ]);
         if (mounted) {
-          setPizzas(Array.isArray(foodsData) ? foodsData : []);
+          // Join variants into foods as BienTheMonAn array
+          const foods = Array.isArray(foodsData) ? foodsData : [];
+          const variants = Array.isArray(variantsData) ? variantsData : [];
+          
+          const enrichedFoods = foods.map(food => {
+            const foodVariants = variants.filter(v => v.MonAn?.MaMonAn === food.MaMonAn);
+            return {
+              ...food,
+              BienTheMonAn: foodVariants
+            };
+          });
+          
+          setPizzas(enrichedFoods);
           setTypes(Array.isArray(typesData) ? typesData : []);
           // Auto select first type
           if (typesData && typesData.length > 0) {
@@ -110,15 +123,46 @@ const MenuPage = () => {
       ? `${currentTypeName} (${currentCategoryName})`
       : currentTypeName);
 
-  // Sorting (approximate by name/price if available in item variants)
-  const getMinPrice = (item) => {
-    if (Array.isArray(item?.BienTheMonAn) && item.BienTheMonAn.length > 0) {
-      const nums = item.BienTheMonAn.map(v => Number(v?.GiaBan)).filter(n => !Number.isNaN(n));
-      if (nums.length > 0) return Math.min(...nums);
-    }
-    return Number.POSITIVE_INFINITY; // unknown price goes last in price sorts
-  };
+  // Sorting with price parsing
   const renderList = useMemo(() => {
+    // Robust price parsing: handle strings with commas, currency symbols, etc.
+    const parsePrice = (val) => {
+      if (val == null) return NaN;
+      if (typeof val === 'number') return val;
+      // Remove any non-digit except dot and minus (e.g., "1,000,000 đ")
+      const cleaned = String(val).replace(/[^0-9.-]+/g, '');
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    const getMinPrice = (item) => {
+      const variants = Array.isArray(item?.BienTheMonAn) ? item.BienTheMonAn : [];
+      if (variants.length === 0) return Number.POSITIVE_INFINITY;
+      const nums = variants
+        .map(v => parsePrice(v?.GiaBan))
+        .filter(n => !Number.isNaN(n));
+      if (nums.length > 0) return Math.min(...nums);
+      return Number.POSITIVE_INFINITY; // unknown price goes last in price sorts
+    };
+    
+    // Calculate the effective (discounted) min price for an item, applying product promotion if present
+    const getMinDiscountedPrice = (item) => {
+      const baseMin = getMinPrice(item);
+      if (!Number.isFinite(baseMin)) return Number.POSITIVE_INFINITY;
+      const promotion = item?.KhuyenMai || item?.promotion || null;
+      if (!promotion) return baseMin;
+      const kmLoai = (promotion.KMLoai || '').toUpperCase();
+      const kmGiaTri = Number(promotion.KMGiaTri || 0);
+      if (kmLoai === 'PERCENT' || kmLoai === 'PHANTRAM') {
+        const discounted = baseMin - (baseMin * kmGiaTri / 100);
+        return Math.max(0, discounted);
+      } else if (kmLoai === 'AMOUNT' || kmLoai === 'SOTIEN') {
+        const discounted = baseMin - kmGiaTri;
+        return Math.max(0, discounted);
+      }
+      return baseMin;
+    };
+
     const clone = [...filtered];
     switch (sort) {
       case 'name.asc':
@@ -126,9 +170,9 @@ const MenuPage = () => {
       case 'name.desc':
         return clone.sort((a, b) => String(b.TenMonAn || '').localeCompare(String(a.TenMonAn || ''), 'vi'));
       case 'price.asc':
-        return clone.sort((a, b) => getMinPrice(a) - getMinPrice(b));
+        return clone.sort((a, b) => getMinDiscountedPrice(a) - getMinDiscountedPrice(b));
       case 'price.desc':
-        return clone.sort((a, b) => getMinPrice(b) - getMinPrice(a));
+        return clone.sort((a, b) => getMinDiscountedPrice(b) - getMinDiscountedPrice(a));
       default:
         return clone;
     }
@@ -223,9 +267,9 @@ const MenuPage = () => {
                 <EmptyState title="Không tìm thấy món ăn" description="Thử từ khóa khác hoặc bỏ bớt bộ lọc." />
               </div>
             )}
-            {!loading && !error && filtered.length > 0 && (
+            {!loading && !error && renderList.length > 0 && (
               <div className={styles.grid}>
-                {filtered.map(pizza => (
+                {renderList.map(pizza => (
                   <ProductCard key={pizza.MaMonAn} pizza={pizza} />
                 ))}
               </div>

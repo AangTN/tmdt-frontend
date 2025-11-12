@@ -78,6 +78,30 @@ const ProductDetail = () => {
   const baseVariant = variants.find(v => v.Size?.MaSize === sizeId) || null;
   const basePrice = variantPrice(baseVariant);
 
+  // Calculate promotion discount
+  const promotion = food?.KhuyenMai;
+  const { discountedPrice: basePriceAfterDiscount, hasDiscount } = useMemo(() => {
+    if (!promotion || !basePrice) {
+      return { discountedPrice: basePrice, hasDiscount: false };
+    }
+    
+    const kmLoai = promotion.KMLoai?.toUpperCase();
+    const kmGiaTri = Number(promotion.KMGiaTri || 0);
+    let discount = 0;
+    
+    if (kmLoai === 'PERCENT' || kmLoai === 'PHANTRAM') {
+      discount = (basePrice * kmGiaTri) / 100;
+    } else if (kmLoai === 'AMOUNT' || kmLoai === 'SOTIEN') {
+      discount = kmGiaTri;
+    }
+    
+    const finalPrice = Math.max(0, basePrice - discount);
+    return { 
+      discountedPrice: finalPrice, 
+      hasDiscount: discount > 0 
+    };
+  }, [basePrice, promotion]);
+
   const groupedOptions = useMemo(() => {
     const list = (food?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
     const groups = {};
@@ -100,6 +124,10 @@ const ProductDetail = () => {
   }, [selectedOptions, food, sizeId]);
 
   const total = useMemo(() => {
+    return (basePriceAfterDiscount + optionsExtra) * qty;
+  }, [basePriceAfterDiscount, optionsExtra, qty]);
+  
+  const originalTotal = useMemo(() => {
     return (basePrice + optionsExtra) * qty;
   }, [basePrice, optionsExtra, qty]);
 
@@ -237,7 +265,7 @@ const ProductDetail = () => {
           {/* Image Section */}
           <Col lg={5}>
             <Card className="border-0 shadow-sm sticky-top" style={{ top: '100px' }}>
-              <div className="ratio ratio-1x1">
+              <div className="ratio ratio-1x1" style={{ position: 'relative' }}>
                 <img 
                   src={imageUrl} 
                   alt={food.TenMonAn} 
@@ -248,6 +276,40 @@ const ProductDetail = () => {
                   }} 
                   className={styles.mainImage}
                 />
+                {promotion && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    pointerEvents: 'none',
+                    zIndex: 2
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '15px',
+                      left: '15px',
+                      background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)',
+                      color: '#fff',
+                      padding: '0.5rem 0.85rem',
+                      borderRadius: '9999px',
+                      fontWeight: 800,
+                      fontSize: '1.1rem',
+                      lineHeight: 1.1,
+                      letterSpacing: '0.3px',
+                      border: '1px solid rgba(255, 255, 255, 0.4)',
+                      boxShadow: '0 6px 16px rgba(255, 77, 79, 0.35)',
+                      textShadow: '0 1px 0 rgba(0, 0, 0, 0.08)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {(promotion.KMLoai?.toUpperCase() === 'PERCENT' || promotion.KMLoai?.toUpperCase() === 'PHANTRAM') ? (
+                        <>-{promotion.KMGiaTri}%</>
+                      ) : (
+                        <>-{Number(promotion.KMGiaTri).toLocaleString()}<span style={{fontSize: '0.75em'}}>đ</span></>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
           </Col>
@@ -291,6 +353,25 @@ const ProductDetail = () => {
                 <p className="text-muted mb-3" style={{ fontSize: '1.05rem', lineHeight: '1.7' }}>
                   {food.MoTa}
                 </p>
+              )}
+              
+              {promotion && (
+                <Alert variant="success" className="d-flex align-items-center mb-3">
+                  <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="me-2 flex-shrink-0">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                  </svg>
+                  <div>
+                    <strong>🎉 {promotion.TenKhuyenMai}</strong>
+                    <div className="small">
+                      {(promotion.KMLoai?.toUpperCase() === 'PERCENT' || promotion.KMLoai?.toUpperCase() === 'PHANTRAM') ? (
+                        <>Giảm {promotion.KMGiaTri}% cho món này</>
+                      ) : (
+                        <>Giảm {Number(promotion.KMGiaTri).toLocaleString()}đ cho món này</>
+                      )}
+                    </div>
+                  </div>
+                </Alert>
               )}
             </div>
 
@@ -404,9 +485,36 @@ const ProductDetail = () => {
                 <Row className="align-items-center g-3">
                   <Col md={4}>
                     <div className="small text-muted mb-1">Tổng giá trị</div>
-                    <div className={styles.totalPrice}>
-                      {total.toLocaleString()} đ
-                    </div>
+                    {hasDiscount && originalTotal !== total ? (
+                      <div>
+                        <div style={{ 
+                          color: '#94a3b8', 
+                          fontSize: '1rem', 
+                          textDecoration: 'line-through',
+                          fontWeight: 500,
+                          marginBottom: '0.25rem'
+                        }}>
+                          {originalTotal.toLocaleString()} đ
+                        </div>
+                        <div className={styles.totalPrice}>
+                          {total.toLocaleString()} đ
+                        </div>
+                        {promotion && (
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#ff4d4f',
+                            fontWeight: 600,
+                            marginTop: '0.25rem'
+                          }}>
+                            Tiết kiệm {(originalTotal - total).toLocaleString()} đ
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className={styles.totalPrice}>
+                        {total.toLocaleString()} đ
+                      </div>
+                    )}
                   </Col>
                   
                   <Col md={3}>

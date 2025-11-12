@@ -38,6 +38,21 @@ const AdminLogin = () => {
     }
   };
 
+  // Prefill form from saved credentials if present
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('admin:credentials');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.email) setForm(f => ({ ...f, email: parsed.email }));
+        // do NOT prefill password field for security unless you really want to
+        if (parsed.matKhau) setForm(f => ({ ...f, password: parsed.matKhau }));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
       <div className="card shadow" style={{ maxWidth: 420, width: '100%' }}>

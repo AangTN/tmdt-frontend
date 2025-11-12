@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchFoods, fetchTypes, fetchCategories } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { fetchFoods, fetchTypes, fetchCategories, assetUrl } from '../../services/api';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -8,6 +9,7 @@ import { AdminResponsiveContainer } from '../../components/admin/AdminResponsive
 import { ProductCard } from '../../components/admin/AdminTableCard';
 
 const ManageProducts = () => {
+  const navigate = useNavigate();
   const [foods, setFoods] = useState([]);
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -43,18 +45,12 @@ const ManageProducts = () => {
 
   // Action handlers
   const handleEdit = (product) => {
-    console.log('Edit product:', product);
-    // TODO: Implement edit functionality
+    navigate(`/admin/products/edit/${product.MaMonAn}`);
   };
 
   const handleDelete = (product) => {
     console.log('Delete product:', product);
     // TODO: Implement delete functionality
-  };
-
-  const handleView = (product) => {
-    console.log('View product details:', product);
-    // TODO: Implement view functionality
   };
 
   // Card component for responsive view
@@ -68,7 +64,6 @@ const ManageProducts = () => {
           typeMap={typeMap}
           onEdit={() => handleEdit(product)}
           onDelete={() => handleDelete(product)}
-          onView={() => handleView(product)}
           index={index}
           animate={true}
           showImage={true}
@@ -108,7 +103,10 @@ const ManageProducts = () => {
                   </button>
                 )}
               </div>
-              <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}>
+              <button 
+                className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}
+                onClick={() => navigate('/admin/products/add')}
+              >
                 <span>+</span> Thêm sản phẩm
               </button>
             </div>
@@ -209,21 +207,33 @@ const ManageProducts = () => {
                       </td>
                       <td>
                         <div className="d-flex align-items-start gap-3">
-                          <div className="flex-shrink-0">
-                            <div 
-                              className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
-                              style={{ 
-                                width: 48, 
-                                height: 48,
-                                background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
-                              }}
-                            >
-                              <span style={{ fontSize: 20 }}>🍕</span>
-                            </div>
-                          </div>
+                              <div className="flex-shrink-0">
+                                {(() => {
+                                  const rawImg = food.HinhAnh;
+                                  const imgPath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
+                                  const imgSrc = imgPath ? assetUrl(imgPath) : '/placeholder.svg';
+                                  return (
+                                    <div style={{ width: 56, height: 56 }} className="overflow-hidden rounded-2 bg-light d-flex align-items-center justify-content-center">
+                                      <img src={imgSrc} alt={food.TenMonAn} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { try { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; } catch {} }} />
+                                    </div>
+                                  );
+                                })()}
+                              </div>
                           <div>
-                            <div className={`${styles.tableCellBold} mb-1`}>{food.TenMonAn}</div>
-                            <small className={styles.tableCellMuted}>Mã: {food.MaMonAn}</small>
+                            <div className="d-flex align-items-center gap-2 mb-1">
+                              <div className="fw-semibold">{food.TenMonAn}</div>
+                              {food.KhuyenMai && (
+                                <span className={`${styles.tableBadge} ${styles.tableBadgeDanger}`} title={food.KhuyenMai.TenKhuyenMai}>
+                                  {food.KhuyenMai.KMLoai === 'PERCENT' ? `${food.KhuyenMai.KMGiaTri}%` : `-${Number(food.KhuyenMai.KMGiaTri).toLocaleString()}đ`}
+                                </span>
+                              )}
+                            </div>
+                            <div className={styles.tableCellMuted}>
+                              <small>Mã: {food.MaMonAn}</small>
+                              {typeof food.SoSaoTrungBinh !== 'undefined' && (
+                                <span className="ms-2 text-warning">⭐ {Number(food.SoSaoTrungBinh).toFixed(1)} ({food.SoDanhGia || 0})</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -273,13 +283,7 @@ const ManageProducts = () => {
                           >
                             🗑️
                           </button>
-                          <button 
-                            className={styles.tableAction}
-                            title="Xem chi tiết"
-                            onClick={() => handleView(food)}
-                          >
-                            👁️
-                          </button>
+                          {/* View button removed - only edit allowed from manage page */}
                         </div>
                       </td>
                     </tr>

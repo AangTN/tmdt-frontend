@@ -19,6 +19,8 @@ import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ManageProducts from './pages/admin/ManageProducts.jsx';
+import AddProduct from './pages/admin/AddProduct.jsx';
+import EditProduct from './pages/admin/EditProduct.jsx';
 import ManageCategories from './pages/admin/ManageCategories.jsx';
 import ManageTypes from './pages/admin/ManageTypes.jsx';
 import ManageOrders from './pages/admin/ManageOrders.jsx';
@@ -68,6 +70,16 @@ function App() {
             <Route path="products" element={
               <RequireAdmin requiredPermission="Quản lý sản phẩm">
                 <ManageProducts />
+              </RequireAdmin>
+            } />
+            <Route path="products/add" element={
+              <RequireAdmin requiredPermission="Quản lý sản phẩm">
+                <AddProduct />
+              </RequireAdmin>
+            } />
+            <Route path="products/edit/:id" element={
+              <RequireAdmin requiredPermission="Quản lý sản phẩm">
+                <EditProduct />
               </RequireAdmin>
             } />
             <Route path="categories" element={

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Container, Row, Col, Card, Spinner, Button } from 'react-bootstrap';
-import { fetchBranches, fetchFoods, assetUrl } from '../services/api';
+import { fetchBranches, fetchBestSellingFoods, assetUrl } from '../services/api';
+import ProductCard from '../components/ui/ProductCard';
 import styles from './AboutPage.module.css';
 
 const GOONG_API_KEY = import.meta.env.VITE_MAP_KEY || 'GwbEvplbZNagXL5wwjjKOuOZnonRgeMYi46NToda';
@@ -13,11 +14,12 @@ const AboutPage = () => {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [sdkReady, setSdkReady] = useState(() => typeof window !== 'undefined' && !!window.goongjs);
+  const [mapError, setMapError] = useState('');
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
-  // Foods for best sellers showcase
-  const [foods, setFoods] = useState([]);
+  // Best selling foods for showcase (use same source as HomePage)
+  const [bestSellingFoods, setBestSellingFoods] = useState([]);
   const [foodsLoading, setFoodsLoading] = useState(false);
 
   useEffect(() => {
@@ -35,26 +37,32 @@ const AboutPage = () => {
     return () => { mounted = false; };
   }, []);
 
-  // Load foods for best seller/product showcase
+  // Load best selling foods for showcase
   useEffect(() => {
-    let active = true;
+    let mounted = true;
     (async () => {
       setFoodsLoading(true);
       try {
-        const data = await fetchFoods();
-        if (active && Array.isArray(data)) setFoods(data);
+        const data = await fetchBestSellingFoods();
+        if (mounted) setBestSellingFoods(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Load foods failed', err);
+        console.error('Load best selling foods failed', err);
       } finally {
-        if (active) setFoodsLoading(false);
+        if (mounted) setFoodsLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
     if (sdkReady) {
-      window.goongjs.accessToken = GOONG_API_KEY;
+      try {
+        console.log('Goong SDK already present. Setting accessToken from env. key present?', !!GOONG_API_KEY);
+        window.goongjs.accessToken = GOONG_API_KEY;
+      } catch (err) {
+        console.error('Failed to set goongjs.accessToken:', err);
+        setMapError('Lỗi khi cấu hình map SDK');
+      }
       return;
     }
 
@@ -68,16 +76,31 @@ const AboutPage = () => {
     }
 
     const handleLoad = () => {
+      console.log('Goong SDK script loaded, window.goongjs:', !!window.goongjs, 'GOONG_API_KEY present?', !!GOONG_API_KEY);
       if (window.goongjs) {
-        window.goongjs.accessToken = GOONG_API_KEY;
-        setSdkReady(true);
+        try {
+          window.goongjs.accessToken = GOONG_API_KEY;
+          setSdkReady(true);
+        } catch (err) {
+          console.error('Failed to set accessToken after SDK load:', err);
+          setMapError('Lỗi khi cấu hình access token cho map');
+        }
+      } else {
+        setMapError('SDK Goong không khả dụng sau khi tải');
       }
     };
 
     const existingScript = document.querySelector('script[data-goong-js]');
     if (existingScript) {
       existingScript.addEventListener('load', handleLoad);
-      return () => existingScript.removeEventListener('load', handleLoad);
+      existingScript.addEventListener('error', () => {
+        console.error('Existing Goong SDK script reported error');
+        setMapError('Không thể tải SDK bản đồ (existing script)');
+      });
+      return () => {
+        existingScript.removeEventListener('load', handleLoad);
+        existingScript.removeEventListener('error', () => {});
+      };
     }
 
     const script = document.createElement('script');
@@ -85,7 +108,10 @@ const AboutPage = () => {
     script.async = true;
     script.setAttribute('data-goong-js', 'true');
     script.addEventListener('load', handleLoad);
-    script.addEventListener('error', () => console.error('Failed to load Goong Maps SDK'));
+    script.addEventListener('error', (e) => {
+      console.error('Failed to load Goong Maps SDK', e);
+      setMapError('Không thể tải SDK bản đồ');
+    });
     document.head.appendChild(script);
 
     return () => {
@@ -96,21 +122,36 @@ const AboutPage = () => {
   useEffect(() => {
     if (!sdkReady || !mapRef.current || mapInstanceRef.current) return;
 
-    const map = new window.goongjs.Map({
-      container: mapRef.current,
-      style: 'https://tiles.goong.io/assets/goong_map_web.json',
-      center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
-      zoom: DEFAULT_ZOOM
-    });
+    let map;
+    try {
+      console.log('Creating Goong map instance...');
+      map = new window.goongjs.Map({
+        container: mapRef.current,
+        style: import.meta.env.VITE_MAP_STYLE || 'https://tiles.goong.io/assets/goong_map_web.json',
+        center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
+        zoom: DEFAULT_ZOOM
+      });
+    } catch (err) {
+      console.error('Failed to create Goong map instance:', err);
+      setMapError('Lỗi khi khởi tạo bản đồ: ' + (err.message || 'Unknown'));
+      return;
+    }
 
     mapInstanceRef.current = map;
     setMapLoaded(false);
 
     const handleLoad = () => {
+      console.log('Goong map load event fired');
       setMapLoaded(true);
     };
 
+    const handleError = (err) => {
+      console.error('Goong map error event:', err);
+      setMapError('Lỗi bản đồ: ' + (err && err.error ? err.error.message || err.error : JSON.stringify(err)));
+    };
+
     map.on('load', handleLoad);
+    map.on('error', handleError);
 
     return () => {
       map.off('load', handleLoad);
@@ -184,32 +225,8 @@ const AboutPage = () => {
     }
   }, [branches, sdkReady]);
 
-  // Derive best sellers (simple heuristic: first items with an image & variant price)
-  const bestSellers = useMemo(() => {
-    const enriched = foods.map(food => {
-      const rawImg = food?.HinhAnh;
-      const imagePath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
-      const variants = Array.isArray(food?.BienTheMonAn) ? food.BienTheMonAn : [];
-      const prices = variants.map(v => Number(v?.GiaBan || 0)).filter(p => p > 0);
-      const minPrice = prices.length ? Math.min(...prices) : 0;
-      return {
-        id: food.MaMonAn,
-        name: food.TenMonAn,
-        image: imagePath ? assetUrl(imagePath) : '/placeholder.svg',
-        price: minPrice,
-        typeName: food?.LoaiMonAn?.TenLoaiMonAn || '',
-        rating: Number(food?.SoSaoTrungBinh || 0),
-        count: Number(food?.SoDanhGia || 0)
-      };
-    });
-    // prioritize by rating then count then price descending (higher price maybe premium)
-    enriched.sort((a, b) => {
-      if (b.rating !== a.rating) return b.rating - a.rating;
-      if (b.count !== a.count) return b.count - a.count;
-      return b.price - a.price;
-    });
-    return enriched.slice(0, 4);
-  }, [foods]);
+  // For About page we will display bestSellingFoods directly using ProductCard (like HomePage)
+  const bestSellers = useMemo(() => (Array.isArray(bestSellingFoods) ? bestSellingFoods.slice(0, 4) : []), [bestSellingFoods]);
 
   // Simple KPIs (static / could be dynamic later)
   const kpis = [
@@ -279,7 +296,7 @@ const AboutPage = () => {
           <Row className="gy-4">
             <Col md={3} sm={6}>
               <Card className={styles.uspCard}>
-                <div className={styles.uspIcon}>�</div>
+                <div className={styles.uspIcon}>🧀</div>
                 <h3>Nguyên liệu chuẩn</h3>
                 <p>Tươi mới mỗi ngày, phô mai & sốt nhập khẩu tuyển chọn.</p>
               </Card>
@@ -300,7 +317,7 @@ const AboutPage = () => {
             </Col>
             <Col md={3} sm={6}>
               <Card className={styles.uspCard}>
-                <div className={styles.uspIcon}>�</div>
+                <div className={styles.uspIcon}>🎁</div>
                 <h3>Ưu đãi đều đặn</h3>
                 <p>Voucher & combo tiết kiệm chi phí mỗi tuần.</p>
               </Card>
@@ -316,29 +333,34 @@ const AboutPage = () => {
             <h2 className={styles.bestTitle}>Món được đặt nhiều</h2>
             <p className={styles.bestSubtitle}>Thử ngay những lựa chọn làm khách hàng quay lại thường xuyên</p>
           </div>
-          <Row className="g-4">
-            {foodsLoading && (
-              <div className="d-flex justify-content-center py-5"><Spinner animation="border" variant="danger" /></div>
-            )}
-            {!foodsLoading && bestSellers.map(f => (
-              <Col key={f.id} md={3} sm={6}>
-                <div className={styles.foodCard}>
-                  <div className={styles.foodImageWrap}>
-                    <img src={f.image} alt={f.name} className={styles.foodImage} />
+          {foodsLoading ? (
+            <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Col key={i}>
+                  <div className={styles.skeletonCard}>
+                    <div className="ratio ratio-4x3 skeleton mb-3"></div>
+                    <div className="skeleton" style={{ height: 16, width: '70%', borderRadius: 8 }}></div>
+                    <div className="skeleton mt-2" style={{ height: 14, width: '50%', borderRadius: 8 }}></div>
                   </div>
-                  <div className={styles.foodBody}>
-                    <div className={styles.foodName}>{f.name}</div>
-                    {f.typeName && <div className={styles.foodType}>{f.typeName}</div>}
-                    <div className={styles.foodPrice}>{f.price.toLocaleString()} đ</div>
-                    <Button href={`/foods/${f.id}`} variant="danger" size="sm" className="mt-2 w-100">Đặt ngay</Button>
-                  </div>
-                </div>
-              </Col>
-            ))}
-            {!foodsLoading && bestSellers.length === 0 && (
-              <div className="text-center text-muted py-4">Chưa có dữ liệu món ăn hiển thị.</div>
-            )}
-          </Row>
+                </Col>
+              ))}
+            </Row>
+          ) : bestSellers.length > 0 ? (
+            <>
+              <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+                {bestSellers.map(item => (
+                  <Col key={item.MaMonAn || item.id}>
+                    <ProductCard pizza={item} />
+                  </Col>
+                ))}
+              </Row>
+              <div className="text-center mt-4">
+                <Button href="/menu" variant="danger" size="lg">Xem tất cả món ăn →</Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-muted py-4">Chưa có dữ liệu món ăn hiển thị.</div>
+          )}
         </Container>
       </section>
 
@@ -358,11 +380,17 @@ const AboutPage = () => {
           ) : (
             <>
               <div ref={mapRef} className={styles.mapContainer}>
-                {!mapLoaded && (
+                {mapError ? (
+                  <div className="text-center text-danger p-4">
+                    <div style={{ fontWeight: 700, marginBottom: 8 }}>Không thể hiển thị bản đồ</div>
+                    <div className="small">{mapError}</div>
+                    <div className="small text-muted mt-2">Mở DevTools → Console để xem log chi tiết.</div>
+                  </div>
+                ) : !mapLoaded ? (
                   <div className={styles.mapPlaceholder}>
                     <Spinner animation="border" variant="danger" />
                   </div>
-                )}
+                ) : null}
               </div>
 
               <Row className={`g-4 ${styles.branchesGrid}`}>

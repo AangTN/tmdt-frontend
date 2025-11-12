@@ -85,6 +85,32 @@ export async function fetchCrusts() {
   });
 }
 
+export async function fetchSizes() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/sizes');
+    return res.data;
+  });
+}
+
+export async function fetchOptions() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/options');
+    // API trả về mảng các loại tùy chọn, mỗi loại có mảng TuyChon
+    // Flatten để lấy tất cả options
+    const data = res.data;
+    if (Array.isArray(data)) {
+      const allOptions = [];
+      data.forEach(type => {
+        if (Array.isArray(type.TuyChon)) {
+          allOptions.push(...type.TuyChon);
+        }
+      });
+      return allOptions;
+    }
+    return [];
+  });
+}
+
 export async function fetchBanners() {
   return retryRequest(async () => {
     const res = await api.get('/api/banners');
@@ -97,6 +123,17 @@ export async function fetchBranches() {
     const res = await api.get('/api/branches');
     return res.data;
   });
+}
+
+// Uploads
+export async function uploadImage(file) {
+  // Accepts a File or Blob; posts multipart/form-data to /api/uploads
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await api.post('/api/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return res.data;
 }
 
 // Combos

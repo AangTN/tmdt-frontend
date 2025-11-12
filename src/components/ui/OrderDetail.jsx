@@ -54,6 +54,42 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null 
     return sortedHistory[sortedHistory.length - 1].TrangThai;
   }, [sortedHistory]);
 
+  // Normalize ThanhToan which can be null, an object or an array
+  const payment = useMemo(() => {
+    if (!detail) return null;
+    const t = detail.ThanhToan;
+    if (!t) return null;
+    if (Array.isArray(t)) {
+      // prefer newest by ThoiGianGiaoDich or ThoiGian
+      const arr = [...t].sort((a, b) => new Date(a.ThoiGianGiaoDich || a.ThoiGian || 0) - new Date(b.ThoiGianGiaoDich || b.ThoiGian || 0));
+      return arr[arr.length - 1] || null;
+    }
+    if (typeof t === 'object') return t;
+    return null;
+  }, [detail]);
+
+  // Compute a displayable payment status: prefer newest payment.TrangThai; if no payments or empty array => 'Chưa thanh toán'
+  const paymentStatus = useMemo(() => {
+    if (!detail) return 'Chưa thanh toán';
+    // If ThanhToan is an array and empty -> treat as unpaid
+    if (Array.isArray(detail.ThanhToan) && detail.ThanhToan.length === 0) return 'Chưa thanh toán';
+    // If we normalized a payment and it has TrangThai, use it
+    if (payment?.TrangThai) return payment.TrangThai;
+    // If raw ThanhToan is an object with TrangThai
+    if (detail.ThanhToan && !Array.isArray(detail.ThanhToan) && typeof detail.ThanhToan === 'object' && detail.ThanhToan.TrangThai) return detail.ThanhToan.TrangThai;
+    // Fallback
+    return 'Chưa thanh toán';
+  }, [detail, payment]);
+
+  // Determine payment method to display: if ThanhToan is an empty array, show 'Chuyển Khoản'
+  const paymentMethod = useMemo(() => {
+    if (!detail) return 'Chuyển Khoản';
+    if (Array.isArray(detail.ThanhToan) && detail.ThanhToan.length === 0) return 'Chuyển Khoản';
+    if (payment?.PhuongThuc) return payment.PhuongThuc;
+    if (detail.ThanhToan && !Array.isArray(detail.ThanhToan) && detail.ThanhToan.PhuongThuc) return detail.ThanhToan.PhuongThuc;
+    return 'Chuyển Khoản';
+  }, [detail, payment]);
+
   const handleCancelOrder = async () => {
     if (!detail || !detail.MaDonHang) return;
     setCancelError('');
@@ -117,7 +153,7 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null 
                     (currentOrderStatus || '').toLowerCase().includes('đã') || (currentOrderStatus || '').toLowerCase().includes('hoàn') ? 'success' :
                     'warning'
                   }>
-                    {currentOrderStatus || detail?.ThanhToan?.TrangThai || 'Pending'}
+                    {currentOrderStatus || paymentStatus}
                   </Badge>
                 </div>
               </div>
@@ -169,16 +205,16 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null 
                     </div>
                     <div className="mb-2">
                       <div className="small text-muted mb-1">Phương thức</div>
-                      <div className="fw-semibold">{detail?.ThanhToan?.PhuongThuc || 'N/A'}</div>
+                      <div className="fw-semibold">{paymentMethod}</div>
                     </div>
                     <div className="mb-2">
                       <div className="small text-muted mb-1">Trạng thái</div>
                       <Badge bg={
-                        detail?.ThanhToan?.TrangThai === 'Đã thanh toán' ? 'success' : 
-                        detail?.ThanhToan?.TrangThai === 'Chưa thanh toán' ? 'warning' : 
+                        paymentStatus === 'Đã thanh toán' ? 'success' : 
+                        paymentStatus === 'Chưa thanh toán' ? 'warning' : 
                         'secondary'
                       } className="px-2 py-1">
-                        {detail?.ThanhToan?.TrangThai || 'N/A'}
+                        {paymentStatus}
                       </Badge>
                     </div>
                     {detail?.CoSo && (
@@ -416,7 +452,7 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null 
         )}
       </Modal.Body>
         <Modal.Footer>
-        {detail && detail?.ThanhToan?.TrangThai === 'Chưa thanh toán' && currentOrderStatus === 'Đang chờ xác nhận' && (
+        {detail && paymentStatus === 'Chưa thanh toán' && currentOrderStatus === 'Đang chờ xác nhận' && (
           <Button variant="danger" onClick={handleCancelOrder} disabled={canceling}>
             {canceling ? 'Đang hủy…' : 'Hủy đơn'}
           </Button>

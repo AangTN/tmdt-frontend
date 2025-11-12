@@ -126,7 +126,31 @@ const CartPage = () => {
         });
       }
       const unitPrice = basePrice + optionsExtra;
-      const total = unitPrice * item.soLuong;
+      
+      // Calculate promotion discount
+      const promotion = food.KhuyenMai;
+      let discountedUnitPrice = unitPrice;
+      let hasDiscount = false;
+      
+      if (promotion && basePrice > 0) {
+        const kmLoai = promotion.KMLoai?.toUpperCase();
+        const kmGiaTri = Number(promotion.KMGiaTri || 0);
+        let discount = 0;
+        
+        if (kmLoai === 'PERCENT' || kmLoai === 'PHANTRAM') {
+          discount = (basePrice * kmGiaTri) / 100;
+        } else if (kmLoai === 'AMOUNT' || kmLoai === 'SOTIEN') {
+          discount = kmGiaTri;
+        }
+        
+        const basePriceAfterDiscount = Math.max(0, basePrice - discount);
+        discountedUnitPrice = basePriceAfterDiscount + optionsExtra;
+        hasDiscount = discount > 0;
+      }
+      
+      const total = discountedUnitPrice * item.soLuong;
+      const originalTotal = unitPrice * item.soLuong;
+      
       const segments = [];
       if (sizeName) segments.push(`Size: ${sizeName}`);
       if (crustName) segments.push(`Đế: ${crustName}`);
@@ -134,11 +158,42 @@ const CartPage = () => {
       const detailLine = segments.join(' • ');
       const rawImg = food.HinhAnh;
       const imgPath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
-      return { ...item, displayType: 'product', displayName: food.TenMonAn, displayImage: imgPath ? assetUrl(imgPath) : '/placeholder.svg', displayPrice: unitPrice, displayTotal: total, displayDetails: detailLine, hasError: false };
+      return { 
+        ...item, 
+        displayType: 'product', 
+        displayName: food.TenMonAn, 
+        displayImage: imgPath ? assetUrl(imgPath) : '/placeholder.svg', 
+        displayPrice: discountedUnitPrice,
+        originalPrice: unitPrice,
+        displayTotal: total,
+        originalTotal: originalTotal,
+        displayDetails: detailLine,
+        promotion: promotion,
+        hasDiscount: hasDiscount,
+        hasError: false 
+      };
     });
   }, [items, foodsMap, combosMap, variantsMap, optionPricesMap, crustsMap]);
 
   const subtotal = useMemo(() => enrichedItems.reduce((sum, item) => sum + (item.displayTotal || 0), 0), [enrichedItems]);
+  
+  const totalDiscount = useMemo(() => {
+    return enrichedItems.reduce((sum, item) => {
+      if (item.hasDiscount && item.originalTotal && item.displayTotal) {
+        return sum + (item.originalTotal - item.displayTotal);
+      }
+      return sum;
+    }, 0);
+  }, [enrichedItems]);
+  
+  const originalSubtotal = useMemo(() => {
+    return enrichedItems.reduce((sum, item) => {
+      if (item.originalTotal) {
+        return sum + item.originalTotal;
+      }
+      return sum + (item.displayTotal || 0);
+    }, 0);
+  }, [enrichedItems]);
 
   // Editor functions
   const openEditor = async (item) => {
@@ -210,7 +265,27 @@ const CartPage = () => {
     }, 0);
   }, [editOptions, editSizeId, editorFood]);
 
-  const editorTotal = (editorBasePrice + editorOptionsExtra) * editQty;
+  // Calculate editor promotion discount
+  const editorPromotion = editorFood?.KhuyenMai;
+  const editorBasePriceAfterDiscount = useMemo(() => {
+    if (!editorPromotion || !editorBasePrice) return editorBasePrice;
+    
+    const kmLoai = editorPromotion.KMLoai?.toUpperCase();
+    const kmGiaTri = Number(editorPromotion.KMGiaTri || 0);
+    let discount = 0;
+    
+    if (kmLoai === 'PERCENT' || kmLoai === 'PHANTRAM') {
+      discount = (editorBasePrice * kmGiaTri) / 100;
+    } else if (kmLoai === 'AMOUNT' || kmLoai === 'SOTIEN') {
+      discount = kmGiaTri;
+    }
+    
+    return Math.max(0, editorBasePrice - discount);
+  }, [editorBasePrice, editorPromotion]);
+
+  const editorTotal = (editorBasePriceAfterDiscount + editorOptionsExtra) * editQty;
+  const editorOriginalTotal = (editorBasePrice + editorOptionsExtra) * editQty;
+  const editorHasDiscount = editorPromotion && editorOriginalTotal > editorTotal;
 
   // Group editor options by type - from food's MonAn_TuyChon
   const editorGroupedOptions = useMemo(() => {
@@ -378,9 +453,47 @@ const CartPage = () => {
                                     Dữ liệu không hợp lệ
                                   </div>
                                 )}
+                                {item.hasDiscount && item.promotion && (
+                                  <div className="mt-2">
+                                    <span 
+                                      className="badge" 
+                                      style={{
+                                        background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)',
+                                        color: '#fff',
+                                        padding: '0.3rem 0.6rem',
+                                        borderRadius: '9999px',
+                                        fontWeight: 700,
+                                        fontSize: '0.75rem',
+                                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                                        boxShadow: '0 2px 6px rgba(255, 77, 79, 0.25)'
+                                      }}
+                                    >
+                                      {(item.promotion.KMLoai?.toUpperCase() === 'PERCENT' || item.promotion.KMLoai?.toUpperCase() === 'PHANTRAM') ? (
+                                        <>-{item.promotion.KMGiaTri}%</>
+                                      ) : (
+                                        <>-{Number(item.promotion.KMGiaTri).toLocaleString()}<span style={{fontSize: '0.7em'}}>đ</span></>
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                               <div className="text-end ms-3">
-                                <div className="fw-bold text-danger fs-6">{item.displayPrice.toLocaleString()} đ</div>
+                                {item.hasDiscount && item.originalPrice ? (
+                                  <div>
+                                    <div style={{ 
+                                      color: '#94a3b8', 
+                                      fontSize: '0.85rem', 
+                                      textDecoration: 'line-through',
+                                      fontWeight: 500,
+                                      marginBottom: '0.15rem'
+                                    }}>
+                                      {item.originalPrice.toLocaleString()} đ
+                                    </div>
+                                    <div className="fw-bold text-danger fs-6">{item.displayPrice.toLocaleString()} đ</div>
+                                  </div>
+                                ) : (
+                                  <div className="fw-bold text-danger fs-6">{item.displayPrice.toLocaleString()} đ</div>
+                                )}
                                 <div className="small text-muted">Đơn giá</div>
                               </div>
                             </div>
@@ -478,6 +591,30 @@ const CartPage = () => {
                 <Card.Body className="p-3">
                   <h5 className="mb-3 fw-bold">Tóm tắt đơn hàng</h5>
 
+                  {totalDiscount > 0 && (
+                    <>
+                      <div className="d-flex justify-content-between mb-2">
+                        <span className="text-muted">Tổng tiền hàng</span>
+                        <span className="text-muted" style={{ textDecoration: 'line-through' }}>
+                          {originalSubtotal.toLocaleString()} đ
+                        </span>
+                      </div>
+                      
+                      <div className="d-flex justify-content-between mb-2">
+                        <span className="text-success fw-semibold">
+                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                          </svg>
+                          Khuyến mãi
+                        </span>
+                        <span className="text-success fw-semibold">
+                          -{totalDiscount.toLocaleString()} đ
+                        </span>
+                      </div>
+                    </>
+                  )}
+
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Tạm tính</span>
                     <span className="fw-semibold">{subtotal.toLocaleString()} đ</span>
@@ -492,8 +629,14 @@ const CartPage = () => {
                     <span className="fw-bold">Tổng thanh toán</span>
                     <span className="text-danger fw-bold fs-4">{subtotal.toLocaleString()} đ</span>
                   </div>
+                  
+                  {totalDiscount > 0 && (
+                    <div className="alert alert-success py-2 px-3 mb-3" style={{ fontSize: '0.9rem' }}>
+                      <strong>🎉 Bạn đã tiết kiệm {totalDiscount.toLocaleString()} đ</strong>
+                    </div>
+                  )}
 
-                  <Link to="/checkout" className="d-grid">
+                  <Link to="/checkout" className="d-grid" style={{ textDecoration: 'none' }}>
                     <Button variant="danger" size="lg">
                       Thanh toán
                     </Button>
@@ -515,17 +658,49 @@ const CartPage = () => {
           {!editorLoading && editorFood && (
             <div className="d-flex flex-column gap-3">
               <div className="d-flex gap-3">
-                <div style={{ width: 120, height: 120 }} className="rounded overflow-hidden bg-light flex-shrink-0">
+                <div style={{ width: 120, height: 120, position: 'relative' }} className="rounded overflow-hidden bg-light flex-shrink-0">
                   {(() => {
                     const raw = editorFood.HinhAnh;
                     if (!raw) return <div className="text-muted small">No image</div>;
                     const path = String(raw).startsWith('/') ? String(raw) : `/images/AnhMonAn/${raw}`;
-                    return <img src={assetUrl(path)} alt={editorFood.TenMonAn} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                    return (
+                      <>
+                        <img src={assetUrl(path)} alt={editorFood.TenMonAn} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {editorPromotion && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '8px',
+                            left: '8px',
+                            background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)',
+                            color: '#fff',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '9999px',
+                            fontWeight: 700,
+                            fontSize: '0.7rem',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                            boxShadow: '0 2px 6px rgba(255, 77, 79, 0.25)'
+                          }}>
+                            {(editorPromotion.KMLoai?.toUpperCase() === 'PERCENT' || editorPromotion.KMLoai?.toUpperCase() === 'PHANTRAM') ? (
+                              <>-{editorPromotion.KMGiaTri}%</>
+                            ) : (
+                              <>-{Number(editorPromotion.KMGiaTri).toLocaleString()}<span style={{fontSize: '0.7em'}}>đ</span></>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    );
                   })()}
                 </div>
                 <div className="flex-grow-1">
                   <h5 className="mb-1">{editorFood.TenMonAn}</h5>
                   <div className="text-muted small">Chỉnh sửa kích thước, đế và tùy chọn</div>
+                  {editorPromotion && (
+                    <div className="mt-2">
+                      <span className="badge bg-success">
+                        🎉 {editorPromotion.TenKhuyenMai}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -595,8 +770,28 @@ const CartPage = () => {
                   <Button variant="light" className="px-2" onClick={() => setEditQty(editQty + 1)}>+</Button>
                 </div>
                 <div className="text-end">
-                  <div className="fw-semibold">{editorTotal.toLocaleString()} đ</div>
-                  <div className="small text-muted">Tổng tạm tính</div>
+                  {editorHasDiscount ? (
+                    <div>
+                      <div style={{ 
+                        color: '#94a3b8', 
+                        fontSize: '0.85rem', 
+                        textDecoration: 'line-through',
+                        fontWeight: 500,
+                        marginBottom: '0.15rem'
+                      }}>
+                        {editorOriginalTotal.toLocaleString()} đ
+                      </div>
+                      <div className="fw-semibold text-danger">{editorTotal.toLocaleString()} đ</div>
+                      <div className="small" style={{ color: '#10b981', fontWeight: 600 }}>
+                        Tiết kiệm {(editorOriginalTotal - editorTotal).toLocaleString()} đ
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="fw-semibold">{editorTotal.toLocaleString()} đ</div>
+                      <div className="small text-muted">Tổng tạm tính</div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

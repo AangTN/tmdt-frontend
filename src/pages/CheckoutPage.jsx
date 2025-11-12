@@ -324,7 +324,31 @@ const CheckoutPage = () => {
         });
       }
       const unitPrice = basePrice + optionsExtra;
-      const total = unitPrice * item.soLuong;
+      
+      // Calculate promotion discount
+      const promotion = food.KhuyenMai;
+      let discountedUnitPrice = unitPrice;
+      let hasDiscount = false;
+      
+      if (promotion && basePrice > 0) {
+        const kmLoai = promotion.KMLoai?.toUpperCase();
+        const kmGiaTri = Number(promotion.KMGiaTri || 0);
+        let discount = 0;
+        
+        if (kmLoai === 'PERCENT' || kmLoai === 'PHANTRAM') {
+          discount = (basePrice * kmGiaTri) / 100;
+        } else if (kmLoai === 'AMOUNT' || kmLoai === 'SOTIEN') {
+          discount = kmGiaTri;
+        }
+        
+        const basePriceAfterDiscount = Math.max(0, basePrice - discount);
+        discountedUnitPrice = basePriceAfterDiscount + optionsExtra;
+        hasDiscount = discount > 0;
+      }
+      
+      const total = discountedUnitPrice * item.soLuong;
+      const originalTotal = unitPrice * item.soLuong;
+      
       const segments = [];
       if (sizeName) segments.push(sizeName);
       if (crustName) segments.push(crustName);
@@ -333,13 +357,42 @@ const CheckoutPage = () => {
       const rawImg = food.HinhAnh;
       const imgPath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
       const displayImage = imgPath ? assetUrl(imgPath) : '/placeholder.svg';
-      return { ...item, displayName: food.TenMonAn, displayImage, displayPrice: unitPrice, displayTotal: total, displayDetails: detailLine };
+      return { 
+        ...item, 
+        displayName: food.TenMonAn, 
+        displayImage, 
+        displayPrice: discountedUnitPrice,
+        originalPrice: unitPrice,
+        displayTotal: total,
+        originalTotal: originalTotal,
+        displayDetails: detailLine,
+        promotion: promotion,
+        hasDiscount: hasDiscount
+      };
     });
   }, [items, foodsMap, combosMap, variantsMap, optionPricesMap, crustsMap]);
 
   const subtotal = useMemo(() => enrichedItems.reduce((sum, item) => sum + (item.displayTotal || 0), 0), [enrichedItems]);
+  
+  const totalPromotionDiscount = useMemo(() => {
+    return enrichedItems.reduce((sum, item) => {
+      if (item.hasDiscount && item.originalTotal && item.displayTotal) {
+        return sum + (item.originalTotal - item.displayTotal);
+      }
+      return sum;
+    }, 0);
+  }, [enrichedItems]);
+  
+  const originalSubtotal = useMemo(() => {
+    return enrichedItems.reduce((sum, item) => {
+      if (item.originalTotal) {
+        return sum + item.originalTotal;
+      }
+      return sum + (item.displayTotal || 0);
+    }, 0);
+  }, [enrichedItems]);
 
-  // Calculate discount
+  // Calculate voucher discount
   const discount = useMemo(() => {
     if (!voucher) return 0;
     
@@ -421,7 +474,14 @@ const CheckoutPage = () => {
         items: formattedItems,
         payment: { phuongThuc: paymentMethod }
       };
+      // Log payload for debugging: object + pretty JSON
       console.log('Submitting order payload:', payload);
+      try {
+        console.log('Submitting order payload (json):', JSON.stringify(payload, null, 2));
+      } catch (err) {
+        // If payload contains circular refs, fallback to object log
+        console.log('Could not stringify payload for pretty print, payload logged as object above.');
+      }
 
       const res = await api.post('/api/orders', payload);
       const data = res.data;
@@ -511,7 +571,11 @@ const CheckoutPage = () => {
                       <Col md={4}>
                         <Form.Group>
                           <Form.Label>Thành phố</Form.Label>
-                          <Form.Select aria-label="Chọn tỉnh/thành" onChange={handleProvinceSelect} defaultValue="">
+                          <Form.Select
+                            aria-label="Chọn tỉnh/thành"
+                            onChange={handleProvinceSelect}
+                            value={provinces.find(p => p.name === formData.thanhPho)?.code || ''}
+                          >
                             <option value="" disabled>Chọn tỉnh/thành</option>
                             {provinces.map((p) => (
                               <option key={p.code} value={p.code}>{p.name}</option>
@@ -629,13 +693,55 @@ const CheckoutPage = () => {
                   const isCombo = i.loai === 'CB';
                   return (
                     <li key={i.key} className="border-bottom py-2">
-                      <div className="d-flex justify-content-between">
-                        <span className="fw-semibold">
-                          {isCombo && <span className="badge bg-danger me-1">COMBO</span>}
-                          {i.displayName}
-                          {i.displayDetails && ` (${i.displayDetails})`} x {i.soLuong}
-                        </span>
-                        <span>{i.displayTotal.toLocaleString()} đ</span>
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div className="flex-grow-1">
+                          <div className="fw-semibold">
+                            {isCombo && <span className="badge bg-danger me-1">COMBO</span>}
+                            {i.displayName}
+                            {i.displayDetails && ` (${i.displayDetails})`} x {i.soLuong}
+                          </div>
+                          {i.hasDiscount && i.promotion && (
+                            <div className="mt-1">
+                              <span 
+                                className="badge" 
+                                style={{
+                                  background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)',
+                                  color: '#fff',
+                                  padding: '0.2rem 0.5rem',
+                                  borderRadius: '9999px',
+                                  fontWeight: 700,
+                                  fontSize: '0.7rem',
+                                  border: '1px solid rgba(255, 255, 255, 0.4)'
+                                }}
+                              >
+                                {(i.promotion.KMLoai?.toUpperCase() === 'PERCENT' || i.promotion.KMLoai?.toUpperCase() === 'PHANTRAM') ? (
+                                  <>-{i.promotion.KMGiaTri}%</>
+                                ) : (
+                                  <>-{Number(i.promotion.KMGiaTri).toLocaleString()}<span style={{fontSize: '0.7em'}}>đ</span></>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-end ms-2">
+                          {i.hasDiscount && i.originalTotal ? (
+                            <div>
+                              <div style={{ 
+                                color: '#94a3b8', 
+                                fontSize: '0.75rem', 
+                                textDecoration: 'line-through',
+                                fontWeight: 400
+                              }}>
+                                {i.originalTotal.toLocaleString()} đ
+                              </div>
+                              <div className="text-danger fw-semibold">
+                                {i.displayTotal.toLocaleString()} đ
+                              </div>
+                            </div>
+                          ) : (
+                            <span>{i.displayTotal.toLocaleString()} đ</span>
+                          )}
+                        </div>
                       </div>
                     </li>
                   );
@@ -682,7 +788,45 @@ const CheckoutPage = () => {
                 )}
               </div>
 
-              {/* Shipping quote info */}
+              {/* Shipping quote info is shown below voucher in the summary */}
+
+              {totalPromotionDiscount > 0 && (
+                <>
+                  <div className="d-flex justify-content-between align-items-center mt-3">
+                    <span className="text-muted">Tổng tiền hàng</span>
+                    <span className="text-muted" style={{ textDecoration: 'line-through' }}>
+                      {originalSubtotal.toLocaleString()} đ
+                    </span>
+                  </div>
+                  
+                  <div className="d-flex justify-content-between align-items-center mt-2">
+                    <span className="text-success fw-semibold">
+                      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                      </svg>
+                      Khuyến mãi sản phẩm
+                    </span>
+                    <span className="text-success fw-semibold">
+                      -{totalPromotionDiscount.toLocaleString()} đ
+                    </span>
+                  </div>
+                </>
+              )}
+              
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <span>Tạm tính</span>
+                <strong>{subtotal.toLocaleString()} đ</strong>
+              </div>
+              
+              {discount > 0 && (
+                <div className="d-flex justify-content-between align-items-center mt-2 text-success">
+                  <span>Giảm giá voucher ({voucher?.code})</span>
+                  <strong>-{discount.toLocaleString()} đ</strong>
+                </div>
+              )}
+
+              {/* Shipping quote info (moved below voucher) */}
               <div className="mt-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <span>Phí giao hàng</span>
@@ -707,22 +851,16 @@ const CheckoutPage = () => {
                 )}
               </div>
 
-              <div className="d-flex justify-content-between align-items-center mt-3">
-                <span>Tạm tính</span>
-                <strong>{subtotal.toLocaleString()} đ</strong>
-              </div>
-              
-              {discount > 0 && (
-                <div className="d-flex justify-content-between align-items-center mt-2 text-success">
-                  <span>Giảm giá ({voucher?.code})</span>
-                  <strong>-{discount.toLocaleString()} đ</strong>
-                </div>
-              )}
-
               <div className="d-flex justify-content-between align-items-center mt-2 border-top pt-2">
                 <span className="fw-bold">Tổng thanh toán</span>
                 <strong className="text-danger fs-5">{total.toLocaleString()} đ</strong>
               </div>
+              
+              {(totalPromotionDiscount > 0 || discount > 0) && (
+                <div className="alert alert-success py-2 px-3 mt-3 mb-0" style={{ fontSize: '0.85rem' }}>
+                  <strong>🎉 Bạn đã tiết kiệm {(totalPromotionDiscount + discount).toLocaleString()} đ</strong>
+                </div>
+              )}
             </Card>
           </Col>
         </Row>

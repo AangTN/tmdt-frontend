@@ -3,26 +3,17 @@ import axios from 'axios';
 
 const AdminAuthContext = createContext();
 
-const CREDENTIALS_KEY = 'admin:credentials';
+export const CREDENTIALS_KEY = 'admin:credentials';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-
-let autoLoginAttempted = false;
 
 export const AdminAuthProvider = ({ children }) => {
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Auto-login khi mount
+  // Auto-login khi mount - luôn chạy mỗi lần F5/reload
   useEffect(() => {
     const attemptAutoLogin = async () => {
-      if (autoLoginAttempted) {
-        setLoading(false);
-        return;
-      }
-      
-      autoLoginAttempted = true;
-
       try {
         const savedCredentials = localStorage.getItem(CREDENTIALS_KEY);
         if (!savedCredentials) {
@@ -31,7 +22,7 @@ export const AdminAuthProvider = ({ children }) => {
         }
 
         const { email, matKhau } = JSON.parse(savedCredentials);
-        console.log('Attempting auto-login for admin:', email);
+        console.log('🔄 Attempting auto-login for admin:', email);
 
         const response = await axios.post(`${API_BASE_URL}/api/auth/admin/login`, {
           email,
@@ -50,12 +41,15 @@ export const AdminAuthProvider = ({ children }) => {
             permissions: userData.permissions || []
           };
           setAdmin(adminData);
-          console.log('Auto-login successful, permissions:', adminData.permissions);
+          console.log('✅ Auto-login successful, permissions:', adminData.permissions);
+        } else {
+          console.log('⚠️ No user data in response');
         }
       } catch (error) {
-        console.error('Auto-login failed:', error);
-        // Nếu auto-login thất bại, xóa credentials
-        localStorage.removeItem(CREDENTIALS_KEY);
+        console.error('❌ Auto-login failed:', error);
+        // Don't remove saved credentials on auto-login failure so the stored creds persist across reloads.
+        // This allows retrying auto-login on subsequent reloads. If you want to clear creds on persistent
+        // failures, call logout() explicitly from the admin UI.
       } finally {
         setLoading(false);
       }
@@ -117,7 +111,6 @@ export const AdminAuthProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     setAdmin(null);
-    autoLoginAttempted = false;
     try {
       localStorage.removeItem(CREDENTIALS_KEY);
     } catch (error) {

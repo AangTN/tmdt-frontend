@@ -36,9 +36,28 @@ const ProductCard = ({ pizza, onView }) => {
     }
     return null;
   });
-  const image = pizza?.HinhAnh
-    ? assetUrl(String(pizza.HinhAnh).startsWith('/') ? String(pizza.HinhAnh) : `/images/AnhMonAn/${pizza.HinhAnh}`)
-    : '/placeholder.svg';
+  const image = useMemo(() => {
+    const h = pizza?.HinhAnh;
+    if (!h) return '/placeholder.svg';
+    const s = String(h);
+    if (s.startsWith('http')) return s;
+    if (s.startsWith('/')) return assetUrl(s);
+    return assetUrl(`/images/AnhMonAn/${s}`);
+  }, [pizza?.HinhAnh]);
+
+  // Calculate discount price if promotion exists
+  const promotion = pizza?.KhuyenMai;
+  const discountedPrice = useMemo(() => {
+    if (!promotion || !price) return null;
+    const kmLoai = promotion.KMLoai?.toUpperCase();
+    const kmGiaTri = Number(promotion.KMGiaTri || 0);
+    if (kmLoai === 'PERCENT' || kmLoai === 'PHANTRAM') {
+      return price - (price * kmGiaTri / 100);
+    } else if (kmLoai === 'AMOUNT' || kmLoai === 'SOTIEN') {
+      return Math.max(0, price - kmGiaTri);
+    }
+    return null;
+  }, [promotion, price]);
 
   // Reconcile price using new variants API to ensure consistency with cart logic
   useEffect(() => {
@@ -89,6 +108,17 @@ const ProductCard = ({ pizza, onView }) => {
           decoding="async"
           onError={(e) => { try { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; } catch {} }}
         />
+        <div className={styles.badgeLayer}>
+          {promotion && (
+            <div className={styles.promotionBadge}>
+              {(promotion.KMLoai?.toUpperCase() === 'PERCENT' || promotion.KMLoai?.toUpperCase() === 'PHANTRAM') ? (
+                <>-{promotion.KMGiaTri}%</>
+              ) : (
+                <>-{Number(promotion.KMGiaTri).toLocaleString()}<span style={{fontSize: '0.75em'}}>đ</span></>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className={styles.cardBody}>
         <div className={styles.ratingStars}>
@@ -103,7 +133,16 @@ const ProductCard = ({ pizza, onView }) => {
         </div>
         <h5 className={styles.title}>{pizza?.TenMonAn}</h5>
         {typeof price === 'number' && price > 0 ? (
-          <div className={styles.price}>Từ {price.toLocaleString()} đ</div>
+          <div className={styles.priceContainer}>
+            {discountedPrice && discountedPrice < price ? (
+              <>
+                <div className={styles.originalPrice}>Từ {price.toLocaleString()} đ</div>
+                <div className={styles.discountedPrice}>Từ {discountedPrice.toLocaleString()} đ</div>
+              </>
+            ) : (
+              <div className={styles.price}>Từ {price.toLocaleString()} đ</div>
+            )}
+          </div>
         ) : (
           <div className="text-muted small">Xem chi tiết để biết giá</div>
         )}
