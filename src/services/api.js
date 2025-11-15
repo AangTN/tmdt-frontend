@@ -31,7 +31,8 @@ export function assetUrl(path) {
 
 export async function fetchFoods() {
   return retryRequest(async () => {
-    const res = await api.get('/api/foods');
+    // Admin endpoint returning full foods list for management UI
+    const res = await api.get('/api/foods/admin/all');
     return res.data;
   });
 }
@@ -140,6 +141,13 @@ export async function uploadImage(file) {
 export async function fetchCombos() {
   return retryRequest(async () => {
     const res = await api.get('/api/combos');
+    return res.data;
+  });
+}
+
+export async function fetchAllAccounts() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/users/admin/all-accounts');
     return res.data;
   });
 }

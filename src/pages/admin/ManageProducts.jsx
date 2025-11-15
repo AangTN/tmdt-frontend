@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchFoods, fetchTypes, fetchCategories, assetUrl } from '../../services/api';
+import { fetchFoods, fetchTypes, fetchCategories, assetUrl, api } from '../../services/api';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -48,9 +48,26 @@ const ManageProducts = () => {
     navigate(`/admin/products/edit/${product.MaMonAn}`);
   };
 
-  const handleDelete = (product) => {
-    console.log('Delete product:', product);
-    // TODO: Implement delete functionality
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDelete = async (product) => {
+    if (!product || !product.MaMonAn) return;
+    const confirmed = window.confirm(`Bạn có chắc muốn xóa món "${product.TenMonAn}" (Mã ${product.MaMonAn})?`);
+    if (!confirmed) return;
+    try {
+      setDeletingId(product.MaMonAn);
+      const res = await api.delete(`/api/foods/${product.MaMonAn}`);
+      const msg = res?.data?.message || 'Xóa món ăn thành công';
+      // remove locally for snappy UI
+      setFoods(prev => prev.filter(f => f.MaMonAn !== product.MaMonAn));
+      alert(msg);
+    } catch (err) {
+      console.error('Lỗi khi xóa món:', err);
+      const errMsg = err?.response?.data?.message || err.message || 'Không thể xóa món ăn';
+      alert(errMsg);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Card component for responsive view
@@ -160,7 +177,7 @@ const ManageProducts = () => {
                   </th>
                   <th>
                     <div className={styles.tableSortable}>
-                      <span>Mô tả</span>
+                      <span>Trạng thái</span>
                       <span className={styles.tableSortIcon}></span>
                     </div>
                   </th>
@@ -263,9 +280,13 @@ const ManageProducts = () => {
                         )}
                       </td>
                       <td>
-                        <div className={`${styles.tableCellMuted} text-truncate`} style={{ maxWidth: 200 }}>
-                          {food.MoTa || 'Chưa cập nhật'}
-                        </div>
+                        {food.TrangThai ? (
+                          <span className={`${styles.tableBadge} ${food.TrangThai === 'Active' ? styles.tableBadgeActive : styles.tableBadgeDanger}`}>
+                            {food.TrangThai}
+                          </span>
+                        ) : (
+                          <span className={styles.tableCellMuted}>—</span>
+                        )}
                       </td>
                       <td>
                         <div className={styles.tableActions}>

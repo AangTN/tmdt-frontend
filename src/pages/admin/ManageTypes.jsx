@@ -1,41 +1,109 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTypes } from '../../services/api';
+import { fetchTypes, api } from '../../services/api';
 import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
 import { SimpleEntityCard } from '../../components/admin/AdminTableCard';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
+import formStyles from '../../styles/admin/AdminForm.module.css';
 
 const ManageTypes = () => {
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingType, setEditingType] = useState(null);
+  const [formData, setFormData] = useState({ tenLoaiMonAn: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const loadTypes = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchTypes().catch(() => []);
+      setTypes(Array.isArray(res) ? res : []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      try {
-        setLoading(true);
-        const res = await fetchTypes().catch(() => []);
-        if (!mounted) return;
-        setTypes(Array.isArray(res) ? res : []);
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      if (mounted) await loadTypes();
     })();
     return () => { mounted = false; };
   }, []);
 
-  // Action handlers for edit and delete operations
-  const handleEdit = (type) => {
-    console.log('Edit type:', type);
-    // TODO: Implement edit functionality - open modal or navigate to edit page
-    // This will be implemented in future phases
+  const openAddModal = () => {
+    setEditingType(null);
+    setFormData({ tenLoaiMonAn: '' });
+    setFormError('');
+    setShowModal(true);
   };
 
-  const handleDelete = (type) => {
-    console.log('Delete type:', type);
-    // TODO: Implement delete functionality - show confirmation dialog
-    // This will be implemented in future phases
+  const openEditModal = (type) => {
+    setEditingType(type);
+    setFormData({ tenLoaiMonAn: type.TenLoaiMonAn || '' });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingType(null);
+    setFormData({ tenLoaiMonAn: '' });
+    setFormError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    const tenLoaiMonAn = formData.tenLoaiMonAn.trim();
+    if (!tenLoaiMonAn) {
+      setFormError('Vui lòng nhập tên thể loại');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (editingType) {
+        // Update existing type
+        const res = await api.put(`/api/types/${editingType.MaLoaiMonAn}`, { tenLoaiMonAn });
+        alert(res?.data?.message || 'Cập nhật thể loại thành công');
+      } else {
+        // Create new type
+        const res = await api.post('/api/types', { tenLoaiMonAn });
+        alert(res?.data?.message || 'Thêm thể loại thành công');
+      }
+      closeModal();
+      // Reload all types after successful add/edit
+      await loadTypes();
+    } catch (err) {
+      console.error('Lỗi khi lưu thể loại:', err);
+      setFormError(err?.response?.data?.message || err.message || 'Không thể lưu thể loại');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (type) => {
+    openEditModal(type);
+  };
+
+  const handleDelete = async (type) => {
+    if (!type || !type.MaLoaiMonAn) return;
+    const confirmed = window.confirm(`Bạn có chắc muốn xóa thể loại "${type.TenLoaiMonAn}"?`);
+    if (!confirmed) return;
+    try {
+      const res = await api.delete(`/api/types/${type.MaLoaiMonAn}`);
+      alert(res?.data?.message || 'Xóa thể loại thành công');
+      // Reload all types after successful delete
+      await loadTypes();
+    } catch (err) {
+      console.error('Lỗi khi xóa thể loại:', err);
+      alert(err?.response?.data?.message || err.message || 'Không thể xóa thể loại');
+    }
   };
 
   // Card component for mobile view
@@ -65,7 +133,10 @@ const ManageTypes = () => {
               <h2 className={`${cardStyles.cardTitleLarge} mb-2`}>Quản lý thể loại món</h2>
               <p className={cardStyles.cardSubtitle}>Tổng số: {types.length} thể loại</p>
             </div>
-            <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}>
+            <button 
+              className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}
+              onClick={openAddModal}
+            >
               <span>+</span> Thêm thể loại
             </button>
           </div>
@@ -129,7 +200,10 @@ const ManageTypes = () => {
                         <div className={styles.tableEmptyDescription}>
                           Tạo thể loại đầu tiên để phân loại các món ăn của bạn
                         </div>
-                        <button className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}>
+                        <button 
+                          className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                          onClick={openAddModal}
+                        >
                           Thêm thể loại mới
                         </button>
                       </div>
@@ -213,6 +287,82 @@ const ManageTypes = () => {
           )}
         </div>
       </AdminResponsiveContainer>
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">
+                  {editingType ? '✏️ Chỉnh sửa thể loại' : '➕ Thêm thể loại mới'}
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={closeModal}
+                  disabled={submitting}
+                ></button>
+              </div>
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  {formError && (
+                    <div className="alert alert-danger d-flex align-items-center gap-2 mb-3">
+                      <span>⚠️</span>
+                      <span>{formError}</span>
+                    </div>
+                  )}
+                  
+                  <div className="mb-3">
+                    <label className={`${formStyles.formLabel} fw-semibold mb-2`}>
+                      Tên thể loại <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`${formStyles.formInput}`}
+                      placeholder="VD: Pizza, Món chính, Đồ uống..."
+                      value={formData.tenLoaiMonAn}
+                      onChange={(e) => setFormData({ tenLoaiMonAn: e.target.value })}
+                      disabled={submitting}
+                      autoFocus
+                      required
+                    />
+                    <small className="text-muted d-block mt-1">
+                      Tên thể loại sẽ hiển thị trong menu và phân loại sản phẩm
+                    </small>
+                  </div>
+                </div>
+                <div className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                    onClick={closeModal}
+                    disabled={submitting}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        {editingType ? '💾 Cập nhật' : '➕ Thêm mới'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -30,7 +30,7 @@ const CombosPage = () => {
   const others = activeCombos.slice(1);
 
   return (
-    <section>
+    <section style={{ paddingTop: 0 }}>
       <div className={styles.hero}> 
         <Container>
           <h1 className={styles.heroTitle}>Combo Ưu Đãi Cho Mọi Dịp</h1>

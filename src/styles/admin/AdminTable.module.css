@@ -186,13 +186,13 @@
   border-radius: var(--admin-radius-base);
   font-size: var(--admin-font-size-xs);
   font-weight: var(--admin-font-weight-semibold);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
 }
 
 .tableBadgeActive {
   background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
-  color: var(--admin-success);
+  color: #52c41a;
   border: 1px solid #b7eb8f;
 }
 
@@ -210,7 +210,7 @@
 
 .tableBadgeError {
   background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%);
-  color: var(--admin-error);
+  color: #ff4d4f;
   border: 1px solid #ffa39e;
 }
 

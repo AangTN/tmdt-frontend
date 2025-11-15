@@ -75,7 +75,10 @@ const ProductDetail = () => {
   }, [food]);
   const crusts = (food?.MonAn_DeBanh || []).map(mdb => mdb.DeBanh);
 
-  const baseVariant = variants.find(v => v.Size?.MaSize === sizeId) || null;
+  // Handle products without sizes (MaSize: null) - use the first variant
+  const baseVariant = sizes.length > 0 
+    ? variants.find(v => v.Size?.MaSize === sizeId) || null
+    : (variants.length > 0 ? variants[0] : null);
   const basePrice = variantPrice(baseVariant);
 
   // Calculate promotion discount
@@ -104,14 +107,46 @@ const ProductDetail = () => {
 
   const groupedOptions = useMemo(() => {
     const list = (food?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
+    // Filter options: only show if they have a price for the selected size
+    // If no size is selected (sizeId is null), show all options
+    const filteredList = list.filter(opt => {
+      if (!sizeId) return true; // No size selected, show all options
+      // Check if this option has a price for the current sizeId
+      const hasPriceForSize = opt?.TuyChon_Gia?.some(g => g.Size?.MaSize === sizeId);
+      return hasPriceForSize;
+    });
     const groups = {};
-    list.forEach(opt => {
+    filteredList.forEach(opt => {
       const key = opt?.LoaiTuyChon?.TenLoaiTuyChon || 'Khác';
       if (!groups[key]) groups[key] = [];
       groups[key].push(opt);
     });
     return groups;
-  }, [food]);
+  }, [food, sizeId]);
+
+  // Clear selected options that don't have price for the new size when size changes
+  useEffect(() => {
+    if (!sizeId) return;
+    const list = (food?.MonAn_TuyChon || []).map(mt => mt.TuyChon);
+    const updatedSelectedOptions = { ...selectedOptions };
+    let hasChanges = false;
+    
+    Object.keys(updatedSelectedOptions).forEach(optionIdStr => {
+      if (!updatedSelectedOptions[optionIdStr]) return; // Skip unchecked options
+      const optionId = Number(optionIdStr);
+      const opt = list.find(o => o.MaTuyChon === optionId);
+      // Check if this option has a price for the current size
+      const hasPriceForSize = opt?.TuyChon_Gia?.some(g => g.Size?.MaSize === sizeId);
+      if (!hasPriceForSize) {
+        updatedSelectedOptions[optionIdStr] = false;
+        hasChanges = true;
+      }
+    });
+    
+    if (hasChanges) {
+      setSelectedOptions(updatedSelectedOptions);
+    }
+  }, [sizeId, food]);
 
   const optionsExtra = useMemo(() => {
     const ids = Object.keys(selectedOptions).filter(k => selectedOptions[k]);
@@ -374,6 +409,47 @@ const ProductDetail = () => {
                 </Alert>
               )}
             </div>
+
+            {/* Price Display for products without sizes */}
+            {sizes.length === 0 && basePrice > 0 && (
+              <Card className="border-0 shadow-sm mb-3">
+                <Card.Body className="p-3">
+                  <h5 className="fw-bold mb-2 d-flex align-items-center">
+                    <svg width="20" height="20" fill="#dc3545" viewBox="0 0 16 16" className="me-2">
+                      <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-11zm0 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1h-6zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z"/>
+                    </svg>
+                    Giá món ăn
+                  </h5>
+                  {hasDiscount ? (
+                    <div className="d-flex align-items-center gap-3">
+                      <div style={{ 
+                        color: '#94a3b8', 
+                        fontSize: '1.25rem', 
+                        textDecoration: 'line-through',
+                        fontWeight: 500
+                      }}>
+                        {basePrice.toLocaleString()}đ
+                      </div>
+                      <div style={{ 
+                        color: '#dc3545', 
+                        fontSize: '1.75rem', 
+                        fontWeight: 700
+                      }}>
+                        {basePriceAfterDiscount.toLocaleString()}đ
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      color: '#dc3545', 
+                      fontSize: '1.75rem', 
+                      fontWeight: 700
+                    }}>
+                      {basePrice.toLocaleString()}đ
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
 
             {/* Size Selection */}
             {sizes.length > 0 && (

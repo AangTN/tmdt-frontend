@@ -40,6 +40,13 @@ const AdminSidebar = () => {
       permission: 'Quản lý thể loại'
     },
     {
+      path: '/admin/categories',
+      icon: '📁',
+      label: 'Danh mục',
+      description: 'Quản lý danh mục',
+      permission: 'Quản lý danh mục'
+    },
+    {
       path: '/admin/orders',
       icon: '🧾',
       label: 'Đơn hàng',
@@ -101,6 +108,13 @@ const AdminSidebar = () => {
       label: 'Khuyến mãi',
       description: 'Quản lý khuyến mãi',
       permission: 'Quản lý khuyến mãi'
+    },
+    {
+      path: '/admin/vouchers',
+      icon: '🎟️',
+      label: 'Voucher',
+      description: 'Quản lý voucher',
+      permission: 'Quản lý voucher'
     },
     {
       path: '/admin/banners',

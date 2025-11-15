@@ -6,7 +6,7 @@ function formatVnd(n) {
   return `${Number(n || 0).toLocaleString()} đ`;
 }
 
-export default function OrderDetail({ show, onHide, orderId, initialData = null }) {
+export default function OrderDetail({ show, onHide, orderId, initialData = null, modalZIndex = 1100 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [detail, setDetail] = useState(initialData);
@@ -124,7 +124,7 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null 
       size="lg" 
       centered 
       scrollable
-      style={{ zIndex: 1100 }}
+      style={{ zIndex: modalZIndex }}
     >
       <Modal.Header closeButton className="border-bottom bg-white sticky-top" style={{ zIndex: 1 }}>
         <Modal.Title>Đơn hàng #{detail?.MaDonHang || '...'}</Modal.Title>
