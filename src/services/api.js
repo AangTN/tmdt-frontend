@@ -31,7 +31,15 @@ export function assetUrl(path) {
 
 export async function fetchFoods() {
   return retryRequest(async () => {
-    // Admin endpoint returning full foods list for management UI
+    // Public endpoint returning available foods for storefront
+    const res = await api.get('/api/foods');
+    return res.data;
+  });
+}
+
+// Admin-specific fetch: returns all foods including hidden/inactive for admin UI
+export async function fetchFoodsAdmin() {
+  return retryRequest(async () => {
     const res = await api.get('/api/foods/admin/all');
     return res.data;
   });
@@ -141,6 +149,27 @@ export async function uploadImage(file) {
 export async function fetchCombos() {
   return retryRequest(async () => {
     const res = await api.get('/api/combos');
+    return res.data;
+  });
+}
+
+export async function fetchOrders() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders');
+    return res.data;
+  });
+}
+
+export async function fetchReviews() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/reviews');
+    return res.data;
+  });
+}
+
+export async function fetchOrderReviews() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/reviews');
     return res.data;
   });
 }

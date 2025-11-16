@@ -19,13 +19,6 @@ const AdminSidebar = () => {
       permission: 'Tổng quan'
     },
     {
-      path: '/admin/branch-overview',
-      icon: '�',
-      label: 'TQ Chi nhánh',
-      description: 'Tổng quan chi nhánh',
-      permission: 'Tổng quan chi nhánh'
-    },
-    {
       path: '/admin/products',
       icon: '�',
       label: 'Sản phẩm',
@@ -82,11 +75,11 @@ const AdminSidebar = () => {
       permission: 'Quản lý tùy chọn'
     },
     {
-      path: '/admin/product-reviews',
+      path: '/admin/reviews',
       icon: '⭐',
-      label: 'ĐG Sản phẩm',
-      description: 'Đánh giá sản phẩm',
-      permission: 'Quản lý đánh giá sản phẩm'
+      label: 'Đánh giá món ăn',
+      description: 'Đánh giá món ăn',
+      permission: 'Quản lý đánh giá món ăn'
     },
     {
       path: '/admin/order-reviews',

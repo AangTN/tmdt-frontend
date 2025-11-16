@@ -26,7 +26,9 @@ import ManageTypes from './pages/admin/ManageTypes.jsx';
 import ManageOrders from './pages/admin/ManageOrders.jsx';
 import ManageOptions from './pages/admin/ManageOptions.jsx';
 import ManageReviews from './pages/admin/ManageReviews.jsx';
+import ManageOrderReviews from './pages/admin/ManageOrderReviews.jsx';
 import ManagePromotions from './pages/admin/ManagePromotions.jsx';
+import PromotionDetail from './pages/admin/PromotionDetail.jsx';
 import ManageVouchers from './pages/admin/ManageVouchers.jsx';
 import ManageBanners from './pages/admin/ManageBanners.jsx';
 import ManageUsers from './pages/admin/ManageUsers.jsx';
@@ -98,6 +100,11 @@ function App() {
                 <ManageOrders />
               </RequireAdmin>
             } />
+            <Route path="order-reviews" element={
+              <RequireAdmin requiredPermission="Quản lý đánh giá đơn hàng">
+                <ManageOrderReviews />
+              </RequireAdmin>
+            } />
             <Route path="users" element={
               <RequireAdmin requiredPermission="Quản lý người dùng">
                 <ManageUsers />
@@ -116,6 +123,11 @@ function App() {
             <Route path="promotions" element={
               <RequireAdmin requiredPermission="Quản lý khuyến mãi">
                 <ManagePromotions />
+              </RequireAdmin>
+            } />
+            <Route path="promotions/:id" element={
+              <RequireAdmin requiredPermission="Quản lý khuyến mãi">
+                <PromotionDetail />
               </RequireAdmin>
             } />
             <Route path="vouchers" element={

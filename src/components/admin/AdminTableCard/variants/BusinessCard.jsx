@@ -60,7 +60,8 @@ const ActionButtons = ({ data, type, actions, compact }) => {
         return [
           { icon: '👁️', variant: 'success', label: 'Xem', onClick: actions.onView },
           { icon: '📝', variant: 'primary', label: 'Cập nhật', onClick: actions.onEdit },
-          ...(data.status === 'Đang xử lý' ? 
+          // Allow cancelling for any order that is not already delivered or cancelled
+          ...((data.status !== 'Đã giao' && data.status !== 'Đã hủy') ?
             [{ icon: '❌', variant: 'danger', label: 'Hủy', onClick: actions.onCancel }] : [])
         ];
       case 'promotion':
@@ -397,7 +398,7 @@ const BusinessCard = React.memo(({
         actions: [
           { text: 'Xem', type: 'primary', onClick: onView },
           { text: 'Sửa', type: 'success', onClick: onEdit },
-          ...(type === 'order' && data.status === 'Đang xử lý' ? 
+          ...(type === 'order' && data.status !== 'Đã giao' && data.status !== 'Đã hủy' ? 
             [{ text: 'Hủy', type: 'danger', onClick: onCancel }] : []),
           ...(type === 'promotion' ? 
             [{ text: data.status === 'Đang hoạt động' ? 'Tạm dừng' : 'Kích hoạt', 

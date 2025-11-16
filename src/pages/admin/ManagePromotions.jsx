@@ -1,110 +1,132 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
 import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
 import { BusinessCard } from '../../components/admin/AdminTableCard';
-
-const initialPromotions = [
-  {
-    code: 'PIZZA50',
-    title: 'Giảm 50% cho đơn đầu tiên',
-    discountType: 'percent',
-    value: 50,
-    minOrder: 300000,
-    startDate: '2025-10-01',
-    endDate: '2025-10-31',
-    usage: 120,
-    status: 'Đang áp dụng',
-  },
-  {
-    code: 'FREESHIP',
-    title: 'Miễn phí vận chuyển cuối tuần',
-    discountType: 'amount',
-    value: 30000,
-    minOrder: 200000,
-    startDate: '2025-10-15',
-    endDate: '2025-12-31',
-    usage: 87,
-    status: 'Đang áp dụng',
-  },
-  {
-    code: 'WELCOME20',
-    title: 'Giảm 20k cho khách hàng mới',
-    discountType: 'amount',
-    value: 20000,
-    minOrder: 150000,
-    startDate: '2025-09-01',
-    endDate: '2025-09-30',
-    usage: 240,
-    status: 'Đã hết hạn',
-  }
-];
-
-const statusVariant = {
-  'Đang áp dụng': 'Active',
-  'Chưa kích hoạt': 'Pending',
-  'Đã hết hạn': 'Error',
-};
-
-const statusIcons = {
-  'Đang áp dụng': '✅',
-  'Chưa kích hoạt': '⏳',
-  'Đã hết hạn': '❌',
-};
+import { api } from '../../services/api';
 
 const ManagePromotions = () => {
-  const [promotions] = useState(initialPromotions);
+  const navigate = useNavigate();
+  const [promotions, setPromotions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [processingId, setProcessingId] = useState(null);
+
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
+  const fetchPromotions = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/promotions');
+      setPromotions(response.data);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+      alert('Lỗi khi tải danh sách khuyến mãi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPromotionStatus = (promo) => {
+    const now = new Date();
+    const startDate = new Date(promo.KMBatDau);
+    const endDate = new Date(promo.KMKetThuc);
+
+    if (endDate < now) return { text: 'Đã hết hạn', variant: 'Error', icon: '❌' };
+    if (promo.TrangThai === 'Inactive') return { text: 'Bị khóa', variant: 'Error', icon: '🔒' };
+    if (startDate > now) return { text: 'Chưa bắt đầu', variant: 'Pending', icon: '⏳' };
+    return { text: 'Đang áp dụng', variant: 'Active', icon: '✅' };
+  };
 
   const filteredPromotions = useMemo(() => {
     return promotions.filter((promo) => {
-      const matchQuery = [promo.code, promo.title]
-        .some((field) => field.toLowerCase().includes(query.toLowerCase()));
-      const matchStatus = statusFilter === 'all' || promo.status === statusFilter;
+      const status = getPromotionStatus(promo);
+      const matchQuery = [promo.MaKhuyenMai?.toString(), promo.TenKhuyenMai]
+        .some((field) => field?.toLowerCase().includes(query.toLowerCase()));
+      const matchStatus = statusFilter === 'all' || status.text === statusFilter;
       return matchQuery && matchStatus;
     });
   }, [promotions, query, statusFilter]);
 
   const formatDiscount = (promo) => {
-    if (promo.discountType === 'percent') return `${promo.value}%`;
-    return `${promo.value.toLocaleString()} đ`;
+    if (promo.KMLoai === 'PERCENT') return `${promo.KMGiaTri}%`;
+    return `${Number(promo.KMGiaTri).toLocaleString()} đ`;
   };
 
-  // Action handlers
-  const handleEdit = (promotionCode) => {
-    console.log('Edit promotion:', promotionCode);
-    // TODO: Implement edit functionality
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
-  const handleToggleStatus = (promotionCode) => {
-    console.log('Toggle promotion status:', promotionCode);
-    // TODO: Implement toggle status functionality
+  const handleToggleStatus = async (promotion) => {
+    if (processingId) return;
+    
+    const newStatus = promotion.TrangThai === 'Active' ? 'Inactive' : 'Active';
+    const confirmMessage = newStatus === 'Inactive' 
+      ? 'Bạn có chắc muốn khóa khuyến mãi này?' 
+      : 'Bạn có chắc muốn mở khóa khuyến mãi này?';
+    
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      setProcessingId(promotion.MaKhuyenMai);
+      await api.patch(`/api/promotions/${promotion.MaKhuyenMai}/status`, { TrangThai: newStatus });
+      fetchPromotions();
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
-  const handleDelete = (promotionCode) => {
-    console.log('Delete promotion:', promotionCode);
-    // TODO: Implement delete functionality
+  const handleDeletePromotion = async (promotion) => {
+    if (processingId) return;
+    if (!confirm('Bạn có chắc muốn xóa khuyến mãi này? Hành động này sẽ không thể hoàn tác.')) return;
+
+    try {
+      setProcessingId(promotion.MaKhuyenMai);
+      await api.delete(`/api/promotions/${promotion.MaKhuyenMai}`);
+      // refresh list
+      fetchPromotions();
+    } catch (error) {
+      console.error('Error deleting promotion:', error);
+      alert(error.response?.data?.message || 'Có lỗi khi xóa khuyến mãi');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   // Card component for responsive view
   const cardComponent = (
     <div className={styles.adminTableCards}>
-      {filteredPromotions.map((promotion, index) => (
-        <BusinessCard
-          key={promotion.code}
-          data={promotion}
-          type="promotion"
-          onEdit={() => handleEdit(promotion.code)}
-          onToggleStatus={() => handleToggleStatus(promotion.code)}
-          onDelete={() => handleDelete(promotion.code)}
-          index={index}
-          animate={true}
-          compact={true}
-        />
-      ))}
+      {filteredPromotions.map((promotion, index) => {
+        const status = getPromotionStatus(promotion);
+        return (
+          <BusinessCard
+            key={promotion.MaKhuyenMai}
+            data={{
+              ...promotion,
+              code: String(promotion.MaKhuyenMai),
+              title: promotion.TenKhuyenMai,
+              status: status.text,
+              value: formatDiscount(promotion),
+            }}
+            type="promotion"
+            onEdit={() => navigate(`/admin/promotions/${promotion.MaKhuyenMai}`)}
+            onToggleStatus={() => handleToggleStatus(promotion)}
+            index={index}
+            animate={true}
+            compact={true}
+          />
+        );
+      })}
     </div>
   );
 
@@ -147,11 +169,15 @@ const ManagePromotions = () => {
                 >
                   <option value="all">Tất cả trạng thái</option>
                   <option value="Đang áp dụng">Đang áp dụng</option>
-                  <option value="Chưa kích hoạt">Chưa kích hoạt</option>
+                  <option value="Chưa bắt đầu">Chưa bắt đầu</option>
+                  <option value="Bị khóa">Bị khóa</option>
                   <option value="Đã hết hạn">Đã hết hạn</option>
                 </select>
               </div>
-              <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}>
+              <button 
+                className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}
+                onClick={() => navigate('/admin/promotions/new')}
+              >
                 <span>+</span> Tạo khuyến mãi
               </button>
             </div>
@@ -162,7 +188,7 @@ const ManagePromotions = () => {
       {/* Table Section with Enhanced Responsive Container */}
       <AdminResponsiveContainer 
         data={filteredPromotions}
-        loading={false}
+        loading={loading}
         empty={filteredPromotions.length === 0}
         cardComponent={cardComponent}
         onResponsiveChange={(responsiveInfo) => {
@@ -179,55 +205,19 @@ const ManagePromotions = () => {
             <table className={`${styles.table} ${styles.tableRowHover}`}>
               <thead className={styles.tableHeaderPrimary}>
                 <tr>
-                  <th style={{ width: 120 }}>
-                    <div className={styles.tableSortable}>
-                      <span>Mã</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th>
-                    <div className={styles.tableSortable}>
-                      <span>Tên chương trình</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th style={{ width: 100 }}>
-                    <div className={styles.tableSortable}>
-                      <span>Giá trị</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th style={{ width: 120 }}>
-                    <div className={styles.tableSortable}>
-                      <span>Đơn tối thiểu</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th style={{ width: 180 }}>
-                    <div className={styles.tableSortable}>
-                      <span>Thời gian</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th style={{ width: 100 }}>
-                    <div className={styles.tableSortable}>
-                      <span>Lượt sử dụng</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th style={{ width: 120 }}>
-                    <div className={styles.tableSortable}>
-                      <span>Trạng thái</span>
-                      <span className={styles.tableSortIcon}></span>
-                    </div>
-                  </th>
-                  <th style={{ width: 180 }}>Thao tác</th>
+                  <th style={{ width: 80 }}>Mã KM</th>
+                  <th>Tên chương trình</th>
+                  <th style={{ width: 100 }}>Giá trị</th>
+                  <th style={{ width: 180 }}>Thời gian</th>
+                  <th style={{ width: 100 }}>Món áp dụng</th>
+                  <th style={{ width: 120 }}>Trạng thái</th>
+                  <th style={{ width: 150 }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPromotions.length === 0 ? (
                   <tr>
-                    <td colSpan={8}>
+                    <td colSpan={7}>
                       <div className={styles.tableEmpty}>
                         <div className={styles.tableEmptyIcon}>🎁</div>
                         <div className={styles.tableEmptyTitle}>Không tìm thấy khuyến mãi</div>
@@ -249,79 +239,87 @@ const ManagePromotions = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredPromotions.map((promo, index) => (
-                    <tr key={promo.code} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
-                      <td className={styles.tableCellBold}>
-                        <span className={`${styles.tableBadge} ${styles.tableBadgeInfo}`}>
-                          {promo.code}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-center gap-3">
-                          <div 
-                            className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
-                            style={{ 
-                              width: 40, 
-                              height: 40,
-                              background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
-                            }}
-                          >
-                            <span style={{ fontSize: 18 }}>🎁</span>
+                  filteredPromotions.map((promo, index) => {
+                    const status = getPromotionStatus(promo);
+                    return (
+                      <tr key={promo.MaKhuyenMai} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
+                        <td className={styles.tableCellBold}>
+                          <span className={`${styles.tableBadge} ${styles.tableBadgeInfo}`}>
+                            {promo.MaKhuyenMai}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-center gap-3">
+                            <div 
+                              className="rounded-2 bg-gradient d-flex align-items-center justify-content-center"
+                              style={{ 
+                                width: 40, 
+                                height: 40,
+                                background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)'
+                              }}
+                            >
+                              <span style={{ fontSize: 18 }}>🎁</span>
+                            </div>
+                            <div>
+                              <div className={styles.tableCellBold}>{promo.TenKhuyenMai}</div>
+                              {promo.MoTa && <small className={styles.tableCellMuted}>{promo.MoTa}</small>}
+                            </div>
                           </div>
-                          <div>
-                            <div className={styles.tableCellBold}>{promo.title}</div>
+                        </td>
+                        <td>
+                          <div className={`${styles.tableCellBold} ${styles.tableCellSuccess}`}>
+                            {formatDiscount(promo)}
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={`${styles.tableCellBold} ${styles.tableCellSuccess}`}>
-                          {formatDiscount(promo)}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.tableCellMuted}>
-                          {promo.minOrder.toLocaleString()} đ
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.tableCellMuted}>
-                          <small>{promo.startDate}</small>
-                          <br />
-                          <small>→ {promo.endDate}</small>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.tableCellBold}>
-                          {promo.usage}
-                        </div>
-                        <small className={styles.tableCellMuted}>lượt</small>
-                      </td>
-                      <td>
-                        <span className={`${styles.tableBadge} ${styles[`tableBadge${statusVariant[promo.status]}`]}`}>
-                          <span className="me-1">{statusIcons[promo.status]}</span>
-                          {promo.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className={styles.tableActions}>
-                          <button 
-                            className={`${styles.tableAction} ${styles.tableActionSuccess}`}
-                            title="Chỉnh sửa"
-                            onClick={() => handleEdit(promo.code)}
-                          >
-                            ✏️
-                          </button>
-                          <button 
-                            className={`${promo.status === 'Đang áp dụng' ? styles.tableActionDanger : styles.tableActionWarning}`}
-                            title={promo.status === 'Đang áp dụng' ? 'Ngừng kích hoạt' : 'Kích hoạt lại'}
-                            onClick={() => handleToggleStatus(promo.code)}
-                          >
-                            {promo.status === 'Đang áp dụng' ? '⏸️' : '▶️️'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td>
+                          <div className={styles.tableCellMuted}>
+                            <small>{formatDate(promo.KMBatDau)}</small>
+                            <br />
+                            <small>→ {formatDate(promo.KMKetThuc)}</small>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.tableCellBold}>
+                            {promo.totalFoods || 0}
+                          </div>
+                          <small className={styles.tableCellMuted}>món</small>
+                        </td>
+                        <td>
+                          <span className={`${styles.tableBadge} ${styles[`tableBadge${status.variant}`]}`}>
+                            <span className="me-1">{status.icon}</span>
+                            {status.text}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={styles.tableActions}>
+                            <button 
+                              className={`${styles.tableAction} ${styles.tableActionSuccess}`}
+                              title="Chỉnh sửa"
+                              onClick={() => navigate(`/admin/promotions/${promo.MaKhuyenMai}`)}
+                            >
+                              ✏️
+                            </button>
+                            <button 
+                              className={`${styles.tableAction} ${promo.TrangThai === 'Active' ? styles.tableActionDanger : styles.tableActionWarning}`}
+                              title={promo.TrangThai === 'Active' ? 'Khóa' : 'Mở khóa'}
+                              onClick={() => handleToggleStatus(promo)}
+                              disabled={processingId === promo.MaKhuyenMai}
+                            >
+                              {processingId === promo.MaKhuyenMai ? '⏳' : (promo.TrangThai === 'Active' ? '🔒' : '🔓')}
+                            </button>
+                            <button
+                              className={`${styles.tableAction} ${styles.tableActionDanger}`}
+                              title="Xóa"
+                              onClick={() => handleDeletePromotion(promo)}
+                              disabled={processingId === promo.MaKhuyenMai}
+                            >
+                              {processingId === promo.MaKhuyenMai ? '⏳' : '🗑️'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchFoods, fetchCategories, fetchTypes } from '../../services/api';
+import { fetchFoodsAdmin, fetchCategories, fetchTypes } from '../../services/api';
 import styles from '../../styles/admin/AdminCard.module.css';
 import '../../styles/admin.css';
 
@@ -19,7 +19,7 @@ const AdminDashboard = () => {
     (async () => {
       try {
         const [foodsRes, categoriesRes, typesRes] = await Promise.all([
-          fetchFoods().catch(() => []),
+          fetchFoodsAdmin().catch(() => []),
           fetchCategories().catch(() => []),
           fetchTypes().catch(() => []),
         ]);

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Spinner, Card, Button, Form, Badge, Alert, Toast, ToastContainer } from 'react-bootstrap';
-import { api, assetUrl } from '../services/api';
+import { api, assetUrl, fetchFeaturedFoods } from '../services/api';
+import ProductCard from '../components/ui/ProductCard';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './ProductDetail.module.css';
@@ -35,6 +36,8 @@ const ProductDetail = () => {
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [recommended, setRecommended] = useState([]);
+  const [recommendedLoading, setRecommendedLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -54,6 +57,27 @@ const ProductDetail = () => {
     })();
     return () => { mounted = false; };
   }, [id]);
+
+    // Load recommended products (best-selling / featured)
+    useEffect(() => {
+      let mounted = true;
+      (async () => {
+        setRecommendedLoading(true);
+        try {
+          const res = await fetchFeaturedFoods();
+          const data = Array.isArray(res) ? res : (res?.data || []);
+          if (!mounted) return;
+          // exclude current product
+          const list = (Array.isArray(data) ? data : []).filter(p => Number(p.MaMonAn) !== Number(id));
+          setRecommended(list.slice(0, 4));
+        } catch (err) {
+          console.error('fetchFeaturedFoods failed', err);
+        } finally {
+          if (mounted) setRecommendedLoading(false);
+        }
+      })();
+      return () => { mounted = false; };
+    }, [id]);
 
 
   const imageUrl = useMemo(() => {
@@ -636,6 +660,30 @@ const ProductDetail = () => {
             </Card>
           </Col>
         </Row>
+
+        {/* Recommended products (match cart layout) */}
+        {recommended.length > 0 && (
+          <div className="mt-5 pt-5 border-top" style={{ background: '#fff' }}>
+            <Container>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                  <h4 className="mb-1" style={{ fontWeight: '700' }}>⭐ Món được đề xuất</h4>
+                  <p className="text-muted small mb-0">Có thể bạn sẽ thích</p>
+                </div>
+                <Link to="/menu" className="btn btn-sm btn-outline-danger">
+                  Xem thêm →
+                </Link>
+              </div>
+              <Row xs={1} sm={2} md={4} className="g-4">
+                {recommended.map(food => (
+                  <Col key={food.MaMonAn}>
+                    <ProductCard pizza={food} />
+                  </Col>
+                ))}
+              </Row>
+            </Container>
+          </div>
+        )}
 
         {/* Reviews Section */}
         <Row className="mt-5">

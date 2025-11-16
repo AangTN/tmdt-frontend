@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchFoods, fetchTypes, fetchCategories, assetUrl, api } from '../../services/api';
+import { fetchFoodsAdmin, fetchTypes, fetchCategories, assetUrl, api } from '../../services/api';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -22,7 +22,7 @@ const ManageProducts = () => {
       try {
         setLoading(true);
         const [foodsRes, typesRes, categoriesRes] = await Promise.all([
-          fetchFoods().catch(() => []),
+          fetchFoodsAdmin().catch(() => []),
           fetchTypes().catch(() => []),
           fetchCategories().catch(() => []),
         ]);

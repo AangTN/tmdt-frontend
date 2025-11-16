@@ -1,4 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { fetchOrders, fetchBranches, api } from '../../services/api';
+import OrderDetail from '../../components/ui/OrderDetail';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -66,151 +69,389 @@ const statusIcons = {
 
 const ManageOrders = () => {
   const [filter, setFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [selectedStatusValue, setSelectedStatusValue] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [cancelingOrderId, setCancelingOrderId] = useState(null);
+  const location = useLocation();
 
-  const filteredOrders = useMemo(() => {
-    if (filter === 'all') return mockOrders;
-    return mockOrders.filter(order => order.status === filter);
-  }, [filter]);
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch orders and branches in parallel
+        const [ordersRes, branchesRes] = await Promise.all([fetchOrders(), fetchBranches()]);
+        const ordersData = Array.isArray(ordersRes.data) ? ordersRes.data : ordersRes.data || ordersRes;
+        const branchesData = Array.isArray(branchesRes.data) ? branchesRes.data : branchesRes.data || branchesRes;
 
-  const stats = useMemo(() => {
-    const total = mockOrders.length;
-    const processing = mockOrders.filter(o => o.status === 'Đang xử lý').length;
-    const delivering = mockOrders.filter(o => o.status === 'Đang giao').length;
-    const completed = mockOrders.filter(o => o.status === 'Đã giao').length;
-    const cancelled = mockOrders.filter(o => o.status === 'Đã hủy').length;
-    const totalRevenue = mockOrders
-      .filter(o => o.status === 'Đã giao')
-      .reduce((sum, o) => sum + o.total, 0);
-
-    return { total, processing, delivering, completed, cancelled, totalRevenue };
+        if (!mounted) return;
+        setOrders(ordersData);
+        // Normalize branches to { id, name }
+        const opts = (branchesData || []).map(b => ({ id: String(b.MaCoSo ?? b.maCoSo ?? b.id ?? b.MaCoSo), name: b.TenCoSo || b.tenCoSo || b.name || `Cơ sở ${b.MaCoSo ?? b.id}` }));
+        setBranchOptions(opts);
+      } catch (err) {
+        console.error('fetchOrders/branches error', err);
+        if (!mounted) return;
+        setError(err.message || 'Lỗi khi tải dữ liệu');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    const openId = location?.state?.openOrderId;
+    if (openId) {
+      setSelectedOrderId(openId);
+      setShowDetailModal(true);
+    }
+  }, [location?.state?.openOrderId]);
+
+  const allowedStatuses = ['Đang chờ xác nhận', 'Đang xử lý', 'Đang giao', 'Đã giao'];
+
+  const getLatestStatus = (order) => {
+    const h = order?.LichSuTrangThaiDonHang;
+    if (!Array.isArray(h) || h.length === 0) return null;
+    try {
+      const sorted = [...h].sort((a, b) => new Date(a.ThoiGianCapNhat || 0) - new Date(b.ThoiGianCapNhat || 0));
+      return sorted[sorted.length - 1]?.TrangThai || null;
+    } catch (e) {
+      return h[0]?.TrangThai || null;
+    }
+  };
+
+  // branchOptions will be loaded from the API
+
+  const filteredOrders = useMemo(() => {
+    // 1) Apply branch filter first
+    let byBranch = orders;
+    if (branchFilter && branchFilter !== 'all') {
+      byBranch = orders.filter(o => String(o.CoSo?.MaCoSo) === String(branchFilter));
+    }
+
+    // 2) Then apply status filter
+    if (filter === 'all') {
+      return byBranch.filter(o => allowedStatuses.includes(getLatestStatus(o)));
+    }
+    return byBranch.filter(order => getLatestStatus(order) === filter);
+  }, [filter, orders, branchFilter]);
+
+  const stats = useMemo(() => {
+    // Stats reflect current filtered view (branch + status)
+    const total = filteredOrders.length;
+    const processing = filteredOrders.filter(o => getLatestStatus(o) === 'Đang xử lý').length;
+    const delivering = filteredOrders.filter(o => getLatestStatus(o) === 'Đang giao').length;
+    const completed = filteredOrders.filter(o => getLatestStatus(o) === 'Đã giao').length;
+    const cancelled = filteredOrders.filter(o => getLatestStatus(o) === 'Đã hủy').length;
+    const totalRevenue = filteredOrders
+      .filter(o => getLatestStatus(o) === 'Đã giao')
+      .reduce((sum, o) => sum + Number(o.TongTien || 0), 0);
+
+    return { total, processing, delivering, completed, cancelled, totalRevenue };
+  }, [filteredOrders]);
+
   // Action handlers
-  const handleView = (orderId) => {
-    console.log('View order details:', orderId);
-    // TODO: Implement view functionality
+  const handleView = (order) => {
+    // Open order detail modal and fetch full details inside OrderDetail
+    if (!order || !order.MaDonHang) return;
+    setSelectedOrder(null); // ensure we don't pass partial data
+    setSelectedOrderId(order.MaDonHang);
+    setShowDetailModal(true);
   };
 
   const handleEdit = (orderId) => {
-    console.log('Edit order:', orderId);
-    // TODO: Implement edit functionality
+    // Start inline edit flow for this order: prepare possible next statuses and show select.
+    const order = orders.find(o => o.MaDonHang === orderId);
+    if (!order) return alert('Không tìm thấy đơn hàng');
+    const latest = getLatestStatus(order) || null;
+    const orderedStatuses = allowedStatuses;
+    const curIdx = orderedStatuses.indexOf(latest);
+    const possible = curIdx === -1 ? orderedStatuses : orderedStatuses.slice(curIdx + 1);
+    if (possible.length === 0) return alert('Đơn hàng đã ở trạng thái cuối, không thể cập nhật thêm.');
+    setEditingOrderId(orderId);
+    setSelectedStatusValue(possible[0]);
   };
 
-  const handleCancel = (orderId) => {
-    console.log('Cancel order:', orderId);
-    // TODO: Implement cancel functionality
+  const cancelEdit = () => {
+    setEditingOrderId(null);
+    setSelectedStatusValue('');
+  };
+
+  const confirmUpdateStatus = async (orderId) => {
+    if (!orderId || !selectedStatusValue) return;
+    setUpdatingStatus(true);
+    try {
+      await api.post(`/api/orders/${orderId}/status`, { TrangThai: selectedStatusValue });
+      const res = await api.get(`/api/orders/${orderId}`);
+      const updated = res.data?.data;
+      if (updated) setOrders(prev => prev.map(o => o.MaDonHang === orderId ? updated : o));
+      alert('Cập nhật trạng thái thành công');
+      cancelEdit();
+    } catch (err) {
+      console.error('Status update failed', err);
+      alert('Không thể cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleCancel = async (orderId) => {
+    if (!orderId) return;
+    if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng ${orderId} không?`)) return;
+    setCancelingOrderId(orderId);
+    try {
+      const res = await api.post(`/api/orders/${orderId}/cancel`);
+      if (res.status === 200) {
+        // refetch order and update
+        const r2 = await api.get(`/api/orders/${orderId}`);
+        const updated = r2.data?.data;
+        if (updated) setOrders(prev => prev.map(o => o.MaDonHang === orderId ? updated : o));
+        alert(res.data?.message || 'Hủy đơn hàng thành công');
+      } else {
+        alert(res.data?.message || 'Hủy đơn không thành công');
+      }
+    } catch (err) {
+      console.error('Cancel order failed', err);
+      alert('Không thể hủy đơn hàng: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setCancelingOrderId(null);
+    }
+  };
+
+  
+
+  // Print invoice - open PDF in new tab (copied from ManageUsers implementation)
+  const handlePrintInvoice = async (order) => {
+    if (!order || !order.MaDonHang) return;
+    try {
+      const res = await api.get(`/api/orders/${order.MaDonHang}`);
+      const fullOrder = res.data?.data || order;
+      const pdfHtml = generateOrderPDF(fullOrder);
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(pdfHtml);
+        newWindow.document.close();
+        newWindow.onload = () => setTimeout(() => newWindow.print(), 500);
+      }
+    } catch (err) {
+      console.error('Failed to load order details:', err);
+      alert('Không thể tải chi tiết đơn hàng: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const generateOrderPDF = (order) => {
+    const formatVnd = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+    const formatDate = (d) => d ? new Date(d).toLocaleString('vi-VN') : '—';
+    
+    // Calculate latest status
+    let lastStatus = 'Đang xử lý';
+    if (Array.isArray(order.LichSuTrangThaiDonHang) && order.LichSuTrangThaiDonHang.length > 0) {
+      const sorted = [...order.LichSuTrangThaiDonHang].sort((a, b) => 
+        new Date(a.ThoiGianCapNhat || 0) - new Date(b.ThoiGianCapNhat || 0)
+      );
+      lastStatus = sorted[sorted.length - 1].TrangThai || lastStatus;
+    }
+    
+    // Calculate latest payment status
+    let lastPaymentStatus = 'Chưa thanh toán';
+    let paymentMethod = 'Chuyển Khoản';
+    if (Array.isArray(order.ThanhToan) && order.ThanhToan.length > 0) {
+      const sorted = [...order.ThanhToan].sort((a, b) => 
+        new Date(a.ThoiGian || 0) - new Date(b.ThoiGian || 0)
+      );
+      const latest = sorted[sorted.length - 1];
+      lastPaymentStatus = latest.TrangThai || lastPaymentStatus;
+      paymentMethod = latest.PhuongThuc || paymentMethod;
+    }
+
+    // Build item details with full information
+    const chiTietHTML = Array.isArray(order.ChiTietDonHang) ? order.ChiTietDonHang.map(item => {
+      let tenMon = '—';
+      let size = '';
+      let deBanh = '';
+      
+      // Get item name based on type
+      if (item.Loai === 'SP' && item.BienTheMonAn?.MonAn) {
+        tenMon = item.BienTheMonAn.MonAn.TenMonAn || '—';
+        size = item.BienTheMonAn?.Size?.TenSize ? ` (${item.BienTheMonAn.Size.TenSize})` : '';
+        deBanh = item.DeBanh?.TenDeBanh ? ` - ${item.DeBanh.TenDeBanh}` : '';
+      } else if (item.Loai === 'CB' && item.Combo) {
+        tenMon = item.Combo.TenCombo || '—';
+      }
+      
+      // Get options/toppings
+      let tuyChon = '';
+      if (Array.isArray(item.ChiTietDonHang_TuyChon) && item.ChiTietDonHang_TuyChon.length > 0) {
+        const opts = item.ChiTietDonHang_TuyChon.map(tc => tc.TuyChon?.TenTuyChon || '').filter(Boolean).join(', ');
+        if (opts) tuyChon = `<br><small style="color: #666;">+ ${opts}</small>`;
+      }
+      
+      return `
+      <tr>
+        <td>${tenMon}${size}${deBanh}${tuyChon}</td>
+        <td style="text-align: center;">${item.SoLuong || 0}</td>
+        <td style="text-align: right;">${formatVnd(item.DonGia || 0)}</td>
+        <td style="text-align: right;">${formatVnd(item.ThanhTien || 0)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" style="text-align: center; color: #999;">Không có chi tiết món ăn</td></tr>';
+
+    const coSoInfo = order.CoSo ? `
+      <div class="info-item"><span class="info-label">Cơ sở:</span> ${order.CoSo.TenCoSo || '—'}</div>
+      <div class="info-item"><span class="info-label">SĐT cơ sở:</span> ${order.CoSo.SoDienThoai || '—'}</div>
+    ` : '';
+
+    return `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đơn hàng #${order.MaDonHang}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #fff; color: #333; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: #dc3545; margin-bottom: 10px; font-size: 28px; text-align: center; }
+    h2 { color: #333; margin: 20px 0 10px; font-size: 18px; border-bottom: 2px solid #dc3545; padding-bottom: 5px; }
+    .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
+    .info-section { margin-bottom: 15px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .info-item { margin-bottom: 10px; line-height: 1.6; }
+    .info-label { font-weight: 600; color: #555; display: inline-block; min-width: 130px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th { background: #dc3545; color: white; padding: 10px; text-align: left; font-weight: 600; font-size: 13px; }
+    td { padding: 10px; border-bottom: 1px solid #e0e0e0; font-size: 13px; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .total-section { margin-top: 15px; padding: 15px; background: #f8f9fa; border-left: 4px solid #dc3545; border-radius: 4px; }
+    .total-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 15px; }
+    .total-row.grand { font-size: 20px; font-weight: bold; color: #dc3545; margin-top: 12px; padding-top: 12px; border-top: 2px solid #dc3545; }
+    .payment-info { background: #fff3cd; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107; margin: 15px 0; }
+    .footer { margin-top: 25px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center; color: #999; font-size: 13px; }
+    @media print {
+      body { padding: 10px; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🍕 HÓA ĐƠN ĐẶT HÀNG</h1>
+      <p style="color: #666; font-size: 18px; margin-top: 8px;">Mã đơn hàng: <strong>#${order.MaDonHang}</strong></p>
+      <p style="color: #666; margin-top: 5px;">Ngày đặt: <strong>${formatDate(order.NgayDat)}</strong></p>
+    </div>
+
+    <div class="info-section">
+      <h2>Thông tin cơ sở</h2>
+      <div>
+        ${coSoInfo}
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h2>Thông tin khách hàng</h2>
+      <div>
+        <div class="info-item"><span class="info-label">Họ tên:</span> ${order.TenNguoiNhan || '—'}</div>
+        <div class="info-item"><span class="info-label">Số điện thoại:</span> ${order.SoDienThoaiGiaoHang || '—'}</div>
+        <div class="info-item"><span class="info-label">Địa chỉ:</span> ${`${order.SoNhaDuongGiaoHang || ''}, ${order.PhuongXaGiaoHang || ''}, ${order.QuanHuyenGiaoHang || ''}, ${order.ThanhPhoGiaoHang || ''}`.replace(/^,\s*/, '').replace(/,\s*,/g, ',') || '—'}</div>
+        ${order.GhiChu ? `<div class="info-item"><span class="info-label">Ghi chú:</span> ${order.GhiChu}</div>` : ''}
+      </div>
+    </div>
+
+    <h2>Chi tiết đơn hàng</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 50%;">Món ăn</th>
+          <th style="text-align: center; width: 12%;">Số lượng</th>
+          <th style="text-align: right; width: 19%;">Đơn giá</th>
+          <th style="text-align: right; width: 19%;">Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${chiTietHTML}
+      </tbody>
+    </table>
+
+    <div class="total-section">
+      <div class="total-row">
+        <span>Tiền trước giảm giá:</span>
+        <span>${formatVnd(order.TienTruocGiamGia || 0)}</span>
+      </div>
+      ${(order.TienGiamGia && Number(order.TienGiamGia) > 0) ? `
+      <div class="total-row">
+        <span>Giảm giá:</span>
+        <span>-${formatVnd(order.TienGiamGia)}</span>
+      </div>` : ''}
+      <div class="total-row">
+        <span>Phí vận chuyển:</span>
+        <span>${formatVnd(order.PhiShip || 0)}</span>
+      </div>
+      <div class="total-row grand">
+        <span>TỔNG CỘNG:</span>
+        <span>${formatVnd(order.TongTien)}</span>
+      </div>
+    </div>
+
+    <div class="payment-info">
+      <strong>Phương thức thanh toán:</strong> ${paymentMethod}
+    </div>
+
+    <div class="footer">
+      <p style="font-weight: 600; color: #dc3545; margin-bottom: 8px;">Cảm ơn quý khách đã đặt hàng!</p>
+      <p>Hotline: ${order.CoSo?.SoDienThoai || '1900xxxx'}</p>
+      <p style="margin-top: 15px; font-size: 12px;">In lúc: ${new Date().toLocaleString('vi-VN')}</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
   };
 
   // Card component for responsive view
   const cardComponent = (
     <div className={styles.adminTableCards}>
-      {filteredOrders.map((order, index) => (
-        <BusinessCard
-          key={order.id}
-          data={order}
-          type="order"
-          onView={() => handleView(order.id)}
-          onEdit={() => handleEdit(order.id)}
-          onCancel={() => handleCancel(order.id)}
-          index={index}
-          animate={true}
-          showTimeline={true}
-        />
-      ))}
+      {filteredOrders.map((order, index) => {
+          const id = order.MaDonHang;
+          const customer = order.NguoiDung_DonHang_MaNguoiDungToNguoiDung?.HoTen || order.TenNguoiNhan || 'Khách vãng lai';
+          const phone = order.SoDienThoaiGiaoHang;
+            const branch = order.CoSo?.TenCoSo || '—';
+            const total = Number(order.TongTien || 0);
+          const latestStatus = getLatestStatus(order) || 'Đang xử lý';
+          const createdAt = new Date(order.NgayDat).toLocaleString();
+
+        return (
+          <BusinessCard
+            key={id}
+            data={{ id, customer, phone, branch, total, status: latestStatus, createdAt, address: branch }}
+            type="order"
+            onView={() => handleView(id)}
+            onEdit={() => handleEdit(id)}
+            onCancel={() => handleCancel(id)}
+            index={index}
+            animate={true}
+            showTimeline={true}
+          />
+        );
+      })}
     </div>
   );
 
   return (
     <div className="admin-animate-fade-in">
-      {/* Stats Cards */}
-      <div className={`${statsStyles.statsGrid4} mb-4`}>
-        <div className={`${statsStyles.statCardPremium} ${statsStyles.statAnimateHover}`}>
-          <div className={statsStyles.statHeader}>
-            <h3 className={statsStyles.statTitle}>Tổng đơn hàng</h3>
-            <div className={`${statsStyles.statIcon} ${statsStyles.statIconPrimary}`}>
-              📋
-            </div>
-          </div>
-          <div className={statsStyles.statContent}>
-            <div className={statsStyles.statValue}>{stats.total}</div>
-            <div className={statsStyles.statLabel}>Đơn hàng</div>
-          </div>
-          <div className={statsStyles.statFooter}>
-            <div className={`${statsStyles.statChange} ${statsStyles.statChangePositive}`}>
-              <span className={statsStyles.statChangeIcon}>↑</span>
-              <span>12% so với tháng trước</span>
-            </div>
-            <div className={statsStyles.statPeriod}>Tháng 10</div>
-          </div>
-        </div>
-
-        <div className={`${statsStyles.statCardPremium} ${statsStyles.statAnimateHover}`}>
-          <div className={statsStyles.statHeader}>
-            <h3 className={statsStyles.statTitle}>Đang xử lý</h3>
-            <div className={`${statsStyles.statIcon} ${statsStyles.statIconWarning}`}>
-              ⏳
-            </div>
-          </div>
-          <div className={statsStyles.statContent}>
-            <div className={statsStyles.statValue}>{stats.processing}</div>
-            <div className={statsStyles.statLabel}>Chờ xác nhận</div>
-          </div>
-          <div className={statsStyles.statFooter}>
-            <div className={statsStyles.statProgress}>
-              <div className={statsStyles.statProgressBar}>
-                <div 
-                  className={`${statsStyles.statProgressFill} ${statsStyles.statProgressFillWarning}`}
-                  style={{ width: `${(stats.processing / stats.total) * 100}%` }}
-                ></div>
-              </div>
-              <div className={statsStyles.statProgressText}>
-                <span>{stats.processing}</span>
-                <span>{Math.round((stats.processing / stats.total) * 100)}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`${statsStyles.statCardPremium} ${statsStyles.statAnimateHover}`}>
-          <div className={statsStyles.statHeader}>
-            <h3 className={statsStyles.statTitle}>Đã giao</h3>
-            <div className={`${statsStyles.statIcon} ${statsStyles.statIconSuccess}`}>
-              ✅
-            </div>
-          </div>
-          <div className={statsStyles.statContent}>
-            <div className={statsStyles.statValue}>{stats.completed}</div>
-            <div className={statsStyles.statLabel}>Thành công</div>
-          </div>
-          <div className={statsStyles.statFooter}>
-            <div className={`${statsStyles.statChange} ${statsStyles.statChangePositive}`}>
-              <span className={statsStyles.statChangeIcon}>↑</span>
-              <span>8% so với tháng trước</span>
-            </div>
-            <div className={statsStyles.statPeriod}>Tháng 10</div>
-          </div>
-        </div>
-
-        <div className={`${statsStyles.statCardPremium} ${statsStyles.statAnimateHover}`}>
-          <div className={statsStyles.statHeader}>
-            <h3 className={statsStyles.statTitle}>Doanh thu</h3>
-            <div className={`${statsStyles.statIcon} ${statsStyles.statIconInfo}`}>
-              💰
-            </div>
-          </div>
-          <div className={statsStyles.statContent}>
-            <div className={statsStyles.statValue}>{stats.totalRevenue.toLocaleString()}đ</div>
-            <div className={statsStyles.statLabel}>Tổng doanh thu</div>
-          </div>
-          <div className={statsStyles.statFooter}>
-            <div className={`${statsStyles.statChange} ${statsStyles.statChangePositive}`}>
-              <span className={statsStyles.statChangeIcon}>↑</span>
-              <span>15% so với tháng trước</span>
-            </div>
-            <div className={statsStyles.statPeriod}>Tháng 10</div>
-          </div>
-        </div>
-      </div>
+      {/* Stats removed as requested */}
 
       {/* Header Section */}
       <div className={`${cardStyles.cardPremium} mb-4`}>
@@ -223,24 +464,36 @@ const ManageOrders = () => {
             <div className="d-flex gap-2 align-items-center">
               <div className={formStyles.formFilter}>
                 <div className={formStyles.formFilterGroup}>
+                  <span className={formStyles.formFilterLabel}>Cơ sở:</span>
+                  <select
+                    className={formStyles.formSelect}
+                    value={branchFilter}
+                    onChange={(e) => setBranchFilter(e.target.value)}
+                  >
+                    <option value="all">Tất cả cơ sở</option>
+                    {branchOptions.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className={formStyles.formFilter}>
+                <div className={formStyles.formFilterGroup}>
                   <span className={formStyles.formFilterLabel}>Trạng thái:</span>
                   <select 
                     className={formStyles.formSelect}
                     value={filter} 
                     onChange={(e) => setFilter(e.target.value)}
                   >
-                    <option value="all">Tất cả trạng thái</option>
+                    <option value="all">Tất cả (Đang chờ xác nhận, Đang xử lý, Đang giao, Đã giao)</option>
+                    <option value="Đang chờ xác nhận">Đang chờ xác nhận</option>
                     <option value="Đang xử lý">Đang xử lý</option>
                     <option value="Đang giao">Đang giao</option>
                     <option value="Đã giao">Đã giao</option>
-                    <option value="Đã hủy">Đã hủy</option>
                   </select>
                 </div>
               </div>
-              <button className={`${buttonStyles.button} ${buttonStyles.buttonSecondary}`}>
-                📊 Xuất báo cáo
-              </button>
-              <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}>
+              <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`} onClick={() => window.location.reload()}>
                 🔄 Tải lại
               </button>
             </div>
@@ -288,6 +541,12 @@ const ManageOrders = () => {
                   </th>
                   <th>
                     <div className={styles.tableSortable}>
+                      <span>Cơ sở</span>
+                      <span className={styles.tableSortIcon}></span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className={styles.tableSortable}>
                       <span>Tổng tiền</span>
                       <span className={styles.tableSortIcon}></span>
                     </div>
@@ -308,7 +567,13 @@ const ManageOrders = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7}>
+                      <div className={styles.tableEmpty}>Đang tải...</div>
+                    </td>
+                  </tr>
+                ) : filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={7}>
                       <div className={styles.tableEmpty}>
@@ -327,83 +592,87 @@ const ManageOrders = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order, index) => (
-                    <tr key={order.id} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
-                      <td className={styles.tableCellBold}>
-                        <span className="badge bg-light text-dark border">
-                          {order.id}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-center gap-2">
-                          <div 
-                            className="rounded-circle d-flex align-items-center justify-content-center"
-                            style={{ 
-                              width: 32, 
-                              height: 32,
-                              background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)',
-                              color: 'white',
-                              fontSize: 14,
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            {order.customer.charAt(0)}
-                          </div>
-                          <div>
-                            <div className={styles.tableCellBold}>{order.customer}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.tableCellMuted}>
-                          📞 {order.phone}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={`${styles.tableCellBold} ${styles.tableCellSuccess}`}>
-                          {order.total.toLocaleString()} đ
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`${styles.tableBadge} ${styles[`tableBadge${statusVariant[order.status] === 'primary' ? 'Pending' : statusVariant[order.status] === 'success' ? 'Active' : statusVariant[order.status] === 'warning' ? 'Inactive' : 'Error'}`]}`}>
-                          <span className="me-1">{statusIcons[order.status]}</span>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className={styles.tableCellMuted}>
-                          🕒 {order.createdAt}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.tableActions}>
-                          <button 
-                            className={`${styles.tableAction} ${styles.tableActionSuccess}`}
-                            title="Xem chi tiết"
-                            onClick={() => handleView(order.id)}
-                          >
-                            👁️
-                          </button>
-                          <button 
-                            className={styles.tableAction}
-                            title="Cập nhật trạng thái"
-                            onClick={() => handleEdit(order.id)}
-                          >
-                            📝
-                          </button>
-                          {order.status === 'Đang xử lý' && (
-                            <button 
-                              className={`${styles.tableAction} ${styles.tableActionDanger}`}
-                              title="Hủy đơn hàng"
-                              onClick={() => handleCancel(order.id)}
+                  filteredOrders.map((order, index) => {
+                    const id = order.MaDonHang;
+                    const customer = order.NguoiDung_DonHang_MaNguoiDungToNguoiDung?.HoTen || order.TenNguoiNhan || 'Khách vãng lai';
+                    const phone = order.SoDienThoaiGiaoHang;
+                    const branch = order.CoSo?.TenCoSo || '—';
+                    const total = Number(order.TongTien || 0).toLocaleString();
+                    const latestStatus = getLatestStatus(order) || 'Đang xử lý';
+                    const createdAt = new Date(order.NgayDat).toLocaleString();
+
+                    return (
+                      <tr key={id} className="admin-animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
+                        <td className={styles.tableCellBold}>
+                          <span className="badge bg-light text-dark border">{id}</span>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-center gap-2">
+                            <div 
+                              className="rounded-circle d-flex align-items-center justify-content-center"
+                              style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)', color: 'white', fontSize: 14, fontWeight: 'bold' }}
                             >
-                              ❌
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                              {String(customer).charAt(0)}
+                            </div>
+                            <div>
+                              <div className={styles.tableCellBold}>{customer}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.tableCellMuted}>📞 {phone}</div>
+                        </td>
+                        <td>
+                          <div className={styles.tableCellMuted}>{branch}</div>
+                        </td>
+                        <td>
+                          <div className={`${styles.tableCellBold} ${styles.tableCellSuccess}`}>{total} đ</div>
+                        </td>
+                        <td>
+                          <span className={`${styles.tableBadge} ${styles[`tableBadge${statusVariant[latestStatus] === 'primary' ? 'Pending' : statusVariant[latestStatus] === 'success' ? 'Active' : statusVariant[latestStatus] === 'warning' ? 'Inactive' : 'Error'}`]}`}>
+                            <span className="me-1">{statusIcons[latestStatus]}</span>
+                            {latestStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={styles.tableCellMuted}>🕒 {createdAt}</div>
+                        </td>
+                        <td>
+                          <div className={styles.tableActions}>
+                            <button className={`${styles.tableAction} ${styles.tableActionSuccess}`} title="Xem chi tiết" onClick={() => handleView(order)}>👁️</button>
+                            <button className={`${styles.tableAction} ${styles.tableActionSecondary}`} title="In hóa đơn" onClick={() => handlePrintInvoice(order)}>🖨️</button>
+
+                            {editingOrderId === id ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <select
+                                  value={selectedStatusValue}
+                                  onChange={(e) => setSelectedStatusValue(e.target.value)}
+                                  style={{ padding: '4px 6px', minWidth: 160 }}
+                                >
+                                  {(() => {
+                                    const latest = getLatestStatus(order) || null;
+                                    const curIdx = allowedStatuses.indexOf(latest);
+                                    const possible = curIdx === -1 ? allowedStatuses : allowedStatuses.slice(curIdx + 1);
+                                    return possible.map(s => <option key={s} value={s}>{s}</option>);
+                                  })()}
+                                </select>
+                                <button className={`${styles.tableAction} ${styles.tableActionSuccess}`} title="Xác nhận" onClick={() => confirmUpdateStatus(id)} disabled={updatingStatus}>✅</button>
+                                <button className={styles.tableAction} title="Hủy" onClick={cancelEdit}>✖️</button>
+                              </div>
+                            ) : (
+                              <>
+                                <button className={styles.tableAction} title="Cập nhật trạng thái" onClick={() => handleEdit(id)}>📝</button>
+                              </>
+                            )}
+
+                            <button className={`${styles.tableAction} ${styles.tableActionDanger}`} title="Hủy đơn hàng" onClick={() => handleCancel(id)} disabled={cancelingOrderId === id || latestStatus === 'Đã giao'}>{cancelingOrderId === id ? 'Đang…' : '❌'}</button>
+
+                            {/* Delete action removed - deletion is not allowed from admin UI */}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -413,7 +682,7 @@ const ManageOrders = () => {
           {filteredOrders.length > 0 && (
             <div className={styles.tablePagination}>
               <div className={styles.tablePaginationInfo}>
-                Hiển thị {filteredOrders.length} trên {mockOrders.length} đơn hàng
+                Hiển thị {filteredOrders.length} trên {orders.length} đơn hàng
               </div>
               <div className={styles.tablePaginationControls}>
                 <button 
@@ -432,6 +701,14 @@ const ManageOrders = () => {
                   →
                 </button>
               </div>
+              {/* Order Detail Modal - using OrderDetail component */}
+              <OrderDetail 
+                show={showDetailModal}
+                onHide={() => setShowDetailModal(false)}
+                  orderId={selectedOrderId}
+                  initialData={null}
+                modalZIndex={1400}
+              />
             </div>
           )}
         </div>
