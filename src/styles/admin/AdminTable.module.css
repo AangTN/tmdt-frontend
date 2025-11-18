@@ -178,6 +178,19 @@
   border-color: var(--admin-success);
 }
 
+/* Info action — used for gift / info buttons */
+.tableActionInfo {
+  background: transparent;
+  border-color: transparent;
+  color: var(--admin-info);
+}
+
+.tableActionInfo:hover {
+  background: var(--admin-info);
+  color: var(--admin-white);
+  border-color: var(--admin-info);
+}
+
 /* Table Status Badges */
 .tableBadge {
   display: inline-flex;
@@ -384,6 +397,42 @@
   padding: var(--admin-space-md);
   background: var(--admin-bg-secondary);
   border-top: 1px solid var(--admin-border-light);
+}
+
+/* Thumbnails and card image variants used across admin pages */
+.cardImageWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--admin-bg-secondary);
+}
+
+.cardImageSmall {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  display: block;
+}
+
+.productThumbnailSmall {
+  width: 64px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.cardSubtitleSmall {
+  margin: 6px 0 0;
+  color: var(--admin-text-secondary);
+  font-size: var(--admin-font-size-sm);
+  line-height: 1.2;
+  max-height: 2.4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tablePaginationInfo {

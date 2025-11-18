@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchOptionPrices } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -7,49 +8,47 @@ import cardStyles from '../../styles/admin/AdminCard.module.css';
 import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
 import { ProductCard } from '../../components/admin/AdminTableCard';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 const ManageOptions = () => {
-  const [optionPrices, setOptionPrices] = useState([]);
+  const navigate = useNavigate();
+  const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await fetchOptionPrices().catch(() => []);
-        if (!mounted) return;
-        setOptionPrices(Array.isArray(res) ? res : []);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
+    fetchOptions();
   }, []);
 
+  const fetchOptions = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/options/admin`);
+      setOptions(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching options:', error);
+      alert('Không thể tải danh sách tùy chọn');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const groupedOptions = useMemo(() => {
-    const map = new Map();
-    optionPrices.forEach((item) => {
-      const option = item?.TuyChon;
-      if (!option) return;
-      const key = option.MaTuyChon;
-      if (!map.has(key)) {
-        map.set(key, {
-          id: option.MaTuyChon,
-          name: option.TenTuyChon,
-          group: option.LoaiTuyChon?.TenLoaiTuyChon || 'Chưa phân loại',
-          prices: [],
-        });
-      }
-      const record = map.get(key);
-      record.prices.push({
-        sizeId: item.MaSize,
-        sizeName: item.Size?.TenSize || 'Không theo size',
-        extra: Number(item.GiaThem || 0),
-      });
-    });
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [optionPrices]);
+    return options
+      .filter(opt => opt.TrangThai !== 'Deleted')
+      .map(opt => ({
+        id: opt.MaTuyChon,
+        name: opt.TenTuyChon,
+        group: opt.LoaiTuyChon?.TenLoaiTuyChon || 'Chưa phân loại',
+        status: opt.TrangThai,
+        prices: opt.TuyChon_Gia?.map(price => ({
+          sizeId: price.MaSize,
+          sizeName: price.Size?.TenSize || 'Không theo size',
+          extra: Number(price.GiaThem || 0),
+        })) || [],
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [options]);
 
   const filteredOptions = groupedOptions.filter((opt) =>
     opt.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -58,18 +57,26 @@ const ManageOptions = () => {
 
   // Action handlers
   const handleEdit = (option) => {
-    console.log('Edit option:', option);
-    // TODO: Implement edit functionality
+    navigate(`/admin/options/edit/${option.id}`);
   };
 
-  const handleDelete = (option) => {
-    console.log('Delete option:', option);
-    // TODO: Implement delete functionality
+  const handleDelete = async (option) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa tùy chọn "${option.name}"?\n\nLưu ý: Tùy chọn này sẽ bị xóa khỏi tất cả món ăn đang sử dụng.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/api/options/${option.id}`);
+      alert('Xóa tùy chọn thành công!');
+      fetchOptions();
+    } catch (error) {
+      console.error('Error deleting option:', error);
+      alert(error.response?.data?.message || 'Lỗi khi xóa tùy chọn');
+    }
   };
 
   const handleView = (option) => {
-    console.log('View option details:', option);
-    // TODO: Implement view functionality
+    navigate(`/admin/options/edit/${option.id}`);
   };
 
   // Card component for responsive view
@@ -122,7 +129,10 @@ const ManageOptions = () => {
                   </button>
                 )}
               </div>
-              <button className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}>
+              <button 
+                className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonLarge}`}
+                onClick={() => navigate('/admin/options/add')}
+              >
                 <span>+</span> Thêm tùy chọn
               </button>
             </div>

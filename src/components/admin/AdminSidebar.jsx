@@ -20,10 +20,17 @@ const AdminSidebar = () => {
     },
     {
       path: '/admin/products',
-      icon: '�',
+      icon: '🍕',
       label: 'Sản phẩm',
       description: 'Quản lý sản phẩm',
       permission: 'Quản lý sản phẩm'
+    },
+    {
+      path: '/admin/combos',
+      icon: '📦',
+      label: 'Combo',
+      description: 'Quản lý combo',
+      permission: 'Quản lý combo'
     },
     {
       path: '/admin/types',

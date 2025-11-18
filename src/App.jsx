@@ -25,9 +25,14 @@ import ManageCategories from './pages/admin/ManageCategories.jsx';
 import ManageTypes from './pages/admin/ManageTypes.jsx';
 import ManageOrders from './pages/admin/ManageOrders.jsx';
 import ManageOptions from './pages/admin/ManageOptions.jsx';
+import AddOption from './pages/admin/AddOption.jsx';
+import EditOption from './pages/admin/EditOption.jsx';
 import ManageReviews from './pages/admin/ManageReviews.jsx';
 import ManageOrderReviews from './pages/admin/ManageOrderReviews.jsx';
 import ManagePromotions from './pages/admin/ManagePromotions.jsx';
+import ManageCombos from './pages/admin/ManageCombos.jsx';
+import AddCombo from './pages/admin/AddCombo.jsx';
+import EditCombo from './pages/admin/EditCombo.jsx';
 import PromotionDetail from './pages/admin/PromotionDetail.jsx';
 import ManageVouchers from './pages/admin/ManageVouchers.jsx';
 import ManageBanners from './pages/admin/ManageBanners.jsx';
@@ -115,6 +120,16 @@ function App() {
                 <ManageOptions />
               </RequireAdmin>
             } />
+            <Route path="options/add" element={
+              <RequireAdmin requiredPermission="Quản lý tùy chọn">
+                <AddOption />
+              </RequireAdmin>
+            } />
+            <Route path="options/edit/:id" element={
+              <RequireAdmin requiredPermission="Quản lý tùy chọn">
+                <EditOption />
+              </RequireAdmin>
+            } />
             <Route path="reviews" element={
               <RequireAdmin requiredPermission="Quản lý đánh giá đơn hàng">
                 <ManageReviews />
@@ -138,6 +153,21 @@ function App() {
             <Route path="banners" element={
               <RequireAdmin requiredPermission="Quản lý banner">
                 <ManageBanners />
+              </RequireAdmin>
+            } />
+            <Route path="combos" element={
+              <RequireAdmin requiredPermission="Quản lý sản phẩm">
+                <ManageCombos />
+              </RequireAdmin>
+            } />
+            <Route path="combos/add" element={
+              <RequireAdmin requiredPermission="Quản lý sản phẩm">
+                <AddCombo />
+              </RequireAdmin>
+            } />
+            <Route path="combos/edit/:id" element={
+              <RequireAdmin requiredPermission="Quản lý sản phẩm">
+                <EditCombo />
               </RequireAdmin>
             } />
           </Route>

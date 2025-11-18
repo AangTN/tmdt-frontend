@@ -153,6 +153,13 @@ export async function fetchCombos() {
   });
 }
 
+export async function fetchCombosAdmin() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/combos/admin');
+    return res.data;
+  });
+}
+
 export async function fetchOrders() {
   return retryRequest(async () => {
     const res = await api.get('/api/orders');

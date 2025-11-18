@@ -15,6 +15,13 @@ const ManageVouchers = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingVoucher, setEditingVoucher] = useState(null);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedVoucherToGift, setSelectedVoucherToGift] = useState(null);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [selectAllChecked, setSelectAllChecked] = useState(false);
+  const [giftMessage, setGiftMessage] = useState('');
   const [formData, setFormData] = useState({
     code: '',
     MoTa: '',
@@ -142,6 +149,111 @@ const ManageVouchers = () => {
 
   const handleFormChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleOpenGiftModal = async (voucher) => {
+    setSelectedVoucherToGift(voucher);
+    setShowGiftModal(true);
+    
+    // Load users
+    setLoadingUsers(true);
+    try {
+      const res = await api.get('/api/users/admin/all-accounts');
+      const userList = res.data?.data || [];
+      // Sort by TongTienDonHang descending
+      const sortedUsers = userList.sort((a, b) => (b.TongTienDonHang || 0) - (a.TongTienDonHang || 0));
+      setUsers(sortedUsers);
+    } catch (err) {
+      console.error('Failed to load users:', err);
+      alert('Không thể tải danh sách người dùng: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleCloseGiftModal = () => {
+    setShowGiftModal(false);
+    setSelectedVoucherToGift(null);
+    setUsers([]);
+    setSelectedUserIds([]);
+    setSelectAllChecked(false);
+    setGiftMessage('');
+  };
+
+  const remainingForVoucher = (voucher) => {
+    if (!voucher) return 0;
+    return Math.max(0, (voucher.SoLuong || 0) - (voucher.usedCount || 0));
+  };
+
+  const isVoucherValidForGift = (voucher) => {
+    if (!voucher) return false;
+    
+    // Check status is Active
+    if (voucher.TrangThai !== 'Active') return false;
+    
+    // Check usedCount < SoLuong
+    const remaining = remainingForVoucher(voucher);
+    if (remaining <= 0) return false;
+    
+    // Check date range is valid
+    const now = new Date();
+    const startDate = voucher.NgayBatDau ? new Date(voucher.NgayBatDau) : null;
+    const endDate = voucher.NgayKetThuc ? new Date(voucher.NgayKetThuc) : null;
+    
+    if (startDate && now < startDate) return false; // Not started
+    if (endDate && now > endDate) return false; // Expired
+    
+    return true;
+  };
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUserIds(prev => {
+      if (prev.includes(userId)) return prev.filter(id => id !== userId);
+      // prevent selecting more than remaining vouchers
+      const remain = remainingForVoucher(selectedVoucherToGift);
+      if (prev.length >= remain) return prev;
+      return [...prev, userId];
+    });
+  };
+
+  const handleSelectAll = () => {
+    const remain = remainingForVoucher(selectedVoucherToGift);
+    if (selectAllChecked) {
+      setSelectedUserIds([]);
+      setSelectAllChecked(false);
+      return;
+    }
+    // select up to `remain` users from the sorted list
+    const ids = users.slice(0, remain).map(u => u.MaTaiKhoan);
+    setSelectedUserIds(ids);
+    setSelectAllChecked(true);
+  };
+
+  const handleGiftSelected = async () => {
+    if (!selectedVoucherToGift) return alert('Không có voucher để tặng');
+    if (selectedUserIds.length === 0) return alert('Vui lòng chọn ít nhất 1 người nhận');
+    
+    // Validate voucher before gifting
+    if (!isVoucherValidForGift(selectedVoucherToGift)) {
+      return alert('Voucher không hợp lệ để tặng. Vui lòng kiểm tra trạng thái, số lượng và thời gian.');
+    }
+
+    if (!confirm(`Bạn có chắc muốn tặng voucher ${selectedVoucherToGift.code} cho ${selectedUserIds.length} người?`)) return;
+
+    try {
+      // Payload: { voucherCode, userIds, message }
+      await api.post('/api/vouchers/gift', {
+        voucherCode: selectedVoucherToGift.code,
+        userIds: selectedUserIds,
+        message: giftMessage.trim() || 'Chúc bạn có trải nghiệm tuyệt vời!'
+      });
+      alert('Đã gửi voucher qua email thành công!');
+      handleCloseGiftModal();
+      loadVouchers();
+    } catch (err) {
+      console.error('Failed to gift vouchers:', err);
+      alert('Không thể tặng voucher: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const validateForm = () => {
@@ -493,6 +605,13 @@ const ManageVouchers = () => {
                             ✏️
                           </button>
                           <button
+                            className={`${styles.tableAction} ${styles.tableActionInfo}`}
+                            title="Tặng voucher"
+                            onClick={() => handleOpenGiftModal(voucher)}
+                          >
+                            🎁 Tặng
+                          </button>
+                          <button
                             className={`${styles.tableAction} ${voucher.TrangThai === 'Active' ? styles.tableActionDanger : styles.tableActionSuccess}`}
                             title={voucher.TrangThai === 'Active' ? 'Khóa' : 'Mở khóa'}
                             onClick={() => handleToggleStatus(voucher)}
@@ -568,6 +687,189 @@ const ManageVouchers = () => {
           </div>
         </div>
       </div>
+
+      {/* Gift Modal - Danh sách người dùng */}
+      {showGiftModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={handleCloseGiftModal}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '1200px',
+              width: '95%',
+              maxHeight: '85vh',
+              overflow: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ marginBottom: '20px', borderBottom: '2px solid #f0f0f0', paddingBottom: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>
+                🎁 Tặng Voucher
+              </h3>
+              {selectedVoucherToGift && (
+                <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                  <strong>Voucher:</strong> {selectedVoucherToGift.code} - {selectedVoucherToGift.MoTa}
+                  <br />
+                  <strong>Giảm giá:</strong> {formatDiscount(selectedVoucherToGift)}
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#2c3e50' }}>
+                Nội dung tặng kèm:
+              </label>
+              <textarea
+                style={{
+                  width: '100%',
+                  minHeight: '80px',
+                  padding: '12px',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+                placeholder="Nhập lời nhắn gửi kèm voucher (tùy chọn)..."
+                value={giftMessage}
+                onChange={(e) => setGiftMessage(e.target.value)}
+              />
+            </div>
+
+            {loadingUsers ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p style={{ marginTop: '12px', color: '#6c757d' }}>Đang tải danh sách người dùng...</p>
+              </div>
+            ) : users.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6c757d' }}>
+                <p>Không có người dùng nào</p>
+              </div>
+            ) : (
+              <div>
+                <div style={{ marginBottom: '16px', fontWeight: '600', color: '#2c3e50' }}>
+                  Danh sách người dùng ({users.length})
+                </div>
+                <div style={{ 
+                  maxHeight: '400px', 
+                  overflow: 'auto',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{ 
+                      position: 'sticky', 
+                      top: 0, 
+                      backgroundColor: '#f8f9fa',
+                      borderBottom: '2px solid #dee2e6',
+                    }}>
+                      <tr>
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectAllChecked}
+                            onChange={handleSelectAll}
+                            title="Chọn tất cả (bị giới hạn bởi số lượng voucher còn)"
+                          />
+                        </th>
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>ID</th>
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Tên</th>
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Email</th>
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>SĐT</th>
+                        <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Số ĐH</th>
+                        <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Tổng tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr 
+                          key={user.MaTaiKhoan}
+                          style={{ 
+                            borderBottom: '1px solid #f0f0f0',
+                            transition: 'background-color 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <td style={{ padding: '12px' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedUserIds.includes(user.MaTaiKhoan)}
+                              onChange={() => toggleUserSelection(user.MaTaiKhoan)}
+                            />
+                          </td>
+                          <td style={{ padding: '12px' }}>{user.MaTaiKhoan}</td>
+                          <td style={{ padding: '12px', fontWeight: '500' }}>{user.NguoiDung?.HoTen || '—'}</td>
+                          <td style={{ padding: '12px', color: '#6c757d' }}>{user.Email}</td>
+                          <td style={{ padding: '12px', color: '#6c757d' }}>{user.NguoiDung?.SoDienThoai || '—'}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', color: '#0d6efd' }}>{user.SoLuongDonHang || 0}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500', color: '#198754' }}>
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(user.TongTienDonHang || 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+              <div style={{ color: '#6c757d', fontSize: '14px' }}>
+                <div style={{ marginBottom: '4px' }}>
+                  Số lượng voucher còn: <strong style={{ color: isVoucherValidForGift(selectedVoucherToGift) ? '#198754' : '#dc3545' }}>{remainingForVoucher(selectedVoucherToGift)}</strong>
+                </div>
+                <div style={{ marginBottom: '4px' }}>
+                  Đã chọn: <strong>{selectedUserIds.length}</strong> người
+                </div>
+                {!isVoucherValidForGift(selectedVoucherToGift) && (
+                  <div style={{ color: '#dc3545', fontWeight: '500', marginTop: '8px' }}>
+                    ⚠️ Voucher không hợp lệ (kiểm tra trạng thái, số lượng, thời gian)
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}
+                  onClick={handleGiftSelected}
+                  disabled={selectedUserIds.length === 0 || !isVoucherValidForGift(selectedVoucherToGift)}
+                  style={{
+                    opacity: (selectedUserIds.length === 0 || !isVoucherValidForGift(selectedVoucherToGift)) ? 0.5 : 1,
+                    cursor: (selectedUserIds.length === 0 || !isVoucherValidForGift(selectedVoucherToGift)) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  🎁 Tặng ({selectedUserIds.length})
+                </button>
+                <button
+                  type="button"
+                  className={`${buttonStyles.button} ${buttonStyles.buttonOutline}`}
+                  onClick={handleCloseGiftModal}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
