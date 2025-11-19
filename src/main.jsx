@@ -10,6 +10,7 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 // Import CSS của Bootstrap
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/global.css';
+import './styles/christmas.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

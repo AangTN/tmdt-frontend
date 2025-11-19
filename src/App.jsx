@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import SnowEffect from './components/ui/SnowEffect.jsx';
 import HomePage from './pages/HomePage.jsx';
 import MenuPage from './pages/MenuPage.jsx';
 import CartPage from './pages/CartPage.jsx';
@@ -43,8 +44,21 @@ function App() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
+  useEffect(() => {
+    if (!isAdminRoute) {
+      document.body.classList.add('christmas-theme');
+    } else {
+      document.body.classList.remove('christmas-theme');
+    }
+
+    return () => {
+      document.body.classList.remove('christmas-theme');
+    };
+  }, [isAdminRoute]);
+
   return (
     <div className="App">
+      {!isAdminRoute && <SnowEffect />}
       {!isAdminRoute && <Header />}
       <main className={isAdminRoute ? 'bg-light' : ''}>
         <Routes>

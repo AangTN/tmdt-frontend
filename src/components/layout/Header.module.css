@@ -9,7 +9,7 @@
 /* Navbar */
 .navBar {
   background: #ffffff;
-  border-bottom: 2px solid #dc3545;
+  border-bottom: 3px solid var(--secondary);
   padding: 0.75rem 0 !important;
   transition: all 0.3s ease;
 }
@@ -24,6 +24,17 @@
   align-items: center;
   gap: 0.5rem;
   color: #dc3545 !important;
+  position: relative;
+}
+
+.brand::after {
+  content: '🎅';
+  position: absolute;
+  top: -0.6rem;
+  right: -1.2rem;
+  font-size: 1.7rem;
+  transform: rotate(-12deg);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .brand:hover {
@@ -103,12 +114,13 @@
 /* Cart count badge */
 .cartCount {
   margin-left: 0.5rem;
-  background: white !important;
-  color: #dc3545 !important;
+  background: var(--gold, #F8B229) !important;
+  color: var(--primary-dark, #A61B1E) !important;
   font-weight: 800;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.55rem;
   font-size: 0.85rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(248, 178, 41, 0.45);
+  border-radius: 999px;
   animation: pulse 2s infinite;
 }
 
