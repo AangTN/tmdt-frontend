@@ -6,7 +6,7 @@ function formatVnd(n) {
   return `${Number(n || 0).toLocaleString()} đ`;
 }
 
-export default function OrderDetail({ show, onHide, orderId, initialData = null, modalZIndex = 1100 }) {
+export default function OrderDetail({ show, onHide, orderId, initialData = null, modalZIndex = 1100, isAdmin = false }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [detail, setDetail] = useState(initialData);
@@ -142,7 +142,15 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null,
           <div>
             <div className="d-flex justify-content-between align-items-start mb-3">
               <div>
-                <div className="text-muted small">Đặt lúc {new Date(detail.NgayDat).toLocaleString()}</div>
+                <div className="text-muted small">Đặt lúc {(() => {
+                  const date = new Date(detail.NgayDat);
+                  const year = date.getUTCFullYear();
+                  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                  const day = String(date.getUTCDate()).padStart(2, '0');
+                  const hours = String(date.getUTCHours()).padStart(2, '0');
+                  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                  return `${day}/${month}/${year}, ${hours}:${minutes}`;
+                })()}</div>
                 {detail.GhiChu && <div className="small">Ghi chú: {detail.GhiChu}</div>}
               </div>
               <div className="text-end small">
@@ -378,13 +386,15 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null,
                             <div>
                               <div className="fw-semibold" style={{ color: isLast ? '#dc3545' : '#2c3e50' }}>{h.TrangThai}</div>
                               <div className="small text-muted">
-                                {new Date(h.ThoiGianCapNhat).toLocaleDateString('vi-VN', { 
-                                  year: 'numeric', 
-                                  month: '2-digit', 
-                                  day: '2-digit',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
+                                {(() => {
+                                  const date = new Date(h.ThoiGianCapNhat);
+                                  const day = String(date.getUTCDate()).padStart(2, '0');
+                                  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                                  const year = date.getUTCFullYear();
+                                  const hours = String(date.getUTCHours()).padStart(2, '0');
+                                  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                                  return `${day}/${month}/${year}, ${hours}:${minutes}`;
+                                })()}
                               </div>
                               {h.GhiChu && <div className="small mt-1">{h.GhiChu}</div>}
                             </div>
@@ -395,6 +405,78 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null,
                   })}
                 </div>
               </div>
+            )}
+
+            {/* Gifts section - show when order is delivered OR in admin view */}
+            {(isAdmin || currentOrderStatus === 'Đã giao') && Array.isArray(detail?.DonHang_QuaTang) && detail.DonHang_QuaTang.length > 0 && (
+              <Card className="mt-4 border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                <Card.Body className="p-4">
+                  <div className="d-flex align-items-center mb-3">
+                    <div className="bg-white bg-opacity-25 rounded-circle p-2 me-2">
+                      <svg width="24" height="24" fill="white" viewBox="0 0 16 16">
+                        <path d="M3 2.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0v.006c0 .07 0 .27-.038.494H15a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5V7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2.038A2.968 2.968 0 0 1 3 2.506V2.5zm1.068.5H7v-.5a1.5 1.5 0 1 0-3 0c0 .085.002.274.045.43a.522.522 0 0 0 .023.07zM9 3h2.932a.56.56 0 0 0 .023-.07c.043-.156.045-.345.045-.43a1.5 1.5 0 0 0-3 0V3zM1 4v2h6V4H1zm8 0v2h6V4H9zm5 3H9v8h4.5a.5.5 0 0 0 .5-.5V7zm-7 8V7H2v7.5a.5.5 0 0 0 .5.5H7z"/>
+                      </svg>
+                    </div>
+                    <span className="fw-bold fs-5 text-white">🎉 Quà tặng đi kèm</span>
+                  </div>
+                  
+                  {detail.DonHang_QuaTang.map((giftItem, idx) => {
+                    const gift = giftItem.QuaTang;
+                    if (!gift) return null;
+                    
+                    const rawImg = gift.HinhAnh;
+                    const imgPath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/QuaTang/${rawImg}`) : null;
+                    const img = imgPath ? assetUrl(imgPath) : '/placeholder.svg';
+                    
+                    const rarityColors = {
+                      'Common': { bg: '#9ca3af', label: 'Common' },
+                      'Uncommon': { bg: '#10b981', label: 'Uncommon' },
+                      'Rare': { bg: '#3b82f6', label: 'Rare' },
+                      'Epic': { bg: '#a855f7', label: 'Epic' },
+                      'Secret': { bg: '#f59e0b', label: 'Secret' }
+                    };
+                    
+                    const rarityInfo = rarityColors[gift.CapDo] || { bg: '#6b7280', label: gift.CapDo };
+                    
+                    return (
+                      <div key={idx} className="bg-white rounded p-3 shadow-sm">
+                        <div className="d-flex gap-3 align-items-start">
+                          <div style={{ width: 80, height: 80 }} className="flex-shrink-0 rounded overflow-hidden bg-light border">
+                            <img 
+                              src={img} 
+                              alt={gift.TenQuaTang} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                              onError={(e)=>{ try { e.currentTarget.onerror=null; e.currentTarget.src='/placeholder.svg'; } catch{} }} 
+                            />
+                          </div>
+                          <div className="flex-grow-1">
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                              <Badge 
+                                style={{ backgroundColor: rarityInfo.bg, color: 'white' }} 
+                                className="px-2 py-1"
+                              >
+                                {rarityInfo.label}
+                              </Badge>
+                              <span className="fw-bold fs-6 text-dark">{gift.TenQuaTang}</span>
+                            </div>
+                            {gift.MoTa && (
+                              <p className="mb-2 small text-muted">{gift.MoTa}</p>
+                            )}
+                            <div className="small text-dark">
+                              <span className="text-muted">Số lượng: </span>
+                              <span className="fw-semibold">{giftItem.SoLuong || 1}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  <div className="mt-3 text-center small text-white">
+                    ✨ Cảm ơn bạn đã tin tưởng và ủng hộ chúng tôi!
+                  </div>
+                </Card.Body>
+              </Card>
             )}
 
             {/* Bottom totals summary */}

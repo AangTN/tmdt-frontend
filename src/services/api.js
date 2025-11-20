@@ -202,3 +202,75 @@ export async function fetchVoucherByCode(code) {
     return res.data;
   });
 }
+
+// Gifts
+export async function fetchGifts() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/gifts');
+    return res.data;
+  });
+}
+
+// Statistics APIs
+export async function fetchBestSellingProducts(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/best-selling-products', { params });
+    return res.data;
+  });
+}
+
+export async function fetchBestSellingCombos(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/best-selling-combos', { params });
+    return res.data;
+  });
+}
+
+export async function fetchRevenueByBranch(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/revenue-by-branch', { params });
+    return res.data;
+  });
+}
+
+export async function fetchOverallRevenue(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/overall-revenue', { params });
+    return res.data;
+  });
+}
+
+export async function fetchOrderCountByPeriod(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/order-count-by-period', { params });
+    return res.data;
+  });
+}
+
+export async function fetchOrdersByStatus(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/by-status', { params });
+    return res.data;
+  });
+}
+
+export async function fetchOrdersByPaymentMethod(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/by-payment-method', { params });
+    return res.data;
+  });
+}
+
+export async function fetchDashboardOverview(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/dashboard-overview', { params });
+    return res.data;
+  });
+}
+
+export async function fetchRevenueComparisonByBranch(params = {}) {
+  return retryRequest(async () => {
+    const res = await api.get('/api/orders/statistics/revenue-comparison-by-branch', { params });
+    return res.data;
+  });
+}

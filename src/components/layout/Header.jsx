@@ -23,7 +23,7 @@ const Header = () => {
         <Container>
           <LinkContainer to="/">
             <Navbar.Brand className={styles.brand}>
-              <img src="/logo.svg" alt="logo" /> 
+              <img src="/logo.png" alt="logo" /> 
               <span className="d-none d-md-inline">Secret Pizza</span>
             </Navbar.Brand>
           </LinkContainer>

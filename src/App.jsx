@@ -38,6 +38,7 @@ import PromotionDetail from './pages/admin/PromotionDetail.jsx';
 import ManageVouchers from './pages/admin/ManageVouchers.jsx';
 import ManageBanners from './pages/admin/ManageBanners.jsx';
 import ManageUsers from './pages/admin/ManageUsers.jsx';
+import ManageGifts from './pages/admin/ManageGifts.jsx';
 import RequireAdmin from './components/admin/RequireAdmin.jsx';
 
 function App() {
@@ -167,6 +168,11 @@ function App() {
             <Route path="banners" element={
               <RequireAdmin requiredPermission="Quản lý banner">
                 <ManageBanners />
+              </RequireAdmin>
+            } />
+            <Route path="gifts" element={
+              <RequireAdmin requiredPermission="Quản lý quà tặng">
+                <ManageGifts />
               </RequireAdmin>
             } />
             <Route path="combos" element={

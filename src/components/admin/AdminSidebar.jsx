@@ -122,6 +122,13 @@ const AdminSidebar = () => {
       label: 'Banner',
       description: 'Quản lý banner',
       permission: 'Quản lý banner'
+    },
+    {
+      path: '/admin/gifts',
+      icon: '🎁',
+      label: 'Quà tặng',
+      description: 'Quản lý quà tặng',
+      permission: 'Quản lý quà tặng'
     }
   ];
 

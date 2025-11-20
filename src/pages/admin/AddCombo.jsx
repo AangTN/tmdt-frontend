@@ -25,7 +25,8 @@ const AddCombo = () => {
     tenCombo: '',
     moTa: '',
     giaCombo: '',
-    trangThai: 'Active'
+    trangThai: 'Active',
+    thoiGianHetHan: ''
   });
 
   // Selected items for combo
@@ -262,6 +263,7 @@ const AddCombo = () => {
       moTa: form.moTa.trim(),
       giaCombo: Number(form.giaCombo),
       trangThai: form.trangThai,
+      thoiGianHetHan: form.thoiGianHetHan || null,
       items: comboItems.map(item => ({
         maBienThe: item.maBienThe,
         maDeBanh: item.maDeBanh || null,
@@ -388,6 +390,19 @@ const AddCombo = () => {
                   <option value="Active">Hoạt động</option>
                   <option value="Inactive">Không hoạt động</option>
                 </select>
+              </div>
+
+              {/* Ngày hết hạn */}
+              <div className="mb-3">
+                <label className={formStyles.formLabel}>Ngày hết hạn</label>
+                <input
+                  type="datetime-local"
+                  name="thoiGianHetHan"
+                  className={formStyles.formInput}
+                  value={form.thoiGianHetHan}
+                  onChange={handleInputChange}
+                />
+                <small className="text-muted d-block mt-1">Nếu để trống, combo sẽ không có hạn sử dụng</small>
               </div>
 
               {/* Hình ảnh */}

@@ -17,6 +17,18 @@ const ManageCombos = () => {
 
   const navigate = useNavigate();
 
+  // Format datetime helper
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -133,6 +145,10 @@ const ManageCombos = () => {
           <div className={styles.cardDetailRow}>
             <span className={styles.cardLabel}>Ngày tạo:</span>
             <span className={styles.cardValue}>{new Date(combo.NgayTao).toLocaleDateString('vi-VN')}</span>
+          </div>
+          <div className={styles.cardDetailRow}>
+            <span className={styles.cardLabel}>Ngày hết hạn:</span>
+            <span className={styles.cardValue}>{formatDateTime(combo.ThoiGianHetHan)}</span>
           </div>
         </div>
         <div className={styles.cardActions}>
@@ -261,13 +277,14 @@ const ManageCombos = () => {
                           </div>
                         </th>
                         <th style={{ width: 120 }}>Ngày tạo</th>
+                        <th style={{ width: 120 }}>Ngày hết hạn</th>
                         <th style={{ width: 180 }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-5">
+                          <td colSpan={7} className="text-center py-5">
                             <div className={styles.tableLoadingOverlay}>
                               <div className={styles.tableLoadingSpinner}></div>
                             </div>
@@ -278,7 +295,7 @@ const ManageCombos = () => {
                         </tr>
                       ) : filteredCombos.length === 0 ? (
                         <tr>
-                          <td colSpan={6}>
+                          <td colSpan={7}>
                             <div className={styles.tableEmpty}>
                               <div className={styles.tableEmptyIcon}>📦</div>
                               <div className={styles.tableEmptyTitle}>Không tìm thấy combo</div>
@@ -336,6 +353,9 @@ const ManageCombos = () => {
                             </td>
                             <td>
                               <small>{new Date(combo.NgayTao).toLocaleDateString('vi-VN')}</small>
+                            </td>
+                            <td>
+                              <small>{formatDateTime(combo.ThoiGianHetHan)}</small>
                             </td>
                             <td>
                               <div className={styles.tableActions}>

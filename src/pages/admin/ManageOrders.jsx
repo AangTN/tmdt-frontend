@@ -253,7 +253,18 @@ const ManageOrders = () => {
 
   const generateOrderPDF = (order) => {
     const formatVnd = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
-    const formatDate = (d) => d ? new Date(d).toLocaleString('vi-VN') : '—';
+    // DB đã lưu giờ VN, không cần chuyển đổi timezone
+    const formatDate = (d) => {
+      if (!d) return '—';
+      const date = new Date(d);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+      return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+    };
     
     // Calculate latest status
     let lastStatus = 'Đang xử lý';
@@ -705,9 +716,10 @@ const ManageOrders = () => {
               <OrderDetail 
                 show={showDetailModal}
                 onHide={() => setShowDetailModal(false)}
-                  orderId={selectedOrderId}
-                  initialData={null}
+                orderId={selectedOrderId}
+                initialData={null}
                 modalZIndex={1400}
+                isAdmin={true}
               />
             </div>
           )}

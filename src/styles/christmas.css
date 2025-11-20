@@ -1,7 +1,1 @@
-body.christmas-theme {
-  --primary: #D42426;
-  --primary-dark: #A61B1E;
-  --secondary: #165B33;
-  --gold: #F8B229;
-  background: linear-gradient(135deg, rgba(212, 36, 38, 0.08), rgba(22, 91, 51, 0.08));
-}
+@import './theme.css';

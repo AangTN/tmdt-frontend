@@ -10,7 +10,7 @@ const Footer = () => {
         <Row className="gy-4">
           <Col md={4}>
             <div className={`${styles.logoSection} d-flex align-items-center mb-3`}>
-              <img src="/logo.svg" alt="logo" style={{ height: 36, width: 36 }} className="me-2" />
+              <img src="/logo.png" alt="logo" style={{ height: 36, width: 36 }} className="me-2" />
               <span className="fw-bold text-white fs-5">Secret Pizza</span>
             </div>
             <p className="mb-3">Pizza tươi ngon mỗi ngày, giao nhanh trong 30 phút. Hương vị Ý chính thống, giá cả hợp lý.</p>

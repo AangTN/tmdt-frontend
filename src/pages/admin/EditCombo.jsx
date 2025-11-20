@@ -28,7 +28,8 @@ const EditCombo = () => {
     moTa: '',
     giaCombo: '',
     trangThai: 'Active',
-    hinhAnh: ''
+    hinhAnh: '',
+    thoiGianHetHan: ''
   });
 
   // Selected items for combo
@@ -80,7 +81,8 @@ const EditCombo = () => {
           moTa: comboDetail.MoTa || '',
           giaCombo: comboDetail.GiaCombo || '',
           trangThai: comboDetail.TrangThai || 'Active',
-          hinhAnh: comboDetail.HinhAnh || ''
+          hinhAnh: comboDetail.HinhAnh || '',
+          thoiGianHetHan: comboDetail.ThoiGianHetHan ? new Date(comboDetail.ThoiGianHetHan).toISOString().slice(0, 16) : ''
         });
 
         // Set image preview
@@ -286,6 +288,7 @@ const EditCombo = () => {
       giaCombo: Number(form.giaCombo),
       trangThai: form.trangThai,
       hinhAnh: form.hinhAnh, // keep existing image path if no new file
+      thoiGianHetHan: form.thoiGianHetHan || null,
       items: comboItems.map(item => ({
         maBienThe: item.maBienThe,
         maDeBanh: item.maDeBanh || null,
@@ -434,6 +437,19 @@ const EditCombo = () => {
                   <option value="Active">Hoạt động</option>
                   <option value="Inactive">Không hoạt động</option>
                 </select>
+              </div>
+
+              {/* Ngày hết hạn */}
+              <div className="mb-3">
+                <label className={formStyles.formLabel}>Ngày hết hạn</label>
+                <input
+                  type="datetime-local"
+                  name="thoiGianHetHan"
+                  className={formStyles.formInput}
+                  value={form.thoiGianHetHan}
+                  onChange={handleInputChange}
+                />
+                <small className="text-muted d-block mt-1">Nếu để trống, combo sẽ không có hạn sử dụng</small>
               </div>
 
               {/* Hình ảnh */}
