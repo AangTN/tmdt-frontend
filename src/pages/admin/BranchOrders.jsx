@@ -1,63 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { fetchOrders, fetchBranches, api } from '../../services/api';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
+import { fetchOrders, api } from '../../services/api';
 import OrderDetail from '../../components/ui/OrderDetail';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-import statsStyles from '../../styles/admin/AdminStats.module.css';
 import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
 import { BusinessCard } from '../../components/admin/AdminTableCard';
-
-const mockOrders = [
-  {
-    id: 'DH1001',
-    customer: 'Nguyễn Văn A',
-    phone: '0901234567',
-    total: 550000,
-    status: 'Đang xử lý',
-    createdAt: '2025-10-20 18:30',
-  },
-  {
-    id: 'DH1002',
-    customer: 'Trần Thị B',
-    phone: '0987654321',
-    total: 325000,
-    status: 'Đã giao',
-    createdAt: '2025-10-19 12:15',
-  },
-  {
-    id: 'DH1003',
-    customer: 'Lê Minh C',
-    phone: '0912345678',
-    total: 720000,
-    status: 'Đang giao',
-    createdAt: '2025-10-18 09:45',
-  },
-  {
-    id: 'DH1004',
-    customer: 'Phạm Thị D',
-    phone: '0934567890',
-    total: 185000,
-    status: 'Đã hủy',
-    createdAt: '2025-10-17 15:20',
-  },
-  {
-    id: 'DH1005',
-    customer: 'Hoàng Văn E',
-    phone: '0956789012',
-    total: 920000,
-    status: 'Đang xử lý',
-    createdAt: '2025-10-16 20:10',
-  },
-];
 
 const statusVariant = {
   'Đang xử lý': 'warning',
   'Chờ giao hàng': 'info',
   'Đang giao': 'primary',
-  'Đã giao': 'success',
+  'Đá giao': 'success',
   'Đã hủy': 'secondary',
 };
 
@@ -69,10 +26,12 @@ const statusIcons = {
   'Đã hủy': '❌',
 };
 
-const ManageOrders = () => {
+const BranchOrders = () => {
+  const { admin } = useAdminAuth();
+  const branchId = admin?.maCoSo;
+  const location = useLocation();
+
   const [filter, setFilter] = useState('all');
-  const [branchFilter, setBranchFilter] = useState('all');
-  const [branchOptions, setBranchOptions] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -83,35 +42,37 @@ const ManageOrders = () => {
   const [selectedStatusValue, setSelectedStatusValue] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [cancelingOrderId, setCancelingOrderId] = useState(null);
-  const location = useLocation();
 
   useEffect(() => {
+    if (!branchId) {
+      setError('Không tìm thấy thông tin chi nhánh');
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        // Fetch orders and branches in parallel
-        const [ordersRes, branchesRes] = await Promise.all([fetchOrders(), fetchBranches()]);
+        const ordersRes = await fetchOrders();
         const ordersData = Array.isArray(ordersRes.data) ? ordersRes.data : ordersRes.data || ordersRes;
-        const branchesData = Array.isArray(branchesRes.data) ? branchesRes.data : branchesRes.data || branchesRes;
 
         if (!mounted) return;
-        setOrders(ordersData);
-        // Normalize branches to { id, name }
-        const opts = (branchesData || []).map(b => ({ id: String(b.MaCoSo ?? b.maCoSo ?? b.id ?? b.MaCoSo), name: b.TenCoSo || b.tenCoSo || b.name || `Cơ sở ${b.MaCoSo ?? b.id}` }));
-        setBranchOptions(opts);
+        
+        // Filter orders by branch
+        const branchOrders = ordersData.filter(order => order.MaCoSo === branchId);
+        setOrders(branchOrders);
       } catch (err) {
-        console.error('fetchOrders/branches error', err);
-        if (!mounted) return;
-        setError(err.message || 'Lỗi khi tải dữ liệu');
+        console.error('Error loading orders:', err);
+        if (mounted) setError('Không thể tải danh sách đơn hàng');
       } finally {
         if (mounted) setLoading(false);
       }
     }
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [branchId]);
 
   useEffect(() => {
     const openId = location?.state?.openOrderId;
@@ -146,24 +107,14 @@ const ManageOrders = () => {
     return `${day}/${month}/${year}, ${hours}:${minutes}`;
   };
 
-  // branchOptions will be loaded from the API
-
   const filteredOrders = useMemo(() => {
-    // 1) Apply branch filter first
-    let byBranch = orders;
-    if (branchFilter && branchFilter !== 'all') {
-      byBranch = orders.filter(o => String(o.CoSo?.MaCoSo) === String(branchFilter));
-    }
-
-    // 2) Then apply status filter
     if (filter === 'all') {
-      return byBranch.filter(o => allowedStatuses.includes(getLatestStatus(o)));
+      return orders.filter(o => allowedStatuses.includes(getLatestStatus(o)));
     }
-    return byBranch.filter(order => getLatestStatus(order) === filter);
-  }, [filter, orders, branchFilter]);
+    return orders.filter(order => getLatestStatus(order) === filter);
+  }, [filter, orders]);
 
   const stats = useMemo(() => {
-    // Stats reflect current filtered view (branch + status)
     const total = filteredOrders.length;
     const processing = filteredOrders.filter(o => getLatestStatus(o) === 'Đang xử lý').length;
     const delivering = filteredOrders.filter(o => getLatestStatus(o) === 'Đang giao').length;
@@ -178,15 +129,13 @@ const ManageOrders = () => {
 
   // Action handlers
   const handleView = (order) => {
-    // Open order detail modal and fetch full details inside OrderDetail
     if (!order || !order.MaDonHang) return;
-    setSelectedOrder(null); // ensure we don't pass partial data
+    setSelectedOrder(null);
     setSelectedOrderId(order.MaDonHang);
     setShowDetailModal(true);
   };
 
   const handleEdit = (orderId) => {
-    // Start inline edit flow for this order: prepare possible next statuses and show select.
     const order = orders.find(o => o.MaDonHang === orderId);
     if (!order) return alert('Không tìm thấy đơn hàng');
     const latest = getLatestStatus(order) || null;
@@ -228,7 +177,6 @@ const ManageOrders = () => {
     try {
       const res = await api.post(`/api/orders/${orderId}/cancel`);
       if (res.status === 200) {
-        // refetch order and update
         const r2 = await api.get(`/api/orders/${orderId}`);
         const updated = r2.data?.data;
         if (updated) setOrders(prev => prev.map(o => o.MaDonHang === orderId ? updated : o));
@@ -244,9 +192,6 @@ const ManageOrders = () => {
     }
   };
 
-  
-
-  // Print invoice - open PDF in new tab (copied from ManageUsers implementation)
   const handlePrintInvoice = async (order) => {
     if (!order || !order.MaDonHang) return;
     try {
@@ -267,7 +212,6 @@ const ManageOrders = () => {
 
   const generateOrderPDF = (order) => {
     const formatVnd = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
-    // DB đã lưu giờ VN, không cần chuyển đổi timezone
     const formatDate = (d) => {
       if (!d) return '—';
       const date = new Date(d);
@@ -280,7 +224,6 @@ const ManageOrders = () => {
       return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
     };
     
-    // Calculate latest status
     let lastStatus = 'Đang xử lý';
     if (Array.isArray(order.LichSuTrangThaiDonHang) && order.LichSuTrangThaiDonHang.length > 0) {
       const sorted = [...order.LichSuTrangThaiDonHang].sort((a, b) => 
@@ -289,7 +232,6 @@ const ManageOrders = () => {
       lastStatus = sorted[sorted.length - 1].TrangThai || lastStatus;
     }
     
-    // Calculate latest payment status
     let lastPaymentStatus = 'Chưa thanh toán';
     let paymentMethod = 'Chuyển Khoản';
     if (Array.isArray(order.ThanhToan) && order.ThanhToan.length > 0) {
@@ -301,13 +243,11 @@ const ManageOrders = () => {
       paymentMethod = latest.PhuongThuc || paymentMethod;
     }
 
-    // Build item details with full information
     const chiTietHTML = Array.isArray(order.ChiTietDonHang) ? order.ChiTietDonHang.map(item => {
       let tenMon = '—';
       let size = '';
       let deBanh = '';
       
-      // Get item name based on type
       if (item.Loai === 'SP' && item.BienTheMonAn?.MonAn) {
         tenMon = item.BienTheMonAn.MonAn.TenMonAn || '—';
         size = item.BienTheMonAn?.Size?.TenSize ? ` (${item.BienTheMonAn.Size.TenSize})` : '';
@@ -316,7 +256,6 @@ const ManageOrders = () => {
         tenMon = item.Combo.TenCombo || '—';
       }
       
-      // Get options/toppings
       let tuyChon = '';
       if (Array.isArray(item.ChiTietDonHang_TuyChon) && item.ChiTietDonHang_TuyChon.length > 0) {
         const opts = item.ChiTietDonHang_TuyChon.map(tc => tc.TuyChon?.TenTuyChon || '').filter(Boolean).join(', ');
@@ -352,7 +291,6 @@ const ManageOrders = () => {
     h2 { color: #333; margin: 20px 0 10px; font-size: 18px; border-bottom: 2px solid #dc3545; padding-bottom: 5px; }
     .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
     .info-section { margin-bottom: 15px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
     .info-item { margin-bottom: 10px; line-height: 1.6; }
     .info-label { font-weight: 600; color: #555; display: inline-block; min-width: 130px; }
     table { width: 100%; border-collapse: collapse; margin: 10px 0; }
@@ -364,10 +302,6 @@ const ManageOrders = () => {
     .total-row.grand { font-size: 20px; font-weight: bold; color: #dc3545; margin-top: 12px; padding-top: 12px; border-top: 2px solid #dc3545; }
     .payment-info { background: #fff3cd; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107; margin: 15px 0; }
     .footer { margin-top: 25px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center; color: #999; font-size: 13px; }
-    @media print {
-      body { padding: 10px; }
-      .no-print { display: none; }
-    }
   </style>
 </head>
 <body>
@@ -377,14 +311,10 @@ const ManageOrders = () => {
       <p style="color: #666; font-size: 18px; margin-top: 8px;">Mã đơn hàng: <strong>#${order.MaDonHang}</strong></p>
       <p style="color: #666; margin-top: 5px;">Ngày đặt: <strong>${formatDate(order.NgayDat)}</strong></p>
     </div>
-
     <div class="info-section">
       <h2>Thông tin cơ sở</h2>
-      <div>
-        ${coSoInfo}
-      </div>
+      <div>${coSoInfo}</div>
     </div>
-
     <div class="info-section">
       <h2>Thông tin khách hàng</h2>
       <div>
@@ -394,7 +324,6 @@ const ManageOrders = () => {
         ${order.GhiChu ? `<div class="info-item"><span class="info-label">Ghi chú:</span> ${order.GhiChu}</div>` : ''}
       </div>
     </div>
-
     <h2>Chi tiết đơn hàng</h2>
     <table>
       <thead>
@@ -405,11 +334,8 @@ const ManageOrders = () => {
           <th style="text-align: right; width: 19%;">Thành tiền</th>
         </tr>
       </thead>
-      <tbody>
-        ${chiTietHTML}
-      </tbody>
+      <tbody>${chiTietHTML}</tbody>
     </table>
-
     <div class="total-section">
       <div class="total-row">
         <span>Tiền trước giảm giá:</span>
@@ -429,11 +355,9 @@ const ManageOrders = () => {
         <span>${formatVnd(order.TongTien)}</span>
       </div>
     </div>
-
     <div class="payment-info">
       <strong>Phương thức thanh toán:</strong> ${paymentMethod}
     </div>
-
     <div class="footer">
       <p style="font-weight: 600; color: #dc3545; margin-bottom: 8px;">Cảm ơn quý khách đã đặt hàng!</p>
       <p>Hotline: ${order.CoSo?.SoDienThoai || '1900xxxx'}</p>
@@ -445,24 +369,23 @@ const ManageOrders = () => {
     `;
   };
 
-  // Card component for responsive view
   const cardComponent = (
     <div className={styles.adminTableCards}>
       {filteredOrders.map((order, index) => {
-          const id = order.MaDonHang;
-          const customer = order.NguoiDung_DonHang_MaNguoiDungToNguoiDung?.HoTen || order.TenNguoiNhan || 'Khách vãng lai';
-          const phone = order.SoDienThoaiGiaoHang;
-            const branch = order.CoSo?.TenCoSo || '—';
-            const total = Number(order.TongTien || 0);
-          const latestStatus = getLatestStatus(order) || 'Đang xử lý';
-          const createdAt = formatDateTime(order.NgayDat);
+        const id = order.MaDonHang;
+        const customer = order.NguoiDung_DonHang_MaNguoiDungToNguoiDung?.HoTen || order.TenNguoiNhan || 'Khách vãng lai';
+        const phone = order.SoDienThoaiGiaoHang;
+        const branch = order.CoSo?.TenCoSo || '—';
+        const total = Number(order.TongTien || 0);
+        const latestStatus = getLatestStatus(order) || 'Đang xử lý';
+        const createdAt = formatDateTime(order.NgayDat);
 
         return (
           <BusinessCard
             key={id}
             data={{ id, customer, phone, branch, total, status: latestStatus, createdAt, address: branch }}
             type="order"
-            onView={() => handleView(id)}
+            onView={() => handleView(order)}
             onEdit={() => handleEdit(id)}
             onCancel={() => handleCancel(id)}
             index={index}
@@ -474,34 +397,25 @@ const ManageOrders = () => {
     </div>
   );
 
+  if (error) {
+    return (
+      <div className="alert alert-danger m-4" role="alert">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <div className="admin-animate-fade-in">
-      {/* Stats removed as requested */}
-
       {/* Header Section */}
       <div className={`${cardStyles.cardPremium} mb-4`}>
         <div className={cardStyles.cardHeaderPremium}>
           <div className="d-flex flex-wrap justify-content-between align-items-center">
             <div>
-              <h2 className={`${cardStyles.cardTitleLarge} mb-2`}>Quản lý đơn hàng</h2>
-              <p className={cardStyles.cardSubtitle}>Theo dõi và quản lý tất cả đơn hàng</p>
+              <h2 className={`${cardStyles.cardTitleLarge} mb-2`}>Quản lý đơn hàng chi nhánh</h2>
+              <p className={cardStyles.cardSubtitle}>Chi nhánh #{branchId} - {admin?.hoTen || 'Chi nhánh'}</p>
             </div>
             <div className="d-flex gap-2 align-items-center">
-              <div className={formStyles.formFilter}>
-                <div className={formStyles.formFilterGroup}>
-                  <span className={formStyles.formFilterLabel}>Cơ sở:</span>
-                  <select
-                    className={formStyles.formSelect}
-                    value={branchFilter}
-                    onChange={(e) => setBranchFilter(e.target.value)}
-                  >
-                    <option value="all">Tất cả cơ sở</option>
-                    {branchOptions.map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
               <div className={formStyles.formFilter}>
                 <div className={formStyles.formFilterGroup}>
                   <span className={formStyles.formFilterLabel}>Trạng thái:</span>
@@ -595,13 +509,13 @@ const ManageOrders = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={8}>
                       <div className={styles.tableEmpty}>Đang tải...</div>
                     </td>
                   </tr>
                 ) : filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={8}>
                       <div className={styles.tableEmpty}>
                         <div className={styles.tableEmptyIcon}>📦</div>
                         <div className={styles.tableEmptyTitle}>Không tìm thấy đơn hàng</div>
@@ -692,8 +606,6 @@ const ManageOrders = () => {
                             )}
 
                             <button className={`${styles.tableAction} ${styles.tableActionDanger}`} title="Hủy đơn hàng" onClick={() => handleCancel(id)} disabled={cancelingOrderId === id || latestStatus === 'Đã giao'}>{cancelingOrderId === id ? 'Đang…' : '❌'}</button>
-
-                            {/* Delete action removed - deletion is not allowed from admin UI */}
                           </div>
                         </td>
                       </tr>
@@ -727,7 +639,7 @@ const ManageOrders = () => {
                   →
                 </button>
               </div>
-              {/* Order Detail Modal - using OrderDetail component */}
+              {/* Order Detail Modal */}
               <OrderDetail 
                 show={showDetailModal}
                 onHide={() => setShowDetailModal(false)}
@@ -744,4 +656,4 @@ const ManageOrders = () => {
   );
 };
 
-export default ManageOrders;
+export default BranchOrders;

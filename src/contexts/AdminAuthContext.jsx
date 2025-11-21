@@ -33,6 +33,7 @@ export const AdminAuthProvider = ({ children }) => {
           const userData = response.data.user;
           const adminData = {
             maTaiKhoan: userData.maTaiKhoan,
+            maCoSo: userData.maCoSo,
             email: userData.email,
             role: userData.role,
             hoTen: userData.hoTen,
@@ -78,6 +79,7 @@ export const AdminAuthProvider = ({ children }) => {
       // Lưu thông tin admin vào state
       const adminData = {
         maTaiKhoan: userData.maTaiKhoan,
+        maCoSo: userData.maCoSo,
         email: userData.email,
         role: userData.role,
         hoTen: userData.hoTen,

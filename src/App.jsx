@@ -39,6 +39,11 @@ import ManageVouchers from './pages/admin/ManageVouchers.jsx';
 import ManageBanners from './pages/admin/ManageBanners.jsx';
 import ManageUsers from './pages/admin/ManageUsers.jsx';
 import ManageGifts from './pages/admin/ManageGifts.jsx';
+import BranchDashboard from './pages/admin/BranchDashboard.jsx';
+import BranchOrders from './pages/admin/BranchOrders.jsx';
+import BranchOrderReviews from './pages/admin/BranchOrderReviews.jsx';
+import ShipperAvailableOrders from './pages/admin/ShipperAvailableOrders.jsx';
+import ShipperMyOrders from './pages/admin/ShipperMyOrders.jsx';
 import RequireAdmin from './components/admin/RequireAdmin.jsx';
 
 function App() {
@@ -88,6 +93,31 @@ function App() {
             <Route index element={
               <RequireAdmin requiredPermission="Tổng quan">
                 <AdminDashboard />
+              </RequireAdmin>
+            } />
+            <Route path="branch-dashboard" element={
+              <RequireAdmin requiredPermission="Tổng quan chi nhánh">
+                <BranchDashboard />
+              </RequireAdmin>
+            } />
+            <Route path="branch-orders" element={
+              <RequireAdmin requiredPermission="Quản lý đơn hàng chi nhánh">
+                <BranchOrders />
+              </RequireAdmin>
+            } />
+            <Route path="branch-order-reviews" element={
+              <RequireAdmin requiredPermission="Quản lý đánh giá đơn hàng chi nhánh">
+                <BranchOrderReviews />
+              </RequireAdmin>
+            } />
+            <Route path="shipper-available-orders" element={
+              <RequireAdmin requiredPermission="Quản lý giao hàng">
+                <ShipperAvailableOrders />
+              </RequireAdmin>
+            } />
+            <Route path="shipper-my-orders" element={
+              <RequireAdmin requiredPermission="Quản lý giao hàng">
+                <ShipperMyOrders />
               </RequireAdmin>
             } />
             <Route path="products" element={

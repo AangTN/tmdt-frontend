@@ -19,6 +19,13 @@ const AdminSidebar = () => {
       permission: 'Tổng quan'
     },
     {
+      path: '/admin/branch-dashboard',
+      icon: '🏪',
+      label: 'TQ Chi nhánh',
+      description: 'Tổng quan chi nhánh',
+      permission: 'Tổng quan chi nhánh'
+    },
+    {
       path: '/admin/products',
       icon: '🍕',
       label: 'Sản phẩm',
@@ -61,13 +68,6 @@ const AdminSidebar = () => {
       permission: 'Quản lý đơn hàng chi nhánh'
     },
     {
-      path: '/admin/delivery',
-      icon: '🚚',
-      label: 'Giao hàng',
-      description: 'Quản lý giao hàng',
-      permission: 'Quản lý giao hàng'
-    },
-    {
       path: '/admin/users',
       icon: '👥',
       label: 'Người dùng',
@@ -101,6 +101,20 @@ const AdminSidebar = () => {
       label: 'ĐG ĐH CN',
       description: 'Đánh giá chi nhánh',
       permission: 'Quản lý đánh giá đơn hàng chi nhánh'
+    },
+    {
+      path: '/admin/shipper-available-orders',
+      icon: '📦',
+      label: 'Nhận đơn',
+      description: 'Đơn hàng có thể nhận',
+      permission: 'Quản lý giao hàng'
+    },
+    {
+      path: '/admin/shipper-my-orders',
+      icon: '🚚',
+      label: 'Đơn của tôi',
+      description: 'Đơn đã nhận',
+      permission: 'Quản lý giao hàng'
     },
     {
       path: '/admin/promotions',
