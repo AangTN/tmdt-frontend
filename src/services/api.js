@@ -274,3 +274,17 @@ export async function fetchRevenueComparisonByBranch(params = {}) {
     return res.data;
   });
 }
+
+export async function fetchOptionsAdmin() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/options/admin');
+    return res.data;
+  });
+}
+
+export async function deleteOption(id) {
+  return retryRequest(async () => {
+    const res = await api.delete(`/api/options/${id}`);
+    return res.data;
+  });
+}

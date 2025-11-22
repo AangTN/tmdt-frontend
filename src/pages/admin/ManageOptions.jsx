@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { fetchOptionsAdmin, deleteOption } from '../../services/api';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
 import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
 import { ProductCard } from '../../components/admin/AdminTableCard';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const ManageOptions = () => {
   const navigate = useNavigate();
@@ -23,8 +21,8 @@ const ManageOptions = () => {
   const fetchOptions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/options/admin`);
-      setOptions(response.data.data || []);
+      const response = await fetchOptionsAdmin();
+      setOptions(response.data || []);
     } catch (error) {
       console.error('Error fetching options:', error);
       alert('Không thể tải danh sách tùy chọn');
@@ -66,7 +64,7 @@ const ManageOptions = () => {
     }
 
     try {
-      await axios.delete(`${API_URL}/api/options/${option.id}`);
+      await deleteOption(option.id);
       alert('Xóa tùy chọn thành công!');
       fetchOptions();
     } catch (error) {
