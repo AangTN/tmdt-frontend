@@ -20,11 +20,11 @@
   position: sticky;
   top: 90px;
   align-self: start;
-  background: #ffffff;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
+  background: #fffaf0;
+  border: 2px solid #165b33;
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(22, 91, 51, 0.12);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -33,10 +33,11 @@
 .sidebarSectionTitle {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #212529;
+  color: #165b33;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #ff4d4f;
+  border-bottom: 2px solid #d42426;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .typeList, .categoryList {
@@ -48,7 +49,7 @@
 .filterItem {
   background: #fff;
   border: 2px solid #e9ecef;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.65rem 1rem;
   cursor: pointer;
   font-weight: 600;
@@ -60,16 +61,17 @@
 }
 
 .filterItem:hover {
-  border-color: #ff4d4f;
-  background: #fff5f5;
+  border-color: #d42426;
+  background: rgba(212, 36, 38, 0.05);
   transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(212, 36, 38, 0.15);
 }
 
 .filterItem.active {
-  background: linear-gradient(135deg, #ff4d4f 0%, #d32029 100%);
+  background: linear-gradient(135deg, #d42426 0%, #a61b1e 100%);
   color: #fff;
-  border-color: #ff4d4f;
-  box-shadow: 0 4px 12px rgba(255,77,79,0.3);
+  border-color: #f8b229;
+  box-shadow: 0 6px 18px rgba(248, 178, 41, 0.35);
   transform: translateX(4px);
 }
 
@@ -80,9 +82,10 @@
   align-items: center;
   margin-bottom: 2rem;
   padding: 1.25rem;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  background: #fffaf0;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(22, 91, 51, 0.08);
+  border: 1px solid rgba(22, 91, 51, 0.1);
 }
 
 .searchBox {
@@ -102,8 +105,8 @@
 
 .searchBox input:focus {
   outline: none;
-  border-color: #ff4d4f;
-  box-shadow: 0 0 0 3px rgba(255,77,79,0.1);
+  border-color: #165b33;
+  box-shadow: 0 0 0 3px rgba(22, 91, 51, 0.12);
 }
 
 .searchIcon {
@@ -128,17 +131,17 @@
 }
 
 .sortSelect:hover {
-  border-color: #ff4d4f;
+  border-color: #d42426;
 }
 
 .sortSelect:focus {
   outline: none;
-  border-color: #ff4d4f;
-  box-shadow: 0 0 0 3px rgba(255,77,79,0.1);
+  border-color: #165b33;
+  box-shadow: 0 0 0 3px rgba(22, 91, 51, 0.12);
 }
 
 .promoBanner {
-  background: linear-gradient(90deg, #ff4d4f 0%, #d32029 100%);
+  background: linear-gradient(120deg, #d42426 0%, #a61b1e 100%);
   color: white;
   padding: 1.1rem 1.4rem;
   border-radius: 16px;
@@ -149,6 +152,8 @@
   margin-bottom: 1.25rem;
   position: relative;
   overflow: hidden;
+  border: 2px solid rgba(248, 178, 41, 0.3);
+  box-shadow: 0 8px 24px rgba(212, 36, 38, 0.25);
 }
 
 .promoBanner::after {

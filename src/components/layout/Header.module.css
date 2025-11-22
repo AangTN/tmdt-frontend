@@ -1,156 +1,235 @@
-/* Sticky area */
-.sticky { 
-  position: sticky; 
-  top: 0; 
-  z-index: 1090;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+/* =========================================
+   Christmas Header Navigation
+   Theme: Festive String Lights & Snowflakes
+   ========================================= */
+
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(5, 21, 32, 0.15);
 }
 
-/* Navbar */
 .navBar {
-  background: #ffffff;
-  border-bottom: 3px solid var(--secondary);
-  padding: 0.75rem 0 !important;
+  background: linear-gradient(135deg, #020b14 0%, #0a3d20 100%) !important;
+  padding: 0.75rem 0;
+  border-bottom: 6px solid transparent;
+  border-image: repeating-linear-gradient(
+    90deg,
+    #ffd86f,
+    #ffd86f 14px,
+    #ff6f61 14px,
+    #ff6f61 28px,
+    #7dd9ff 28px,
+    #7dd9ff 42px,
+    #8be48b 42px,
+    #8be48b 56px
+  ) 20;
+  position: relative;
+}
+
+.navBar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 85% 65%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 45% 8%, rgba(255, 255, 255, 0.35), transparent);
+  background-size: 200% 200%;
+  animation: twinkle 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Brand/Logo */
+.brand {
+  font-weight: 800 !important;
+  font-size: 1.5rem !important;
+  color: #f8b229 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  text-shadow: 0 3px 12px rgba(248, 178, 41, 0.5);
+  position: relative;
   transition: all 0.3s ease;
 }
 
-/* Brand */
-.brand {
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  font-size: 1.5rem;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #dc3545 !important;
-  position: relative;
+.brand::before {
+  content: '❄️';
+  font-size: 1.3rem;
+  animation: snowSpin 4s linear infinite;
 }
 
 .brand::after {
   content: '🎅';
+  font-size: 1rem;
   position: absolute;
-  top: -0.6rem;
-  right: -1.2rem;
-  font-size: 1.7rem;
-  transform: rotate(-12deg);
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  right: -25px;
+  top: -8px;
+}
+
+@keyframes snowSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .brand:hover {
   transform: scale(1.05);
-  color: #c82333 !important;
+  color: #fff !important;
 }
 
 .brand img {
-  height: 40px;
-  width: 40px;
-  filter: drop-shadow(0 2px 6px rgba(220, 53, 69, 0.3));
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: 3px solid #f8b229;
+  box-shadow: 0 4px 16px rgba(248, 178, 41, 0.4);
 }
 
-/* Nav links - Icon only on smaller screens, text shows on lg+ */
+/* Navigation Links */
 .navLink {
-  position: relative;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #2c3e50 !important;
-  padding: 0.5rem 0.75rem !important;
-  border-radius: 6px;
-  transition: all 0.25s ease;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem;
 }
 
 .navLink:hover {
-  color: #dc3545 !important;
-  background: rgba(220, 53, 69, 0.08);
-  transform: translateY(-1px);
-}
-
-/* User button */
-.userBtn {
-  position: relative;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #2c3e50 !important;
-  padding: 0.5rem 0.75rem !important;
-  border-radius: 6px;
-  transition: all 0.25s ease;
-  display: flex !important;
-  align-items: center;
-  white-space: nowrap;
-  text-decoration: none !important;
-}
-
-.userBtn:hover {
-  color: #dc3545 !important;
-  background: rgba(220, 53, 69, 0.08);
-}
-
-/* Cart button - Always prominent */
-.cartBtn {
-  position: relative;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-  color: white !important;
-  padding: 0.6rem 1.2rem !important;
-  border-radius: 25px !important;
-  font-weight: 700 !important;
-  font-size: 0.95rem !important;
-  box-shadow: 0 3px 12px rgba(220, 53, 69, 0.3);
-  border: none;
-  display: flex !important;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.cartBtn:hover {
+  color: #f8b229 !important;
+  background: rgba(248, 178, 41, 0.15) !important;
   transform: translateY(-2px);
-  box-shadow: 0 5px 18px rgba(220, 53, 69, 0.4);
-  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%) !important;
 }
 
-/* Cart count badge */
-.cartCount {
+.navLink.active {
+  color: #f8b229 !important;
+  background: rgba(248, 178, 41, 0.2) !important;
+}
+
+/* Cart Icon */
+.cartIcon {
+  color: #fff !important;
+  font-weight: 700 !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #d42426, #a61b1e) !important;
+  border: 2px solid #f8b229 !important;
+  box-shadow: 0 4px 16px rgba(212, 36, 38, 0.4);
+}
+
+.cartIcon:hover {
+  background: linear-gradient(135deg, #a61b1e, #7d1416) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 36, 38, 0.5);
+}
+
+.cartBadge {
+  background-color: #f8b229 !important;
+  color: #020b14 !important;
+  font-weight: 800 !important;
+  font-size: 0.75rem !important;
+  padding: 0.3rem 0.5rem !important;
+  border-radius: 10px !important;
+}
+
+/* User Dropdown */
+.userDropdown button {
+  color: #fff !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem;
+  background: rgba(22, 91, 51, 0.3) !important;
+  border: 2px solid rgba(22, 91, 51, 0.5) !important;
+}
+
+.userDropdown button:hover {
+  background: rgba(22, 91, 51, 0.5) !important;
+  border-color: #165b33 !important;
+  transform: translateY(-2px);
+}
+
+.userDropdown button::after {
   margin-left: 0.5rem;
-  background: var(--gold, #F8B229) !important;
-  color: var(--primary-dark, #A61B1E) !important;
-  font-weight: 800;
-  padding: 0.25rem 0.55rem;
-  font-size: 0.85rem;
-  box-shadow: 0 2px 8px rgba(248, 178, 41, 0.45);
-  border-radius: 999px;
-  animation: pulse 2s infinite;
 }
 
-/* Animations */
-@keyframes pulse {
-  0%, 100% { 
-    transform: scale(1);
-  }
-  50% { 
-    transform: scale(1.15);
-  }
+/* Login Button */
+.loginButton {
+  color: #020b14 !important;
+  background: #f8b229 !important;
+  font-weight: 700 !important;
+  padding: 0.5rem 1.25rem !important;
+  border-radius: 12px !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 16px rgba(248, 178, 41, 0.4);
+}
+
+.loginButton:hover {
+  background: #f39c12 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(248, 178, 41, 0.5);
+}
+
+/* Dropdown Menu */
+:global(.dropdown-menu) {
+  border-radius: 16px !important;
+  border: 2px solid rgba(22, 91, 51, 0.2) !important;
+  box-shadow: 0 12px 40px rgba(5, 21, 32, 0.2) !important;
+  padding: 0.75rem !important;
+}
+
+:global(.dropdown-item) {
+  border-radius: 10px !important;
+  padding: 0.6rem 1rem !important;
+  transition: all 0.2s ease !important;
+}
+
+:global(.dropdown-item:hover) {
+  background: rgba(248, 178, 41, 0.15) !important;
+  color: #165b33 !important;
+}
+
+/* Navbar Toggle (mobile) */
+:global(.navbar-toggler) {
+  border-color: #f8b229 !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+:global(.navbar-toggler-icon) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23f8b229' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
 }
 
 /* Responsive adjustments */
 @media (max-width: 991px) {
-  .navLink {
-    padding: 0.6rem 1rem !important;
-    margin: 0.25rem 0;
+  .navBar {
+    padding: 0.5rem 0;
   }
   
-  .cartBtn {
-    margin-top: 0.5rem;
-    width: 100%;
-    justify-content: center;
+  .brand {
+    font-size: 1.3rem !important;
   }
-}
-
-/* XL screens - show all text */
-@media (min-width: 1200px) {
+  
+  .brand::after {
+    right: -20px;
+  }
+  
   .navLink {
-    padding: 0.5rem 1rem !important;
+    margin: 0.25rem 0;
   }
 }

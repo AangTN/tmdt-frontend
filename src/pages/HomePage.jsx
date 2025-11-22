@@ -235,7 +235,7 @@ const HomePage = () => {
           <Row className="align-items-center gy-4">
             <Col lg={6}>
               <div className={styles.heroBadge}>Giao nóng 30' • Handmade dough</div>
-              <h1 className={styles.heroHeading}>Secret Pizza - Thắp lửa vị giác</h1>
+              <h1 className={styles.heroHeading}>Secret Pizza - Bùng lửa vị giác</h1>
               <div className={styles.heroMessageTrack}>
                 <strong key={heroMessage.headline}>{heroMessage.headline}</strong>
                 <span>{heroMessage.sub}</span>

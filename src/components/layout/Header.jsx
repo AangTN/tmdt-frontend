@@ -64,10 +64,10 @@ const Header = () => {
             </Nav>
             <Nav className="d-flex align-items-center gap-2">
               {isAuthenticated ? (
-                <Dropdown align="end">
+                <Dropdown align="end" className={styles.userDropdown}>
                   <Dropdown.Toggle 
                     variant="link" 
-                    className={`text-decoration-none d-flex align-items-center ${styles.userBtn}`}
+                    className="text-decoration-none"
                   >
                     <PersonCircle size={22} className="me-1" />
                     <span className="d-none d-xl-inline">{user?.hoTen || user?.email}</span>
@@ -85,7 +85,7 @@ const Header = () => {
                 </Dropdown>
               ) : (
                 <LinkContainer to="/login">
-                  <Nav.Link className={styles.userBtn}>
+                  <Nav.Link className={styles.loginButton}>
                     <PersonCircle size={22} className="me-1" />
                     <span className="d-none d-xl-inline">Đăng nhập</span>
                   </Nav.Link>
@@ -93,11 +93,11 @@ const Header = () => {
               )}
               
               <LinkContainer to="/cart">
-                <Nav.Link className={styles.cartBtn}>
+                <Nav.Link className={styles.cartIcon}>
                   <Cart3 size={20} />
                   <span className="d-none d-sm-inline ms-2">Giỏ hàng</span>
                   {totalQuantity > 0 && (
-                    <Badge bg="light" text="danger" pill className={styles.cartCount}>{totalQuantity}</Badge>
+                    <Badge pill className={styles.cartBadge}>{totalQuantity}</Badge>
                   )}
                 </Nav.Link>
               </LinkContainer>
