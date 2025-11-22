@@ -71,7 +71,6 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/foods/:id" element={<ProductDetail />} />
-          <Route path="/combos" element={<CombosPage />} />
           <Route path="/combos/:id" element={<ComboDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />

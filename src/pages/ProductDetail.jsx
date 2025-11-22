@@ -323,7 +323,7 @@ const ProductDetail = () => {
         <Row className="g-4">
           {/* Image Section */}
           <Col lg={5}>
-            <Card className="border-0 shadow-sm sticky-top" style={{ top: '100px' }}>
+            <Card className="border-0 shadow-sm" style={{ position: 'sticky', top: '100px', zIndex: 900 }}>
               <div className="ratio ratio-1x1" style={{ position: 'relative' }}>
                 <img 
                   src={imageUrl} 
@@ -515,7 +515,7 @@ const ProductDetail = () => {
                 <Card.Body className="p-3">
                   <h5 className="fw-bold mb-3 d-flex align-items-center">
                     <svg width="20" height="20" fill="#dc3545" viewBox="0 0 16 16" className="me-2">
-                      <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                     </svg>
                     Chọn đế bánh <span className="text-danger ms-1">*</span>
                   </h5>

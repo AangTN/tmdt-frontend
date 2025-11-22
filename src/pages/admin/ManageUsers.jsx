@@ -472,27 +472,75 @@ const ManageUsers = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!validateNewUser()) return;
 
-    // Create local user object (UI-only)
-    const id = `U${Date.now()}`;
-    const userItem = {
-      id,
-      name: newUser.hoTen,
-      email: newUser.email,
-      phone: newUser.soDienThoai,
-      role: String(newUser.role || 'customer').toLowerCase(),
-      status: 'active',
-      totalOrders: 0,
-      totalAmount: 0,
-      raw: { MaTaiKhoan: id, Role: newUser.role },
-    };
+    try {
+      // Map role to proper case for backend
+      const roleMap = {
+        'customer': 'CUSTOMER',
+        'shipper': 'SHIPPER',
+        'admin': 'ADMIN',
+        'super_admin': 'SUPER_ADMIN'
+      };
 
-    setUsers((prev) => [userItem, ...prev]);
-    setShowAddModal(false);
-    setNewUser({ email: '', matKhau: '', hoTen: '', soDienThoai: '', role: 'customer', maCoSo: '' });
+      const payload = {
+        Email: newUser.email,
+        MatKhau: newUser.matKhau,
+        HoTen: newUser.hoTen,
+        SoDienThoai: newUser.soDienThoai,
+        Role: roleMap[newUser.role] || 'CUSTOMER',
+      };
+
+      // Add MaCoSo for ADMIN and SHIPPER roles
+      if ((newUser.role === 'admin' || newUser.role === 'shipper') && newUser.maCoSo) {
+        payload.MaCoSo = Number(newUser.maCoSo);
+      }
+
+      // Call API to create user
+      const res = await api.post('/api/users', payload);
+      const created = res.data?.data;
+
+      if (!created) {
+        throw new Error('Không nhận được dữ liệu người dùng mới');
+      }
+
+      // Map created user to UI format
+      const rawRole = String(created.taiKhoan?.Role || 'User');
+      const role = rawRole.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      
+      const userItem = {
+        id: String(created.taiKhoan?.MaTaiKhoan || Date.now()),
+        name: created.nguoiDung?.HoTen || newUser.hoTen,
+        email: created.taiKhoan?.Email || newUser.email,
+        phone: created.nguoiDung?.SoDienThoai || newUser.soDienThoai,
+        role,
+        status: 'active',
+        totalOrders: 0,
+        totalAmount: 0,
+        raw: {
+          MaTaiKhoan: created.taiKhoan?.MaTaiKhoan,
+          Email: created.taiKhoan?.Email,
+          Role: created.taiKhoan?.Role,
+          TrangThai: created.taiKhoan?.TrangThai || 'Active',
+          NguoiDung: {
+            MaNguoiDung: created.nguoiDung?.MaNguoiDung,
+            HoTen: created.nguoiDung?.HoTen,
+            SoDienThoai: created.nguoiDung?.SoDienThoai,
+          }
+        },
+      };
+
+      setUsers((prev) => [userItem, ...prev]);
+      setShowAddModal(false);
+      setNewUser({ email: '', matKhau: '', hoTen: '', soDienThoai: '', role: 'customer', maCoSo: '' });
+      alert('Tạo người dùng thành công!');
+    } catch (err) {
+      console.error('Failed to create user:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể tạo người dùng';
+      alert('Lỗi: ' + errorMsg);
+    }
   };
 
   return (

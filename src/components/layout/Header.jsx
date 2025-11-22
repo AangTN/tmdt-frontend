@@ -43,12 +43,6 @@ const Header = () => {
                   <span className="d-none d-lg-inline">Menu</span>
                 </Nav.Link>
               </LinkContainer>
-              <LinkContainer to="/combos">
-                <Nav.Link className={styles.navLink}>
-                  <Box size={18} className="me-1" />
-                  <span className="d-none d-lg-inline">Combo</span>
-                </Nav.Link>
-              </LinkContainer>
               <LinkContainer to="/about">
                 <Nav.Link className={styles.navLink}>
                   <InfoCircle size={18} className="me-1" />

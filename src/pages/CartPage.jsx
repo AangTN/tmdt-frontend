@@ -587,7 +587,7 @@ const CartPage = () => {
               </div>
             </Col>
             <Col lg={4}>
-              <Card className="border-0 shadow-sm sticky-top" style={{ top: 88 }}>
+              <Card className="border-0 shadow-sm" style={{ position: 'sticky', top: 88, zIndex: 900 }}>
                 <Card.Body className="p-3">
                   <h5 className="mb-3 fw-bold">Tóm tắt đơn hàng</h5>
 

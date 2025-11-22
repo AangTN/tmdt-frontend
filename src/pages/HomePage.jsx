@@ -369,32 +369,6 @@ const HomePage = () => {
       )}
 
       <section className={styles.categoryRail}>
-        <Container>
-          <div className={styles.categoryHead}>
-            <div>
-              <p className={styles.categoryEyebrow}>Khởi động vị giác</p>
-              <h3>Chọn nhanh theo nhóm món</h3>
-            </div>
-            <Button as={Link} to="/menu" variant="link" className={styles.viewAllLink}>
-              Xem toàn bộ menu →
-            </Button>
-          </div>
-          <div className={styles.categoryScroller}>
-            {quickCategories.length > 0 ? (
-              quickCategories.map(type => (
-                <CategoryPill
-                  key={type.MaLoaiMonAn}
-                  label={type.TenLoaiMonAn}
-                  icon={getTypeIcon(type.TenLoaiMonAn)}
-                  to={`/menu?type=${type.MaLoaiMonAn}`}
-                />
-              ))
-            ) : (
-              <div className={styles.categoryPlaceholder}>Đang tải nhóm món...</div>
-            )}
-          </div>
-        </Container>
-
         {comboCarousel.length > 0 && (
           <div className={styles.dealSection}>
             <Container>
@@ -455,6 +429,32 @@ const HomePage = () => {
             </Container>
           </div>
         )}
+
+        <Container>
+          <div className={styles.categoryHead}>
+            <div>
+              <p className={styles.categoryEyebrow}>Khởi động vị giác</p>
+              <h3>Chọn nhanh theo nhóm món</h3>
+            </div>
+            <Button as={Link} to="/menu" variant="link" className={styles.viewAllLink}>
+              Xem toàn bộ menu →
+            </Button>
+          </div>
+          <div className={styles.categoryScroller}>
+            {quickCategories.length > 0 ? (
+              quickCategories.map(type => (
+                <CategoryPill
+                  key={type.MaLoaiMonAn}
+                  label={type.TenLoaiMonAn}
+                  icon={getTypeIcon(type.TenLoaiMonAn)}
+                  to={`/menu?type=${type.MaLoaiMonAn}`}
+                />
+              ))
+            ) : (
+              <div className={styles.categoryPlaceholder}>Đang tải nhóm món...</div>
+            )}
+          </div>
+        </Container>
       </section>
 
       {/* BEST SELLING FOODS - Món bán chạy nhất */}
@@ -545,7 +545,7 @@ const HomePage = () => {
       <section className="py-4" style={{ background: '#fff' }}>
         <Container>
           <div className="text-center mb-5">
-            <h2 className={styles.sectionTitle} style={{ fontSize: '2rem', fontWeight: '700' }}>
+            <h2 className={`${styles.sectionTitle} ${styles.noUnderline}`} style={{ fontSize: '2rem', fontWeight: '700' }}>
               Tại sao chọn Secret Pizza?
             </h2>
             <p className="text-muted" style={{ fontSize: '1.1rem' }}>

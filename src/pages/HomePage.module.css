@@ -216,7 +216,7 @@
 .categoryRail {
   position: relative;
   background: #ffffff;
-  padding: 3rem 0 4rem;
+  padding: 0 0 4rem;
   overflow: hidden;
   border-top: 3px solid #f0f0f0;
 }
@@ -233,16 +233,6 @@
   z-index: 0;
 }
 
-
-
-  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-  background-size: 14px 14px;
-  opacity: 0.5;
-  pointer-events: none;
-  z-index: 0;
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-
 .categoryRail::after {
   content: '';
   position: absolute;
@@ -255,9 +245,6 @@
   z-index: 1;
 }
 
-  50% { opacity: 0.6; }
-}
-
 
 
 .categoryHead {
@@ -267,6 +254,7 @@
   gap: 1rem;
   color: #1a1a1a;
   margin-bottom: 1.5rem;
+  padding-top: 3rem;
 }
 
 .viewAllLink {
@@ -321,6 +309,7 @@
   overflow: visible;
   border-top: 2px dashed #d42426;
   border-bottom: 2px dashed #d42426;
+  margin-bottom: 3rem;
 }
 
 /* Subtle background pattern */
@@ -1239,4 +1228,8 @@
   .ctaCard p {
     font-size: 0.95rem;
   }
+}
+
+.noUnderline::after {
+  display: none !important;
 }
