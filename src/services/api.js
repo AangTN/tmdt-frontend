@@ -288,3 +288,38 @@ export async function deleteOption(id) {
     return res.data;
   });
 }
+
+export async function fetchOptionSizes() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/options/sizes');
+    return res.data;
+  });
+}
+
+export async function fetchOptionTypes() {
+  return retryRequest(async () => {
+    const res = await api.get('/api/options/types');
+    return res.data;
+  });
+}
+
+export async function createOption(data) {
+  return retryRequest(async () => {
+    const res = await api.post('/api/options', data);
+    return res.data;
+  });
+}
+
+export async function fetchOptionById(id) {
+  return retryRequest(async () => {
+    const res = await api.get(`/api/options/${id}`);
+    return res.data;
+  });
+}
+
+export async function updateOption(id, data) {
+  return retryRequest(async () => {
+    const res = await api.put(`/api/options/${id}`, data);
+    return res.data;
+  });
+}

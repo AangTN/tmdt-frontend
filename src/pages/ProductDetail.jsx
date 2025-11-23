@@ -190,8 +190,26 @@ const ProductDetail = () => {
     return (basePrice + optionsExtra) * qty;
   }, [basePrice, optionsExtra, qty]);
 
-  const toggleOption = (id) => {
-    setSelectedOptions(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleOption = (id, groupOptions) => {
+    setSelectedOptions(prev => {
+      const isCurrentlySelected = !!prev[id];
+      const newState = { ...prev };
+      
+      if (!isCurrentlySelected) {
+        // Deselect other options in the same group
+        if (groupOptions && Array.isArray(groupOptions)) {
+          groupOptions.forEach(opt => {
+            newState[opt.MaTuyChon] = false;
+          });
+        }
+        // Select the clicked option
+        newState[id] = true;
+      } else {
+        // Deselect the clicked option
+        newState[id] = false;
+      }
+      return newState;
+    });
   };
 
   const addToCart = () => {
@@ -560,7 +578,7 @@ const ProductDetail = () => {
                             type="checkbox"
                             id={`option-${o.MaTuyChon}`}
                             checked={isChecked}
-                            onChange={() => toggleOption(o.MaTuyChon)}
+                            onChange={() => toggleOption(o.MaTuyChon, opts)}
                             label={
                               <div className="d-flex justify-content-between align-items-center w-100">
                                 <span>{o.TenTuyChon}</span>

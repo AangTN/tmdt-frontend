@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { fetchOptionSizes, fetchOptionTypes, createOption } from '../../services/api';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function AddOption() {
   const navigate = useNavigate();
@@ -27,14 +25,14 @@ function AddOption() {
 
   const fetchData = async () => {
     try {
-      const [sizesRes, typesRes] = await Promise.all([
-        axios.get(`${API_URL}/api/options/sizes`),
-        axios.get(`${API_URL}/api/options/types`),
+      const [sizesData, typesData] = await Promise.all([
+        fetchOptionSizes(),
+        fetchOptionTypes(),
       ]);
       
-      const sizesList = sizesRes.data.data || [];
+      const sizesList = sizesData.data || [];
       setSizes(sizesList);
-      setOptionTypes(typesRes.data.data || []);
+      setOptionTypes(typesData.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert('Không thể tải dữ liệu');
@@ -64,7 +62,7 @@ function AddOption() {
 
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/api/options`, {
+      await createOption({
         TenTuyChon: formData.TenTuyChon.trim(),
         MaLoaiTuyChon: parseInt(formData.MaLoaiTuyChon),
         prices: validPrices.map(p => ({

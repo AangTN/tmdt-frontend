@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { fetchOptionById, fetchOptionSizes, updateOption } from '../../services/api';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function EditOption() {
   const { id } = useParams();
@@ -30,13 +28,13 @@ function EditOption() {
   const fetchData = async () => {
     try {
       setLoadingData(true);
-      const [optionRes, sizesRes] = await Promise.all([
-        axios.get(`${API_URL}/api/options/${id}`),
-        axios.get(`${API_URL}/api/options/sizes`),
+      const [optionData, sizesData] = await Promise.all([
+        fetchOptionById(id),
+        fetchOptionSizes(),
       ]);
       
-      const option = optionRes.data.data;
-      const sizesList = sizesRes.data.data || [];
+      const option = optionData.data;
+      const sizesList = sizesData.data || [];
       setSizes(sizesList);
       
       // Map existing prices - CHỈ LẤY NHỮNG SIZE ĐÃ CÓ GIÁ
@@ -75,7 +73,7 @@ function EditOption() {
 
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/api/options/${id}`, {
+      await updateOption(id, {
         prices: validPrices.map(p => ({
           MaSize: p.MaSize,
           GiaThem: parseFloat(p.GiaThem),
