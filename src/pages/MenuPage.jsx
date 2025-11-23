@@ -205,12 +205,6 @@ const MenuPage = () => {
             <div>
               <div className={styles.sidebarSectionTitle}>Loại món ăn</div>
               <div className={styles.typeList}>
-                <div
-                  className={`${styles.filterItem} ${selectedType === null ? styles.active : ''}`}
-                  onClick={() => { setSelectedType(null); setSelectedCategory(null); }}
-                >
-                  <span>Tất cả</span>
-                </div>
                 {types.map(type => {
                   const active = String(selectedType) === String(type.MaLoaiMonAn);
                   return (
@@ -287,10 +281,6 @@ const MenuPage = () => {
               <div>
                 <div className={styles.sidebarSectionTitle}>Loại món ăn</div>
                 <div className={styles.typeList}>
-                  <div
-                    className={`${styles.filterItem} ${selectedType === null ? styles.active : ''}`}
-                    onClick={() => { setSelectedType(null); setSelectedCategory(null); }}
-                  >Tất cả</div>
                   {types.map(type => {
                     const active = String(selectedType) === String(type.MaLoaiMonAn);
                     return (

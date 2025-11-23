@@ -13,7 +13,7 @@ const Footer = () => {
               <img src="/logo.png" alt="logo" style={{ height: 36, width: 36 }} className="me-2" />
               <span className="fw-bold text-white fs-5">Secret Pizza</span>
             </div>
-            <p className="mb-3">Pizza tươi ngon mỗi ngày, giao nhanh trong 30 phút. Hương vị Ý chính thống, giá cả hợp lý.</p>
+            <p className="mb-3">Pizza tươi ngon mỗi ngày, giao hàng trong 60 phút. Hương vị Ý chính thống, giá cả hợp lý.</p>
             <div className={`${styles.socialLinks} d-flex gap-3 mt-3`}>
               <a href="#" aria-label="Facebook"><Facebook size={18} /></a>
               <a href="#" aria-label="Instagram"><Instagram size={18} /></a>
@@ -43,7 +43,7 @@ const Footer = () => {
               <li className="mb-2">📧 hello@secretpizza.vn</li>
               <li className="mb-2">📞 1900 1234</li>
               <li className="mb-2">🕐 9:00 - 22:00 hàng ngày</li>
-              <li className="mb-2">📍 123 Đường Pizza, Q.1, HCM</li>
+              <li className="mb-2">📍 123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh</li>
             </ul>
           </Col>
         </Row>

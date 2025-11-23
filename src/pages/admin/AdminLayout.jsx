@@ -96,17 +96,12 @@ const AdminLayoutContent = () => {
             style={{
               width: '40px',
               height: '40px',
-              background: 'linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-light) 100%)',
-              borderRadius: 'var(--admin-radius-md)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '20px',
-              fontWeight: 'var(--admin-font-weight-bold)',
-              boxShadow: 'var(--admin-shadow-sm)'
             }}
           >
-            🍕
+            <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
             <h1 
@@ -114,10 +109,7 @@ const AdminLayoutContent = () => {
                 margin: 0,
                 fontSize: screenSize === 'mobile' ? 'var(--admin-font-size-lg)' : 'var(--admin-font-size-xl)',
                 fontWeight: 'var(--admin-font-weight-bold)',
-                background: 'linear-gradient(135deg, var(--admin-text-inverse) 0%, var(--admin-primary-light) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
+                color: 'var(--admin-primary)',
               }}
             >
               Trang quản trị

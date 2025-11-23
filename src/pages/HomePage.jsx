@@ -7,13 +7,13 @@ import { assetUrl, fetchBestSellingFoods, fetchFeaturedFoods, fetchTypes, fetchB
 import styles from './HomePage.module.css';
 
 const HERO_MESSAGES = [
-  { headline: 'Pizza nóng hổi giao trong 30 phút', sub: 'Hot Pizza Delivered In 30 Mins' },
+  { headline: 'Giao hàng hỏa tốc trong 60 phút', sub: 'Express Delivery Within 60 Minutes' },
   { headline: 'Fresh dough made every single morning', sub: 'Fresh Dough Made Daily' },
   { headline: 'Combo tiết kiệm đến 50.000đ', sub: 'Flash Deals & Family Combos' },
 ];
 
 const HERO_STAT_CARDS = [
-  { value: "30'", label: 'Giao hàng', note: 'Đảm bảo nóng hổi' },
+  { value: "60'", label: 'Giao nhanh', note: 'Đảm bảo nóng hổi' },
   { value: '50+', label: 'Món ăn', note: 'Menu phong phú' },
   { value: '4.8', label: 'Điểm đánh giá', note: '5.000+ khách hàng' },
 ];
@@ -234,7 +234,7 @@ const HomePage = () => {
         <Container className={styles.heroInner}>
           <Row className="align-items-center gy-4">
             <Col lg={6}>
-              <div className={styles.heroBadge}>Giao nóng 30' • Handmade dough</div>
+              <div className={styles.heroBadge}>Giao trong 60 phút • Handmade dough</div>
               <h1 className={styles.heroHeading}>Secret Pizza - Bùng lửa vị giác</h1>
               <div className={styles.heroMessageTrack}>
                 <strong key={heroMessage.headline}>{heroMessage.headline}</strong>
@@ -247,8 +247,8 @@ const HomePage = () => {
                 <Button as={Link} to={heroCtaLink} size="lg" className={styles.primaryCta}>
                   Đặt ngay
                 </Button>
-                <Button as={Link} to="/menu" variant="outline-light" size="lg" className={styles.secondaryCta}>
-                  Xem menu
+                <Button href="#best-selling" variant="outline-light" size="lg" className={styles.secondaryCta}>
+                  Best Seller
                 </Button>
               </div>
             </Col>
@@ -436,9 +436,6 @@ const HomePage = () => {
               <p className={styles.categoryEyebrow}>Khởi động vị giác</p>
               <h3>Chọn nhanh theo nhóm món</h3>
             </div>
-            <Button as={Link} to="/menu" variant="link" className={styles.viewAllLink}>
-              Xem toàn bộ menu →
-            </Button>
           </div>
           <div className={styles.categoryScroller}>
             {quickCategories.length > 0 ? (
@@ -556,7 +553,7 @@ const HomePage = () => {
             <Col md={3} sm={6}>
               <div className="text-center p-4 h-100">
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#ff4d4f', marginBottom: '0.5rem' }}>30'</div>
+                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#ff4d4f', marginBottom: '0.5rem' }}>60'</div>
                 <div className="fw-semibold" style={{ color: '#6c757d' }}>Giao hàng nhanh</div>
                 <p className="small text-muted mb-0 mt-2">Nóng hổi tận nhà</p>
               </div>

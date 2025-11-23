@@ -5,8 +5,6 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
-import { ProductCard } from '../../components/admin/AdminTableCard';
 
 const ManageProducts = () => {
   const navigate = useNavigate();
@@ -70,25 +68,6 @@ const ManageProducts = () => {
     }
   };
 
-  // Card component for responsive view
-  const cardComponent = (
-    <div className={styles.adminTableCards}>
-      {filteredFoods.map((product, index) => (
-        <ProductCard
-          key={product.MaMonAn}
-          data={product}
-          type="product"
-          typeMap={typeMap}
-          onEdit={() => handleEdit(product)}
-          onDelete={() => handleDelete(product)}
-          index={index}
-          animate={true}
-          showImage={true}
-        />
-      ))}
-    </div>
-  );
-
   return (
     <div className="admin-animate-fade-in">
       {/* Header Section */}
@@ -131,22 +110,8 @@ const ManageProducts = () => {
         </div>
       </div>
 
-      {/* Table Section with Enhanced Responsive Container */}
-      <AdminResponsiveContainer 
-        data={filteredFoods}
-        loading={loading}
-        empty={filteredFoods.length === 0}
-        cardComponent={cardComponent}
-        onResponsiveChange={(responsiveInfo) => {
-          console.log('View changed:', responsiveInfo);
-        }}
-        accessibility={{
-          announceViewChanges: true,
-          viewChangeMessage: 'Product view changed to {view}'
-        }}
-        className="products-responsive-container"
-      >
-        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+      {/* Table Section */}
+      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
           <div className={styles.tableResponsive}>
             <table className={`${styles.table} ${styles.tableRowHover}`}>
               <thead className={styles.tableHeaderPrimary}>
@@ -340,7 +305,6 @@ const ManageProducts = () => {
             </div>
           )}
         </div>
-      </AdminResponsiveContainer>
 
       {/* Quick Stats */}
       <div className="row g-3 mt-4">

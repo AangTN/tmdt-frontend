@@ -46,8 +46,20 @@ const ProductDetail = () => {
         const res = await api.get(`/api/foods/${id}`);
         if (mounted) {
           setFood(res.data);
-          const sizes = res.data?.BienTheMonAn?.map(v => v.Size).filter(Boolean) || [];
-          if (sizes.length) setSizeId(sizes[0].MaSize);
+          
+          // Select cheapest variant by default
+          const variants = res.data?.BienTheMonAn || [];
+          if (variants.length > 0) {
+            const cheapest = variants.reduce((prev, curr) => {
+              const p1 = Number(prev.GiaBan) || 0;
+              const p2 = Number(curr.GiaBan) || 0;
+              return p1 < p2 ? prev : curr;
+            });
+            if (cheapest?.Size?.MaSize) {
+              setSizeId(cheapest.Size.MaSize);
+            }
+          }
+
           const crustList = (res.data?.MonAn_DeBanh || []).map(mdb => mdb.DeBanh).filter(Boolean) || [];
           if (crustList.length) setCrustId(crustList[0].MaDeBanh);
         }

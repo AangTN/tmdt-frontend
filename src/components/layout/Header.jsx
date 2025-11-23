@@ -24,7 +24,7 @@ const Header = () => {
           <LinkContainer to="/">
             <Navbar.Brand className={styles.brand}>
               <img src="/logo.png" alt="logo" /> 
-              <span className="d-none d-md-inline">Secret Pizza</span>
+              <span>Secret Pizza</span>
             </Navbar.Brand>
           </LinkContainer>
 
@@ -34,25 +34,25 @@ const Header = () => {
               <LinkContainer to="/">
                 <Nav.Link className={styles.navLink}>
                   <HouseDoor size={18} className="me-1" />
-                  <span className="d-none d-lg-inline">Trang chủ</span>
+                  <span>Trang chủ</span>
                 </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/menu">
                 <Nav.Link className={styles.navLink}>
                   <CardList size={18} className="me-1" />
-                  <span className="d-none d-lg-inline">Menu</span>
+                  <span>Menu</span>
                 </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/about">
                 <Nav.Link className={styles.navLink}>
                   <InfoCircle size={18} className="me-1" />
-                  <span className="d-none d-lg-inline">Về chúng tôi</span>
+                  <span>Về chúng tôi</span>
                 </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/track-order">
                 <Nav.Link className={styles.navLink}>
                   <GeoAlt size={18} className="me-1" />
-                  <span className="d-none d-lg-inline">Đơn hàng</span>
+                  <span>Đơn hàng</span>
                 </Nav.Link>
               </LinkContainer>
             </Nav>
@@ -64,7 +64,7 @@ const Header = () => {
                     className="text-decoration-none"
                   >
                     <PersonCircle size={22} className="me-1" />
-                    <span className="d-none d-xl-inline">{user?.hoTen || user?.email}</span>
+                    <span>{user?.hoTen || user?.email}</span>
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <LinkContainer to="/profile/edit">
@@ -81,7 +81,7 @@ const Header = () => {
                 <LinkContainer to="/login">
                   <Nav.Link className={styles.loginButton}>
                     <PersonCircle size={22} className="me-1" />
-                    <span className="d-none d-xl-inline">Đăng nhập</span>
+                    <span>Đăng nhập</span>
                   </Nav.Link>
                 </LinkContainer>
               )}
@@ -89,7 +89,7 @@ const Header = () => {
               <LinkContainer to="/cart">
                 <Nav.Link className={styles.cartIcon}>
                   <Cart3 size={20} />
-                  <span className="d-none d-sm-inline ms-2">Giỏ hàng</span>
+                  <span className="ms-2">Giỏ hàng</span>
                   {totalQuantity > 0 && (
                     <Badge pill className={styles.cartBadge}>{totalQuantity}</Badge>
                   )}

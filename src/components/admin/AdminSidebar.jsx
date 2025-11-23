@@ -215,24 +215,6 @@ const AdminSidebar = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: isCollapsed && screenSize !== 'mobile' ? 0 : 'var(--admin-space-md)', justifyContent: isCollapsed && screenSize !== 'mobile' ? 'center' : 'flex-start' }}>
-            <div 
-              style={{
-                width: isCollapsed && screenSize !== 'mobile' ? '24px' : '32px',
-                height: isCollapsed && screenSize !== 'mobile' ? '24px' : '32px',
-                background: 'linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-light) 100%)',
-                borderRadius: 'var(--admin-radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: isCollapsed && screenSize !== 'mobile' ? '12px' : '16px',
-                fontWeight: 'var(--admin-font-weight-bold)',
-                boxShadow: 'var(--admin-shadow-sm)',
-                animation: 'admin-pulse 2s infinite',
-                flexShrink: 0
-              }}
-            >
-              🍕
-            </div>
             {(!isCollapsed || screenSize === 'mobile') && (
               <div>
                 <h3 

@@ -3,8 +3,6 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
-import { BusinessCard } from '../../components/admin/AdminTableCard';
 import OrderDetail from '../../components/ui/OrderDetail';
 
 import { fetchAllAccounts, fetchBranches, api } from '../../services/api';
@@ -435,23 +433,6 @@ const ManageUsers = () => {
     })();
   };
 
-  // Card component for responsive view
-  const cardComponent = (
-    <div className={styles.adminTableCards}>
-      {filteredUsers.map((user, index) => (
-        <BusinessCard
-          key={user.id}
-          data={user}
-          type="user"
-          onView={() => handleViewOrders(user.id)}
-          index={index}
-          animate={true}
-          showTimeline={true}
-        />
-      ))}
-    </div>
-  );
-
   // Add User modal handlers (UI-only)
   const handleNewUserChange = (field, value) => {
     setNewUser((prev) => ({ ...prev, [field]: value }));
@@ -664,22 +645,8 @@ const ManageUsers = () => {
         </div>
       )}
 
-      {/* Table Section with Enhanced Responsive Container */}
-      <AdminResponsiveContainer 
-        data={filteredUsers}
-        loading={false}
-        empty={filteredUsers.length === 0}
-        cardComponent={cardComponent}
-        onResponsiveChange={(responsiveInfo) => {
-          console.log('Users view changed:', responsiveInfo);
-        }}
-        accessibility={{
-          announceViewChanges: true,
-          viewChangeMessage: 'Users view changed to {view}'
-        }}
-        className="users-responsive-container"
-      >
-        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+      {/* Table Section */}
+      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
           <div className={styles.tableResponsive}>
             <table className={`${styles.table} ${styles.tableRowHover}`}>
               <thead className={styles.tableHeaderPrimary}>
@@ -871,7 +838,6 @@ const ManageUsers = () => {
             </div>
           )}
         </div>
-      </AdminResponsiveContainer>
 
       {/* Quick Stats */}
       <div className="row g-3 mt-4">

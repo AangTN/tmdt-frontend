@@ -51,6 +51,10 @@ function App() {
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!isAdminRoute) {
       document.body.classList.add('christmas-theme');
     } else {

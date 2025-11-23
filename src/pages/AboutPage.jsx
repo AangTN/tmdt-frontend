@@ -4,7 +4,7 @@ import { fetchBranches, fetchBestSellingFoods, assetUrl } from '../services/api'
 import ProductCard from '../components/ui/ProductCard';
 import styles from './AboutPage.module.css';
 
-const GOONG_API_KEY = 'msHvRH6pBTsFvRyZVMacg0YpKhq0VzUdTDaEERTH';
+const GOONG_API_KEY = import.meta.env.VITE_MAP_KEY;
 const DEFAULT_CENTER = { lng: 105.83991, lat: 21.028 };
 const DEFAULT_ZOOM = 5;
 const SINGLE_BRANCH_ZOOM = 13;
@@ -127,7 +127,7 @@ const AboutPage = () => {
       console.log('Creating Goong map instance...');
       map = new window.goongjs.Map({
         container: mapRef.current,
-        style: 'https://tiles.goong.io/assets/goong_map_web.json', // Add style URL
+        style: 'https://tiles.goong.io/assets/goong_map_web.json?api_key=' + GOONG_API_KEY,
         center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
         zoom: DEFAULT_ZOOM
       });
@@ -233,7 +233,7 @@ const AboutPage = () => {
     { label: 'Pizza giao mỗi tháng', value: '12K+' },
     { label: 'Thành phần tươi mỗi ngày', value: '30+' },
     { label: 'Đánh giá trung bình', value: '4.8/5' },
-    { label: 'Thời gian giao trung bình', value: '26 phút' }
+    { label: 'Thời gian giao trung bình', value: 'Trong 60 phút' }
   ];
 
   return (

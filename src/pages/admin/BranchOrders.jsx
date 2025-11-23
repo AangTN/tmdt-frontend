@@ -7,8 +7,6 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
-import { BusinessCard } from '../../components/admin/AdminTableCard';
 
 const statusVariant = {
   'Đang xử lý': 'warning',
@@ -369,34 +367,6 @@ const BranchOrders = () => {
     `;
   };
 
-  const cardComponent = (
-    <div className={styles.adminTableCards}>
-      {filteredOrders.map((order, index) => {
-        const id = order.MaDonHang;
-        const customer = order.NguoiDung_DonHang_MaNguoiDungToNguoiDung?.HoTen || order.TenNguoiNhan || 'Khách vãng lai';
-        const phone = order.SoDienThoaiGiaoHang;
-        const branch = order.CoSo?.TenCoSo || '—';
-        const total = Number(order.TongTien || 0);
-        const latestStatus = getLatestStatus(order) || 'Đang xử lý';
-        const createdAt = formatDateTime(order.NgayDat);
-
-        return (
-          <BusinessCard
-            key={id}
-            data={{ id, customer, phone, branch, total, status: latestStatus, createdAt, address: branch }}
-            type="order"
-            onView={() => handleView(order)}
-            onEdit={() => handleEdit(id)}
-            onCancel={() => handleCancel(id)}
-            index={index}
-            animate={true}
-            showTimeline={true}
-          />
-        );
-      })}
-    </div>
-  );
-
   if (error) {
     return (
       <div className="alert alert-danger m-4" role="alert">
@@ -441,22 +411,8 @@ const BranchOrders = () => {
         </div>
       </div>
 
-      {/* Table Section with Enhanced Responsive Container */}
-      <AdminResponsiveContainer 
-        data={filteredOrders}
-        loading={false}
-        empty={filteredOrders.length === 0}
-        cardComponent={cardComponent}
-        onResponsiveChange={(responsiveInfo) => {
-          console.log('Orders view changed:', responsiveInfo);
-        }}
-        accessibility={{
-          announceViewChanges: true,
-          viewChangeMessage: 'Orders view changed to {view}'
-        }}
-        className="orders-responsive-container"
-      >
-        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+      {/* Table Section */}
+      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
           <div className={styles.tableResponsive}>
             <table className={`${styles.table} ${styles.tableRowHover}`}>
               <thead className={styles.tableHeaderPrimary}>
@@ -651,7 +607,6 @@ const BranchOrders = () => {
             </div>
           )}
         </div>
-      </AdminResponsiveContainer>
     </div>
   );
 };

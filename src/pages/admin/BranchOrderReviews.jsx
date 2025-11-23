@@ -5,7 +5,6 @@ import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
 import cardStyles from '../../styles/admin/AdminCard.module.css';
-import { AdminResponsiveContainer } from '../../components/admin/AdminResponsiveContainer';
 import { fetchOrderReviews } from '../../services/api';
 
 const BranchOrderReviews = () => {
@@ -89,57 +88,6 @@ const BranchOrderReviews = () => {
     return stars;
   };
 
-  const ReviewCard = ({ review, index }) => {
-    const order = review.DonHang || {};
-    const customer = order.NguoiDung_DonHang_MaNguoiDungToNguoiDung?.HoTen || order.TenNguoiNhan || 'Khách';
-
-    return (
-      <div
-        className={`${styles.adminTableCard} admin-animate-slide-up`}
-        style={{ animationDelay: `${index * 0.05}s` }}
-      >
-        <div className={styles.cardContent}>
-          <div className="d-flex justify-content-between align-items-start mb-2">
-            <h5 className={styles.cardTitle}>ĐH #{review.MaDonHang}</h5>
-            <div className="d-flex">
-              {renderStars(review.SoSao || 0)}
-            </div>
-          </div>
-          <div className={styles.cardDetails}>
-            <div className={styles.cardDetailRow}>
-              <span className={styles.cardLabel}>Khách hàng:</span>
-              <span className={styles.cardValue}>{customer}</span>
-            </div>
-            <div className={styles.cardDetailRow}>
-              <span className={styles.cardLabel}>Nhận xét:</span>
-              <span className={styles.cardValue}>{review.BinhLuan || 'Không có nhận xét'}</span>
-            </div>
-            <div className={styles.cardDetailRow}>
-              <span className={styles.cardLabel}>Ngày đánh giá:</span>
-              <span className={styles.cardValue}>{formatDate(review.NgayDanhGia)}</span>
-            </div>
-          </div>
-          <div className={styles.cardActions}>
-            <button
-              onClick={() => handleViewOrder(review)}
-              className={`${buttonStyles.button} ${buttonStyles.buttonPrimary} ${buttonStyles.buttonSmall}`}
-            >
-              Xem đơn hàng
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const cardComponent = (
-    <div className={styles.adminTableCards}>
-      {filtered.map((review, index) => (
-        <ReviewCard key={review.MaDanhGiaDonHang || index} review={review} index={index} />
-      ))}
-    </div>
-  );
-
   if (error) {
     return (
       <div className="alert alert-danger m-4" role="alert">
@@ -175,13 +123,7 @@ const BranchOrderReviews = () => {
         </div>
       </div>
 
-      <AdminResponsiveContainer 
-        data={filtered} 
-        loading={loading} 
-        empty={filtered.length === 0} 
-        cardComponent={cardComponent}
-      >
-        <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
+      <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
           <div className={styles.tableResponsive}>
             <table className={`${styles.table} ${styles.tableRowHover}`}>
               <thead className={styles.tableHeaderPrimary}>
@@ -243,7 +185,6 @@ const BranchOrderReviews = () => {
             </table>
           </div>
         </div>
-      </AdminResponsiveContainer>
 
       {/* Order Detail Modal */}
       {showDetailModal && selectedOrderId && (
