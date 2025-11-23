@@ -65,7 +65,6 @@ const ComboDetailPage = () => {
         <nav className="mb-3 small" aria-label="breadcrumb">
           <ol className="breadcrumb mb-0">
             <li className="breadcrumb-item"><Link to="/">Trang chủ</Link></li>
-            <li className="breadcrumb-item"><Link to="/combos">Combo</Link></li>
             <li className="breadcrumb-item active" aria-current="page">{combo.TenCombo}</li>
           </ol>
         </nav>
@@ -85,7 +84,16 @@ const ComboDetailPage = () => {
                   <div className="small text-success">Tiết kiệm {saving.toLocaleString()} đ so với mua lẻ ({sumRetail.toLocaleString()} đ)</div>
                 )}
               </div>
-              <Button variant="danger" disabled={adding} onClick={handleAddCombo}>🛒 {adding ? 'Đang thêm...' : 'Thêm combo vào giỏ'}</Button>
+              <Button 
+                variant="danger" 
+                size="lg"
+                className="px-5 py-2 fw-bold shadow"
+                style={{ borderRadius: '50px', textTransform: 'uppercase', letterSpacing: '1px' }}
+                disabled={adding} 
+                onClick={handleAddCombo}
+              >
+                {adding ? 'Đang xử lý...' : 'ĐẶT NGAY'}
+              </Button>
             </div>
             {addedMsg && <div className="alert alert-success py-2 small">{addedMsg}</div>}
             <h5 className="mt-4 mb-2 fw-semibold">Bao gồm trong combo:</h5>
