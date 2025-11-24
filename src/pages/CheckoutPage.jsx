@@ -539,7 +539,7 @@ const CheckoutPage = () => {
                         value={formData.hoTen}
                         onChange={handleChange}
                         required 
-                        placeholder="Nguyễn Văn A" 
+                        placeholder="Nhập họ tên của bạn" 
                       />
                     </Form.Group>
                   </Col>
@@ -551,7 +551,7 @@ const CheckoutPage = () => {
                         value={formData.soDienThoai}
                         onChange={handleChange}
                         required 
-                        placeholder="09xxxxxxxx" 
+                        placeholder="Nhập số điện thoại" 
                       />
                     </Form.Group>
                   </Col>
@@ -564,7 +564,7 @@ const CheckoutPage = () => {
                             name="soNhaDuong"
                             value={formData.soNhaDuong}
                             onChange={handleChange}
-                            placeholder="259/18 Hàn Hải Nguyên"
+                            placeholder="Nhập số nhà, tên đường"
                           />
                         </Form.Group>
                       </Col>

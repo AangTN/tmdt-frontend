@@ -122,6 +122,11 @@ const AboutPage = () => {
   useEffect(() => {
     if (!sdkReady || !mapRef.current || mapInstanceRef.current) return;
 
+    if (!GOONG_API_KEY) {
+      setMapError('Thiếu API Key bản đồ (VITE_MAP_KEY)');
+      return;
+    }
+
     let map;
     try {
       console.log('Creating Goong map instance...');
@@ -401,18 +406,22 @@ const AboutPage = () => {
             </div>
           ) : (
             <>
-              <div ref={mapRef} className={styles.mapContainer}>
-                {mapError ? (
-                  <div className="text-center text-danger p-4">
-                    <div style={{ fontWeight: 700, marginBottom: 8 }}>Không thể hiển thị bản đồ</div>
-                    <div className="small">{mapError}</div>
-                    <div className="small text-muted mt-2">Mở DevTools → Console để xem log chi tiết.</div>
-                  </div>
-                ) : !mapLoaded ? (
+              <div className={styles.mapContainer}>
+                <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+                
+                {(mapError || !mapLoaded) && (
                   <div className={styles.mapPlaceholder}>
-                    <Spinner animation="border" variant="danger" />
+                    {mapError ? (
+                      <div className="text-center text-danger p-4">
+                        <div style={{ fontWeight: 700, marginBottom: 8 }}>Không thể hiển thị bản đồ</div>
+                        <div className="small">{mapError}</div>
+                        <div className="small text-muted mt-2">Mở DevTools → Console để xem log chi tiết.</div>
+                      </div>
+                    ) : (
+                      <Spinner animation="border" variant="danger" />
+                    )}
                   </div>
-                ) : null}
+                )}
               </div>
 
               <Row className={`g-4 ${styles.branchesGrid}`}>

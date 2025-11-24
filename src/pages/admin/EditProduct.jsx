@@ -595,7 +595,7 @@ const EditProduct = () => {
                               <input
                                 type="number"
                                 className="form-control bg-white border-2 rounded-end-3"
-                                placeholder="255,000"
+                                placeholder="Nhập giá bán"
                                 value={variant.giaBan}
                                 onChange={(e) => handleVariantChange(index, 'giaBan', e.target.value)}
                                 min="0"

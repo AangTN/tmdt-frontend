@@ -993,6 +993,7 @@ const ManageUsers = () => {
         orderId={selectedOrder?.MaDonHang}
         initialData={null}
         modalZIndex={1400}
+        isAdmin={true}
       />
     </div>
   );

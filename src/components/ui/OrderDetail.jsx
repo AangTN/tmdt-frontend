@@ -534,7 +534,7 @@ export default function OrderDetail({ show, onHide, orderId, initialData = null,
         )}
       </Modal.Body>
         <Modal.Footer>
-        {detail && paymentStatus === 'Chưa thanh toán' && currentOrderStatus === 'Đang chờ xác nhận' && (
+        {detail && !isAdmin && paymentStatus === 'Chưa thanh toán' && currentOrderStatus === 'Đang chờ xác nhận' && (
           <Button variant="danger" onClick={handleCancelOrder} disabled={canceling}>
             {canceling ? 'Đang hủy…' : 'Hủy đơn'}
           </Button>

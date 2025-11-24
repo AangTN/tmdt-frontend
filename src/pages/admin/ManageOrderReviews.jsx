@@ -127,6 +127,7 @@ const ManageOrderReviews = () => {
             orderId={selectedOrderId}
             initialData={null}
             modalZIndex={1400}
+            isAdmin={true}
           />
     </div>
   );

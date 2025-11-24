@@ -465,7 +465,7 @@ const AdminDashboard = () => {
             Tổng quan đơn hàng
           </h2>
           <p style={{ marginTop: 'var(--admin-space-sm)', color: 'var(--admin-text-secondary)' }}>
-            Báo cáo được tổng hợp trực tiếp từ API /api/orders.
+            Báo cáo tổng hợp từ toàn bộ cơ sở
           </p>
         </div>
         {loading && (

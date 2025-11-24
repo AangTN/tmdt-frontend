@@ -130,29 +130,7 @@ const AdminLayoutContent = () => {
 
         {/* Header Right - User Info and Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: screenSize === 'mobile' ? 'var(--admin-space-sm)' : 'var(--admin-space-lg)' }}>
-          {/* Quick Stats - Hide on mobile */}
-          {screenSize !== 'mobile' && (
-            <div 
-              style={{
-                display: 'flex',
-                gap: 'var(--admin-space-md)',
-                padding: 'var(--admin-space-sm) var(--admin-space-md)',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: 'var(--admin-radius-lg)',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'var(--admin-font-size-sm)', color: 'var(--admin-text-tertiary)' }}>Đơn hàng</div>
-                <div style={{ fontSize: 'var(--admin-font-size-lg)', fontWeight: 'var(--admin-font-weight-bold)' }}>24</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'var(--admin-font-size-sm)', color: 'var(--admin-text-tertiary)' }}>Doanh thu</div>
-                <div style={{ fontSize: 'var(--admin-font-size-lg)', fontWeight: 'var(--admin-font-weight-bold)' }}>12.5M</div>
-              </div>
-            </div>
-          )}
-
+          
           {/* User Info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--admin-space-md)' }}>
             <div 

@@ -195,6 +195,7 @@ const BranchOrderReviews = () => {
             setShowDetailModal(false);
             setSelectedOrderId(null);
           }}
+          isAdmin={true}
         />
       )}
     </div>
