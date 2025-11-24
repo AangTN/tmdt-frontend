@@ -4,7 +4,7 @@ import { fetchBranches, fetchBestSellingFoods, assetUrl } from '../services/api'
 import ProductCard from '../components/ui/ProductCard';
 import styles from './AboutPage.module.css';
 
-const GOONG_API_KEY = import.meta.env.VITE_MAP_KEY;
+const GOONG_API_KEY = import.meta.env.VITE_MAP_KEY || 'msHvRH6pBTsFvRyZVMacg0YpKhq0VzUdTDaEERTH';
 const DEFAULT_CENTER = { lng: 105.83991, lat: 21.028 };
 const DEFAULT_ZOOM = 5;
 const SINGLE_BRANCH_ZOOM = 13;
