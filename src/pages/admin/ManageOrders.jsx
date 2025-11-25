@@ -224,7 +224,7 @@ const ManageOrders = () => {
     if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng ${orderId} không?`)) return;
     setCancelingOrderId(orderId);
     try {
-      const res = await api.post(`/api/orders/${orderId}/cancel`);
+      const res = await api.post(`/api/orders/${orderId}/cancel-staff`);
       if (res.status === 200) {
         // refetch order and update
         const r2 = await api.get(`/api/orders/${orderId}`);

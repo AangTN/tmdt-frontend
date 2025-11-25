@@ -38,6 +38,7 @@ const ShipperMyOrders = () => {
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [cancelingOrderId, setCancelingOrderId] = useState(null);
 
   useEffect(() => {
     if (!shipperId) {
@@ -151,6 +152,29 @@ const ShipperMyOrders = () => {
       alert('Không thể cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleCancel = async (orderId) => {
+    if (!orderId) return;
+    if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng ${orderId} không?`)) return;
+    setCancelingOrderId(orderId);
+    try {
+      const res = await api.post(`/api/orders/${orderId}/cancel-staff`);
+      if (res.status === 200) {
+        // refetch order and update
+        const r2 = await api.get(`/api/orders/${orderId}`);
+        const updated = r2.data?.data;
+        if (updated) setOrders(prev => prev.map(o => o.MaDonHang === orderId ? updated : o));
+        alert(res.data?.message || 'Hủy đơn hàng thành công');
+      } else {
+        alert(res.data?.message || 'Hủy đơn không thành công');
+      }
+    } catch (err) {
+      console.error('Cancel order failed', err);
+      alert('Không thể hủy đơn hàng: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setCancelingOrderId(null);
     }
   };
 
@@ -370,6 +394,9 @@ const ShipperMyOrders = () => {
                             ) : (
                               <button className={styles.tableAction} title="Cập nhật trạng thái" onClick={() => handleEdit(id)}>📝</button>
                             )}
+                            <button className={styles.tableAction} title="Hủy đơn hàng" onClick={() => handleCancel(id)} disabled={cancelingOrderId === id}>
+                              {cancelingOrderId === id ? '⏳' : '❌'}
+                            </button>
                           </div>
                         </td>
                       </tr>
