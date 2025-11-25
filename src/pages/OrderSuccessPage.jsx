@@ -14,7 +14,6 @@ const OrderSuccessPage = () => {
         <p className={styles.message}>
           Cảm ơn bạn đã chọn Secret Pizza. Món ăn ngon đang trên đường đến với bạn!
         </p>
-        <div className={styles.orderIdBadge}>Đơn hàng của bạn</div>
         <div className={styles.buttons}>
           <button className={styles.primaryButton} onClick={() => navigate('/menu')}>
             Tiếp tục đặt món
