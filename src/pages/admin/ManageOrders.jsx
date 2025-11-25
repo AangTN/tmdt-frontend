@@ -343,15 +343,16 @@ const ManageOrders = () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đơn hàng #${order.MaDonHang}</title>
   <style>
+    @page { margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #fff; color: #333; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: #fff; color: #333; }
     .container { max-width: 900px; margin: 0 auto; }
     h1 { color: #dc3545; margin-bottom: 10px; font-size: 28px; text-align: center; }
-    h2 { color: #333; margin: 20px 0 10px; font-size: 18px; border-bottom: 2px solid #dc3545; padding-bottom: 5px; }
-    .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
-    .info-section { margin-bottom: 15px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-    .info-item { margin-bottom: 10px; line-height: 1.6; }
+    h2 { color: #333; margin: 15px 0 8px; font-size: 16px; border-bottom: 2px solid #dc3545; padding-bottom: 5px; }
+    .header { text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .info-section { margin-bottom: 10px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+    .info-item { margin-bottom: 5px; line-height: 1.4; }
     .info-label { font-weight: 600; color: #555; display: inline-block; min-width: 130px; }
     table { width: 100%; border-collapse: collapse; margin: 10px 0; }
     th { background: #dc3545; color: white; padding: 10px; text-align: left; font-weight: 600; font-size: 13px; }
@@ -363,7 +364,7 @@ const ManageOrders = () => {
     .payment-info { background: #fff3cd; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107; margin: 15px 0; }
     .footer { margin-top: 25px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center; color: #999; font-size: 13px; }
     @media print {
-      body { padding: 10px; }
+      body { padding: 40px; }
       .no-print { display: none; }
     }
   </style>
@@ -371,9 +372,12 @@ const ManageOrders = () => {
 <body>
   <div class="container">
     <div class="header">
-      <h1>🍕 HÓA ĐƠN ĐẶT HÀNG</h1>
-      <p style="color: #666; font-size: 18px; margin-top: 8px;">Mã đơn hàng: <strong>#${order.MaDonHang}</strong></p>
-      <p style="color: #666; margin-top: 5px;">Ngày đặt: <strong>${formatDate(order.NgayDat)}</strong></p>
+      <div style="margin-bottom: 5px;">
+        <img src="${window.location.origin}/logo.png" alt="Secret Pizza" style="height: 50px; object-fit: contain;" />
+      </div>
+      <h1 style="font-size: 24px; margin-bottom: 5px;">HÓA ĐƠN ĐẶT HÀNG</h1>
+      <p style="color: #666; font-size: 14px; margin-top: 5px;">Mã đơn hàng: <strong>#${order.MaDonHang}</strong></p>
+      <p style="color: #666; margin-top: 2px; font-size: 13px;">Ngày đặt: <strong>${formatDate(order.NgayDat)}</strong></p>
     </div>
 
     <div class="info-section">
