@@ -166,7 +166,7 @@ const AboutPage = () => {
       mapInstanceRef.current = null;
       setMapLoaded(false);
     };
-  }, [sdkReady]);
+  }, [sdkReady, loading]);
 
   useEffect(() => {
     if (!sdkReady || !mapInstanceRef.current || !window.goongjs) return;
