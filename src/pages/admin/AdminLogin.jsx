@@ -58,21 +58,8 @@ const AdminLogin = () => {
       <div className="card shadow" style={{ maxWidth: 420, width: '100%' }}>
         <div className="card-body p-4">
           <div className="text-center mb-4">
-            <div 
-              style={{
-                width: '60px',
-                height: '60px',
-                background: 'linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%)',
-                borderRadius: '12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '28px',
-                marginBottom: '16px',
-                boxShadow: '0 4px 12px rgba(255, 77, 79, 0.3)'
-              }}
-            >
-              🍕
+            <div className="mb-3">
+              <img src="/logo.png" alt="Logo" style={{ height: '80px', objectFit: 'contain' }} />
             </div>
             <h3 className="mb-2">Đăng nhập quản trị</h3>
             <p className="text-muted small mb-0">

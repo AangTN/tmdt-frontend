@@ -159,7 +159,7 @@ const AdminLayoutContent = () => {
                     lineHeight: 'var(--admin-line-height-tight)'
                   }}
                 >
-                  {admin?.username || 'Admin'}
+                  {admin?.hoTen || 'Admin'}
                 </div>
                 <div 
                   style={{
@@ -168,7 +168,7 @@ const AdminLayoutContent = () => {
                     fontWeight: 'var(--admin-font-weight-medium)'
                   }}
                 >
-                  Quản trị viên
+                  {admin?.role || 'Quản trị viên'}
                 </div>
               </div>
             )}
