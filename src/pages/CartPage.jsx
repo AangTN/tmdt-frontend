@@ -301,6 +301,28 @@ const CartPage = () => {
     return groups;
   }, [editorFood]);
 
+  const toggleEditOption = (id, groupOptions) => {
+    setEditOptions(prev => {
+      const isCurrentlySelected = !!prev[id];
+      const newState = { ...prev };
+      
+      if (!isCurrentlySelected) {
+        // Deselect other options in the same group
+        if (groupOptions && Array.isArray(groupOptions)) {
+          groupOptions.forEach(opt => {
+            newState[opt.MaTuyChon] = false;
+          });
+        }
+        // Select the clicked option
+        newState[id] = true;
+      } else {
+        // Deselect the clicked option
+        newState[id] = false;
+      }
+      return newState;
+    });
+  };
+
   return (
     <section style={{ background: '#f8f9fa', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '4rem' }}>
       <Container>
@@ -748,7 +770,7 @@ const CartPage = () => {
                           const extra = priceEntry ? Number(priceEntry.GiaThem || 0) : 0;
                           const checked = !!editOptions[opt.MaTuyChon];
                           return (
-                            <div key={opt.MaTuyChon} className={`d-flex justify-content-between align-items-center px-2 py-1 rounded border ${checked ? 'border-danger bg-light' : 'border-secondary'}`} style={{ cursor: 'pointer' }} onClick={() => setEditOptions(prev => ({ ...prev, [opt.MaTuyChon]: !prev[opt.MaTuyChon] }))}>
+                            <div key={opt.MaTuyChon} className={`d-flex justify-content-between align-items-center px-2 py-1 rounded border ${checked ? 'border-danger bg-light' : 'border-secondary'}`} style={{ cursor: 'pointer' }} onClick={() => toggleEditOption(opt.MaTuyChon, opts)}>
                               <div className="d-flex align-items-center gap-2">
                                 <div style={{ width: 18, height: 18 }} className={`rounded border d-flex align-items-center justify-content-center ${checked ? 'bg-danger text-white' : ''}`}>{checked ? '✓' : ''}</div>
                                 <span className="small">{opt.TenTuyChon}</span>
