@@ -204,11 +204,6 @@ const ManageProducts = () => {
                           <div>
                             <div className="d-flex align-items-center gap-2 mb-1">
                               <div className="fw-semibold">{food.TenMonAn}</div>
-                              {food.KhuyenMai && (
-                                <span className={`${styles.tableBadge} ${styles.tableBadgeDanger}`} title={food.KhuyenMai.TenKhuyenMai}>
-                                  {food.KhuyenMai.KMLoai === 'PERCENT' ? `${food.KhuyenMai.KMGiaTri}%` : `-${Number(food.KhuyenMai.KMGiaTri).toLocaleString()}đ`}
-                                </span>
-                              )}
                             </div>
                             <div className={styles.tableCellMuted}>
                               <small>Mã: {food.MaMonAn}</small>
