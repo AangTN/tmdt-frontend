@@ -45,9 +45,10 @@ export async function fetchFoodsAdmin() {
   });
 }
 
-export async function fetchBestSellingFoods() {
+export async function fetchBestSellingFoods(categoryId = null) {
   return retryRequest(async () => {
-    const res = await api.get('/api/foods/best-selling/top');
+    const params = categoryId ? { categoryId } : {};
+    const res = await api.get('/api/foods/best-selling/top', { params });
     return res.data;
   });
 }

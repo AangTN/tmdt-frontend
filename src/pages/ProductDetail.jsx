@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Spinner, Card, Button, Form, Badge, Alert, Toast, ToastContainer } from 'react-bootstrap';
-import { api, assetUrl, fetchFeaturedFoods } from '../services/api';
+import { api, assetUrl, fetchBestSellingFoods } from '../services/api';
 import ProductCard from '../components/ui/ProductCard';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -74,22 +74,23 @@ const ProductDetail = () => {
     useEffect(() => {
       let mounted = true;
       (async () => {
+        if (!food) return;
         setRecommendedLoading(true);
         try {
-          const res = await fetchFeaturedFoods();
+          const res = await fetchBestSellingFoods(food.MaLoaiMonAn);
           const data = Array.isArray(res) ? res : (res?.data || []);
           if (!mounted) return;
           // exclude current product
           const list = (Array.isArray(data) ? data : []).filter(p => Number(p.MaMonAn) !== Number(id));
           setRecommended(list.slice(0, 4));
         } catch (err) {
-          console.error('fetchFeaturedFoods failed', err);
+          console.error('fetchBestSellingFoods failed', err);
         } finally {
           if (mounted) setRecommendedLoading(false);
         }
       })();
       return () => { mounted = false; };
-    }, [id]);
+    }, [id, food]);
 
 
   const imageUrl = useMemo(() => {

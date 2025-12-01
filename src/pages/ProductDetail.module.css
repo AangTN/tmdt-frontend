@@ -64,26 +64,24 @@
 }
 
 .sizeOption:hover {
-  border-color: #d42426;
+  border-color: #165b33;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(212, 36, 38, 0.2);
+  box-shadow: 0 6px 18px rgba(22, 91, 51, 0.2);
 }
 
 .sizeSelected {
-  border-color: #d42426;
-  background: rgba(212, 36, 38, 0.05);
-  box-shadow: 0 8px 24px rgba(212, 36, 38, 0.25);
+  border-color: #165b33;
+  background: rgba(22, 91, 51, 0.08);
+  box-shadow: 0 8px 24px rgba(22, 91, 51, 0.25);
   position: relative;
 }
 
 .sizeSelected::after {
-  content: '✓';
+  content: '❄️';
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  color: #d42426;
-  font-weight: 800;
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .sizeName {

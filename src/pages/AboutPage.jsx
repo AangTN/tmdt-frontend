@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Spinner, Button } from 'react-bootstrap';
 import { fetchBranches, fetchBestSellingFoods, assetUrl } from '../services/api';
 import ProductCard from '../components/ui/ProductCard';
@@ -381,9 +382,6 @@ const AboutPage = () => {
                   </Col>
                 ))}
               </Row>
-              <div className="text-center mt-5">
-                <Button href="/menu" variant="danger" size="lg" style={{ background: '#c41e3a', border: 'none', padding: '12px 30px', fontWeight: 'bold' }}>Xem Thực Đơn Lễ Hội →</Button>
-              </div>
             </>
           ) : (
             <div className="text-center text-muted py-4">Chưa có dữ liệu món ăn hiển thị.</div>
@@ -481,7 +479,7 @@ const AboutPage = () => {
         <Container className="text-center">
           <h2 className="fw-bold mb-3">Cùng Tạo Nên Mùa Giáng Sinh Đáng Nhớ!</h2>
           <p className="text-white-50 mb-4">Đặt bàn ngay hôm nay để nhận ưu đãi đặc biệt mùa lễ hội.</p>
-          <Button href="/menu" variant="light" size="lg" style={{ color: '#c41e3a', fontWeight: 'bold', padding: '12px 35px' }}>Đặt Tiệc Ngay →</Button>
+          <Button as={Link} to="/menu" variant="light" size="lg" style={{ color: '#c41e3a', fontWeight: 'bold', padding: '12px 35px' }}>Đặt Tiệc Ngay →</Button>
         </Container>
       </section>
     </>
