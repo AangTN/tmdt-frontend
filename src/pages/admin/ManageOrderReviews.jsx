@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import OrderDetail from '../../components/ui/OrderDetail';
+import ReviewAnalytics from './ReviewAnalytics';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -73,6 +74,9 @@ const ManageOrderReviews = () => {
           </div>
         </div>
       </div>
+
+      {/* AI Analytics Section */}
+      <ReviewAnalytics />
 
       <AdminResponsiveContainer data={filtered} loading={loading} empty={filtered.length===0} cardComponent={null}>
         <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>

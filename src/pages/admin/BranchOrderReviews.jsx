@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import OrderDetail from '../../components/ui/OrderDetail';
+import ReviewAnalytics from './ReviewAnalytics';
 import styles from '../../styles/admin/AdminTable.module.css';
 import buttonStyles from '../../styles/admin/AdminButton.module.css';
 import formStyles from '../../styles/admin/AdminForm.module.css';
@@ -122,6 +123,9 @@ const BranchOrderReviews = () => {
           </div>
         </div>
       </div>
+
+      {/* AI Analytics Section */}
+      <ReviewAnalytics branchId={branchId} />
 
       <div className={`${styles.tableContainerPremium} ${styles.tableAnimateIn}`}>
           <div className={styles.tableResponsive}>

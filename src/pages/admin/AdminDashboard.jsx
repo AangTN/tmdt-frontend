@@ -11,6 +11,7 @@ import {
   fetchRevenueComparisonByBranch,
 } from '../../services/api';
 import { BarChart, LineChart, PieChart, AreaChart } from '../../components/admin/Charts';
+import ReviewAnalytics from './ReviewAnalytics';
 import styles from '../../styles/admin/AdminCard.module.css';
 import '../../styles/admin.css';
 
@@ -750,6 +751,11 @@ const AdminDashboard = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Review Analytics Section */}
+      <div className="mt-4">
+        <ReviewAnalytics />
       </div>
     </div>
   );
