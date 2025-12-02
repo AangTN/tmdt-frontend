@@ -507,7 +507,15 @@ const CheckoutPage = () => {
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Tạo đơn hàng thất bại';
       setSubmitError(msg);
-      if (typeof msg === 'string' && msg.includes('Dữ liệu giỏ hàng đã thay đổi')) {
+      
+      // Check for stale cart errors (price changed, item deleted, invalid options/crust)
+      const isStaleCart = typeof msg === 'string' && (
+        msg.includes('Dữ liệu giỏ hàng đã thay đổi') || 
+        msg.includes('cập nhật giỏ hàng') || 
+        msg.includes('thêm lại sản phẩm')
+      );
+
+      if (isStaleCart) {
         clear();
       }
     } finally {

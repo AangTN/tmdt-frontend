@@ -7,7 +7,7 @@ import ProductCard from '../components/ui/ProductCard';
 
 const CartPage = () => {
   const { items, remove, setQty, clear, add } = useCart();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(items.length > 0);
   const [error, setError] = useState('');
   const [foodsMap, setFoodsMap] = useState({});
   const [combosMap, setCombosMap] = useState({});
@@ -105,25 +105,51 @@ const CartPage = () => {
       if (!food) {
         return { ...item, displayType: 'product', displayName: `Món #${item.monAnId}`, displayImage: '/placeholder.svg', displayPrice: 0, displayTotal: 0, displayDetails: 'Không tìm thấy thông tin món ăn', hasError: true };
       }
+
+      // Validate Variant
+      if (item.bienTheId && !variantsMap[item.bienTheId]) {
+        return { ...item, displayType: 'product', displayName: food.TenMonAn, displayImage: '/placeholder.svg', displayPrice: 0, displayTotal: 0, displayDetails: 'Biến thể không tồn tại', hasError: true };
+      }
+
+      // Validate Crust
+      if (item.deBanhId && !crustsMap[item.deBanhId]) {
+        return { ...item, displayType: 'product', displayName: food.TenMonAn, displayImage: '/placeholder.svg', displayPrice: 0, displayTotal: 0, displayDetails: 'Đế bánh không tồn tại', hasError: true };
+      }
+
       const variant = item.bienTheId ? variantsMap[item.bienTheId] : null;
       const basePrice = variant ? Number(variant.GiaBan || 0) : 0;
       const sizeId = variant?.Size?.MaSize;
       const sizeName = variant?.Size?.TenSize || '';
       const crust = item.deBanhId ? crustsMap[item.deBanhId] : null;
       const crustName = crust?.TenDeBanh || '';
+      
       let optionsExtra = 0;
       const optionNames = [];
-      if (Array.isArray(item.tuyChonThem) && item.tuyChonThem.length > 0 && sizeId) {
-        item.tuyChonThem.forEach(optId => {
-          const key = `${optId}_${sizeId}`;
-          const optionPrice = optionPricesMap[key];
-          if (optionPrice && optionPrice.TuyChon) {
-            const extra = Number(optionPrice.GiaThem || 0);
-            optionsExtra += extra;
-            const optName = optionPrice.TuyChon.TenTuyChon;
-            optionNames.push(optName + (extra > 0 ? ` (+${extra.toLocaleString()} đ)` : ''));
-          }
-        });
+      let optionsError = false;
+
+      if (Array.isArray(item.tuyChonThem) && item.tuyChonThem.length > 0) {
+        if (!sizeId) {
+           optionsError = true;
+        } else {
+           for (const optId of item.tuyChonThem) {
+              const key = `${optId}_${sizeId}`;
+              const optionPrice = optionPricesMap[key];
+              if (!optionPrice) {
+                 optionsError = true;
+                 break;
+              }
+              if (optionPrice.TuyChon) {
+                const extra = Number(optionPrice.GiaThem || 0);
+                optionsExtra += extra;
+                const optName = optionPrice.TuyChon.TenTuyChon;
+                optionNames.push(optName + (extra > 0 ? ` (+${extra.toLocaleString()} đ)` : ''));
+              }
+           }
+        }
+      }
+
+      if (optionsError) {
+        return { ...item, displayType: 'product', displayName: food.TenMonAn, displayImage: '/placeholder.svg', displayPrice: 0, displayTotal: 0, displayDetails: 'Tùy chọn không hợp lệ', hasError: true };
       }
       const unitPrice = basePrice + optionsExtra;
       
@@ -194,6 +220,17 @@ const CartPage = () => {
       return sum + (item.displayTotal || 0);
     }, 0);
   }, [enrichedItems]);
+
+  // Check for invalid items and clear cart if found
+  useEffect(() => {
+    if (!loading && items.length > 0) {
+      const hasError = enrichedItems.some(item => item.hasError);
+      if (hasError) {
+        alert('Thông tin sản phẩm đã bị thay đổi vui lòng thêm lại vào giỏ hàng');
+        clear();
+      }
+    }
+  }, [loading, items.length, enrichedItems, clear]);
 
   // Editor functions
   const openEditor = async (item) => {

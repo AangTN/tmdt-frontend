@@ -137,7 +137,40 @@ const PromotionDetail = () => {
     );
   };
 
+  const renderPrices = (food) => {
+    if (!food.BienTheMonAn || food.BienTheMonAn.length === 0) return <div className="text-muted small" style={{ fontSize: '0.85rem' }}>Chưa có giá</div>;
+    
+    const variants = food.BienTheMonAn.filter(v => v.TrangThai === 'Active');
+    if (variants.length === 0) return <div className="text-muted small" style={{ fontSize: '0.85rem' }}>Ngừng kinh doanh</div>;
+
+    return (
+      <div className="d-flex flex-wrap gap-2 mt-1" style={{ fontSize: '0.85rem' }}>
+        {variants.map((v) => (
+          <span key={v.MaBienThe} className="text-muted bg-light px-2 py-1 rounded border">
+            {v.Size ? <span>{v.Size.TenSize}: </span> : null}
+            <span className="fw-bold text-dark">{Number(v.GiaBan).toLocaleString()}đ</span>
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   const handleToggleFood = (foodId) => {
+    // Check if adding
+    if (!selectedFoodIds.includes(foodId)) {
+      const food = allFoods.find(f => f.MaMonAn === foodId);
+      if (formData.KMLoai === 'AMOUNT' || formData.KMLoai === 'SOTIEN') {
+        const discountAmount = Number(formData.KMGiaTri);
+        if (food && food.BienTheMonAn) {
+          const invalidVariants = food.BienTheMonAn.filter(v => Number(v.GiaBan) <= discountAmount);
+          if (invalidVariants.length > 0) {
+            alert(`Không thể thêm món "${food.TenMonAn}" vào khuyến mãi này.\nGiá giảm (${discountAmount.toLocaleString()}đ) phải nhỏ hơn giá bán của tất cả các biến thể.\nBiến thể vi phạm: ${invalidVariants.map(v => v.Size?.TenSize + ' (' + Number(v.GiaBan).toLocaleString() + 'đ)').join(', ')}`);
+            return;
+          }
+        }
+      }
+    }
+
     setSelectedFoodIds(prev => {
       if (prev.includes(foodId)) {
         return prev.filter(id => id !== foodId);
@@ -151,7 +184,19 @@ const PromotionDetail = () => {
     if (selectedFoodIds.length === allFoods.length) {
       setSelectedFoodIds([]);
     } else {
-      setSelectedFoodIds(allFoods.map(f => f.MaMonAn));
+      let validFoods = allFoods;
+      if (formData.KMLoai === 'AMOUNT' || formData.KMLoai === 'SOTIEN') {
+        const discountAmount = Number(formData.KMGiaTri);
+        validFoods = allFoods.filter(food => {
+          if (!food.BienTheMonAn || food.BienTheMonAn.length === 0) return true;
+          return food.BienTheMonAn.every(v => Number(v.GiaBan) > discountAmount);
+        });
+        
+        if (validFoods.length < allFoods.length) {
+          alert(`Đã bỏ qua ${allFoods.length - validFoods.length} món ăn không thỏa mãn điều kiện giá giảm < giá bán.`);
+        }
+      }
+      setSelectedFoodIds(validFoods.map(f => f.MaMonAn));
     }
   };
 
@@ -416,6 +461,7 @@ const PromotionDetail = () => {
                             <div className="flex-grow-1">
                               <div className={styles.tableCellBold}>{food.TenMonAn}</div>
                               {renderCategories(food.DanhMuc)}
+                              {renderPrices(food)}
                             </div>
                           </div>
                         ))}
@@ -477,6 +523,7 @@ const PromotionDetail = () => {
                                 </div>
                               </div>
                               {renderCategories(food.DanhMuc)}
+                              {renderPrices(food)}
                             </div>
                           </div>
                         ))}
