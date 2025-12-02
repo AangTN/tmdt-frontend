@@ -97,7 +97,7 @@ const ComboDetailPage = () => {
             </div>
             {addedMsg && <div className="alert alert-success py-2 small">{addedMsg}</div>}
             <h5 className="mt-4 mb-2 fw-semibold">Bao gồm trong combo:</h5>
-            <div className="d-flex flex-column gap-2">
+            <Row className="g-3">
               {combo.Items.map(item => {
                 const variant = item.BienTheMonAn;
                 const food = variant?.MonAn;
@@ -105,24 +105,33 @@ const ComboDetailPage = () => {
                 const rawImg = food?.HinhAnh;
                 const imagePath = rawImg ? (String(rawImg).startsWith('/') ? String(rawImg) : `/images/AnhMonAn/${rawImg}`) : null;
                 const sizeName = variant?.Size?.TenSize;
+                const isPizza = food?.LoaiMonAn?.TenLoaiMonAn?.toLowerCase() === 'pizza';
+
                 return (
-                  <Card key={item.MaBienThe + '-' + (item.MaDeBanh ?? 'null')} className="border-0 border-start border-4 border-danger-subtle shadow-sm">
-                    <Card.Body className="py-2">
-                      <div className="d-flex align-items-center gap-3">
-                        <div style={{ width:64, height:64 }} className="rounded overflow-hidden bg-light flex-shrink-0">
-                          {imagePath ? <img src={assetUrl(imagePath)} alt={food.TenMonAn} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div className="small text-muted">No image</div>}
+                  <Col md={6} key={item.MaBienThe + '-' + (item.MaDeBanh ?? 'null')}>
+                    <Card className="border-0 border-start border-4 border-danger-subtle shadow-sm h-100">
+                      <Card.Body className="py-2">
+                        <div className="d-flex align-items-center gap-3 h-100">
+                          <div style={{ width:64, height:64 }} className="rounded overflow-hidden bg-light flex-shrink-0">
+                            {imagePath ? <img src={assetUrl(imagePath)} alt={food.TenMonAn} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div className="small text-muted">No image</div>}
+                          </div>
+                          <div className="flex-grow-1">
+                            <div className="fw-semibold">{food.TenMonAn}</div>
+                            <div className="text-muted small">
+                              {isPizza && <span>Size: {sizeName}</span>}
+                              {item?.DeBanh?.TenDeBanh && (
+                                <span>{isPizza ? ' • ' : ''}Đế: {item.DeBanh.TenDeBanh}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-danger fw-semibold small">x {item.SoLuong}</div>
                         </div>
-                        <div className="flex-grow-1">
-                          <div className="fw-semibold">{food.TenMonAn}</div>
-                          <div className="text-muted small">Size: {sizeName}{item?.DeBanh?.TenDeBanh ? ` • Đế: ${item.DeBanh.TenDeBanh}` : ''}</div>
-                        </div>
-                        <div className="text-danger fw-semibold small">x {item.SoLuong}</div>
-                      </div>
-                    </Card.Body>
-                  </Card>
+                      </Card.Body>
+                    </Card>
+                  </Col>
                 );
               })}
-            </div>
+            </Row>
           </Col>
         </Row>
       </Container>
