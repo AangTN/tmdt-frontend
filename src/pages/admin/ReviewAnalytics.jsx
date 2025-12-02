@@ -19,10 +19,13 @@ const ReviewAnalytics = ({ branchId }) => {
       const startDate = new Date();
       if (dateRange === 'week') startDate.setDate(startDate.getDate() - 7);
       else if (dateRange === 'month') startDate.setMonth(startDate.getMonth() - 1);
+      
+      // Set to start of day to include all records from that day
+      startDate.setHours(0, 0, 0, 0);
 
       const params = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
         analyze: analyze,
         branchId: branchId // Pass branchId if available
       };
